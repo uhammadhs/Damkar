@@ -59,47 +59,80 @@ function LeaveRequestTable({ requests }: { requests: typeof leaveRequests }) {
     }
 
     return (
-        <div className="mt-4 overflow-x-auto">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                    <TableHead>Nama Anggota</TableHead>
-                    <TableHead>Jenis & Tanggal</TableHead>
-                    <TableHead>Alasan</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {requests.map((req) => (
-                    <TableRow key={req.id}>
-                        <TableCell className="font-medium">{req.name}</TableCell>
-                        <TableCell>
-                            <div>{req.type}</div>
-                            <div className="text-xs text-muted-foreground">{req.dates} ({req.duration} hari)</div>
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate">{req.reason}</TableCell>
-                        <TableCell className="text-center">
-                            <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
+        <div className="mt-4">
+            {/* Mobile View: List of Cards */}
+            <div className="space-y-4 md:hidden">
+                {requests.map((req) => (
+                    <Card key={req.id} className="p-4">
+                        <div className="flex items-start justify-between gap-2">
+                           <div className="flex-1 space-y-2">
+                                <p className="font-semibold">{req.name}</p>
+                                <p className="text-sm">
+                                    {req.type} - {req.dates} ({req.duration} hari)
+                                </p>
+                                <p className="text-sm text-muted-foreground italic">"{req.reason}"</p>
+                           </div>
+                           <Badge className={`${getStatusColor(req.status)} shrink-0`}>{req.status}</Badge>
+                        </div>
                         {req.status === 'Menunggu' && (
-                            <div className="flex justify-end gap-2">
-                                <Button variant="outline" size="icon" className="h-8 w-8 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700">
+                             <div className="mt-4 flex justify-end gap-2">
+                                <Button variant="outline" size="sm" className="h-8 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700">
                                     <Check className="h-4 w-4" />
-                                    <span className="sr-only">Setujui</span>
+                                    <span className="ml-1">Setujui</span>
                                 </Button>
-                                <Button variant="outline" size="icon" className="h-8 w-8 text-destructive border-destructive hover:bg-destructive/10">
+                                <Button variant="outline" size="sm" className="h-8 text-destructive border-destructive hover:bg-destructive/10">
                                     <X className="h-4 w-4" />
-                                    <span className="sr-only">Tolak</span>
+                                    <span className="ml-1">Tolak</span>
                                 </Button>
                             </div>
                         )}
-                        </TableCell>
-                    </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                    </Card>
+                ))}
+            </div>
+
+            {/* Desktop View: Table */}
+            <div className="hidden overflow-x-auto md:block">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead>Nama Anggota</TableHead>
+                        <TableHead>Jenis & Tanggal</TableHead>
+                        <TableHead>Alasan</TableHead>
+                        <TableHead className="text-center">Status</TableHead>
+                        <TableHead className="text-right">Aksi</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {requests.map((req) => (
+                        <TableRow key={req.id}>
+                            <TableCell className="font-medium">{req.name}</TableCell>
+                            <TableCell>
+                                <div>{req.type}</div>
+                                <div className="text-xs text-muted-foreground">{req.dates} ({req.duration} hari)</div>
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate">{req.reason}</TableCell>
+                            <TableCell className="text-center">
+                                <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                            {req.status === 'Menunggu' && (
+                                <div className="flex justify-end gap-2">
+                                    <Button variant="outline" size="icon" className="h-8 w-8 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700">
+                                        <Check className="h-4 w-4" />
+                                        <span className="sr-only">Setujui</span>
+                                    </Button>
+                                    <Button variant="outline" size="icon" className="h-8 w-8 text-destructive border-destructive hover:bg-destructive/10">
+                                        <X className="h-4 w-4" />
+                                        <span className="sr-only">Tolak</span>
+                                    </Button>
+                                </div>
+                            )}
+                            </TableCell>
+                        </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
         </div>
     )
 }
