@@ -185,7 +185,7 @@ function LeaveRequestDialog({ request, children }: { request: LeaveRequest, chil
                     </div>
                 </div>
                 {request.status === 'Menunggu' && (
-                    <div className="flex justify-end gap-2">
+                    <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
                         <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
                             <X className="h-4 w-4" />
                             <span className="ml-2">Tolak Pengajuan</span>
