@@ -25,12 +25,20 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 
-export default function AdminDashboardLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+
+  const getPageTitle = () => {
+    if (pathname.startsWith("/admin/dashboard")) return "Dashboard Admin"
+    if (pathname.startsWith("/admin/manajemen-cuti")) return "Manajemen Cuti"
+    if (pathname.startsWith("/admin/laporan")) return "Laporan"
+    if (pathname.startsWith("/admin/anggota")) return "Manajemen Anggota"
+    return "Admin SIAP CUTI"
+  }
 
   return (
     <SidebarProvider>
@@ -101,7 +109,7 @@ export default function AdminDashboardLayout({
           <SidebarTrigger className="md:hidden" />
           <div className="flex-1">
             <h2 className="text-lg font-semibold font-headline">
-              Dashboard Admin
+              {getPageTitle()}
             </h2>
           </div>
           <div className="flex items-center gap-4">
