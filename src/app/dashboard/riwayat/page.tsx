@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from "@/components/ui/table";
+import { Separator } from "@/components/ui/separator";
 
 const leaveHistory = [
   { id: 1, type: "Cuti Sakit", dates: "25-26 Des 2023", duration: 2, reason: "Surat dokter terlampir", status: "Menunggu" },
@@ -36,31 +37,52 @@ export default function RiwayatPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableCaption>Daftar lengkap riwayat pengajuan cuti Anda.</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Jenis Cuti</TableHead>
-              <TableHead>Tanggal</TableHead>
-              <TableHead className="text-center">Durasi</TableHead>
-              <TableHead>Alasan</TableHead>
-              <TableHead className="text-right">Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {leaveHistory.map((req) => (
-              <TableRow key={req.id}>
-                <TableCell className="font-medium">{req.type}</TableCell>
-                <TableCell>{req.dates}</TableCell>
-                <TableCell className="text-center">{req.duration} hari</TableCell>
-                <TableCell>{req.reason}</TableCell>
-                <TableCell className="text-right">
-                  <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        {/* Mobile View: List of Cards */}
+        <div className="space-y-4 md:hidden">
+          {leaveHistory.map((req, index) => (
+            <div key={req.id}>
+              <div className="flex items-start justify-between">
+                <div className="flex-1 space-y-1">
+                  <p className="font-medium">{req.type}</p>
+                  <p className="text-sm text-muted-foreground">{req.dates}</p>
+                  <p className="text-sm text-muted-foreground">{req.duration} hari</p>
+                  <p className="text-xs text-muted-foreground italic">"{req.reason}"</p>
+                </div>
+                <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
+              </div>
+              {index < leaveHistory.length - 1 && <Separator className="my-4" />}
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop View: Table */}
+        <div className="hidden md:block">
+            <Table>
+                <TableCaption>Daftar lengkap riwayat pengajuan cuti Anda.</TableCaption>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Jenis Cuti</TableHead>
+                    <TableHead>Tanggal</TableHead>
+                    <TableHead className="text-center">Durasi</TableHead>
+                    <TableHead>Alasan</TableHead>
+                    <TableHead className="text-right">Status</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {leaveHistory.map((req) => (
+                    <TableRow key={req.id}>
+                        <TableCell className="font-medium">{req.type}</TableCell>
+                        <TableCell>{req.dates}</TableCell>
+                        <TableCell className="text-center">{req.duration} hari</TableCell>
+                        <TableCell>{req.reason}</TableCell>
+                        <TableCell className="text-right">
+                        <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
+                        </TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </div>
       </CardContent>
     </Card>
   );
