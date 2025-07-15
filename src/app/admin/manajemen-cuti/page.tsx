@@ -40,8 +40,8 @@ export default function ManajemenCutiPage() {
         <CardContent>
             <Tabs defaultValue="menunggu">
                 <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex">
-                    <TabsTrigger value="menunggu">Menunggu Persetujuan ({waitingRequests.length})</TabsTrigger>
-                    <TabsTrigger value="semua">Semua Pengajuan ({leaveRequests.length})</TabsTrigger>
+                    <TabsTrigger value="menunggu">Menunggu ({waitingRequests.length})</TabsTrigger>
+                    <TabsTrigger value="semua">Semua ({leaveRequests.length})</TabsTrigger>
                 </TabsList>
                 <TabsContent value="menunggu">
                      <LeaveRequestTable requests={waitingRequests} />
@@ -65,32 +65,35 @@ function LeaveRequestTable({ requests }: { requests: LeaveRequest[] }) {
             {/* Mobile View: List of Cards */}
             <div className="space-y-4 md:hidden">
                 {requests.map((req) => (
-                    <LeaveRequestDialog key={req.id} request={req}>
-                        <Card className="p-4 cursor-pointer hover:bg-muted/50">
-                            <div className="flex items-start justify-between gap-2">
-                               <div className="flex-1 space-y-2">
-                                    <p className="font-semibold">{req.name}</p>
-                                    <p className="text-sm">
-                                        {req.type} - {req.dates} ({req.duration} hari)
-                                    </p>
-                                    <p className="text-sm text-muted-foreground italic truncate">"{req.reason}"</p>
-                               </div>
-                               <Badge className={`${getStatusColor(req.status)} shrink-0`}>{req.status}</Badge>
-                            </div>
-                            {req.status === 'Menunggu' && (
-                                 <div className="mt-4 flex justify-end gap-2">
-                                    <Button variant="outline" size="sm" className="h-8 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700">
-                                        <Check className="h-4 w-4" />
-                                        <span className="ml-1">Setujui</span>
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="h-8 text-destructive border-destructive hover:bg-destructive/10">
-                                        <X className="h-4 w-4" />
-                                        <span className="ml-1">Tolak</span>
-                                    </Button>
+                    <Card key={req.id} className="p-0">
+                         <LeaveRequestDialog request={req}>
+                            <div className="p-4 cursor-pointer hover:bg-muted/50">
+                                <div className="flex items-start justify-between gap-2">
+                                   <div className="flex-1 space-y-2">
+                                        <p className="font-semibold">{req.name}</p>
+                                        <p className="text-sm">
+                                            {req.type} - {req.dates} ({req.duration} hari)
+                                        </p>
+                                        <p className="text-sm text-muted-foreground italic truncate">"{req.reason}"</p>
+                                   </div>
+                                   <Badge className={`${getStatusColor(req.status)} shrink-0`}>{req.status}</Badge>
                                 </div>
-                            )}
-                        </Card>
-                    </LeaveRequestDialog>
+                            </div>
+                        </LeaveRequestDialog>
+
+                        {req.status === 'Menunggu' && (
+                             <div className="border-t p-4 flex justify-end gap-2">
+                                <Button variant="outline" size="sm" className="h-8 text-destructive border-destructive hover:bg-destructive/10">
+                                    <X className="h-4 w-4" />
+                                    <span className="ml-1">Tolak</span>
+                                </Button>
+                                <Button variant="outline" size="sm" className="h-8 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700">
+                                    <Check className="h-4 w-4" />
+                                    <span className="ml-1">Setujui</span>
+                                </Button>
+                            </div>
+                        )}
+                    </Card>
                 ))}
             </div>
 
@@ -108,8 +111,7 @@ function LeaveRequestTable({ requests }: { requests: LeaveRequest[] }) {
                     </TableHeader>
                     <TableBody>
                         {requests.map((req) => (
-                        <LeaveRequestDialog key={req.id} request={req}>
-                            <TableRow className="cursor-pointer">
+                            <TableRow key={req.id}>
                                 <TableCell className="font-medium">{req.name}</TableCell>
                                 <TableCell>
                                     <div>{req.type}</div>
@@ -120,21 +122,25 @@ function LeaveRequestTable({ requests }: { requests: LeaveRequest[] }) {
                                     <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                {req.status === 'Menunggu' && (
                                     <div className="flex justify-end gap-2">
-                                        <Button variant="outline" size="icon" className="h-8 w-8 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700">
-                                            <Check className="h-4 w-4" />
-                                            <span className="sr-only">Setujui</span>
-                                        </Button>
-                                        <Button variant="outline" size="icon" className="h-8 w-8 text-destructive border-destructive hover:bg-destructive/10">
-                                            <X className="h-4 w-4" />
-                                            <span className="sr-only">Tolak</span>
-                                        </Button>
+                                        <LeaveRequestDialog request={req}>
+                                            <Button variant="outline" size="sm">Lihat Detail</Button>
+                                        </LeaveRequestDialog>
+                                        {req.status === 'Menunggu' && (
+                                            <>
+                                                <Button variant="outline" size="icon" className="h-9 w-9 text-destructive border-destructive hover:bg-destructive/10">
+                                                    <X className="h-4 w-4" />
+                                                    <span className="sr-only">Tolak</span>
+                                                </Button>
+                                                <Button variant="outline" size="icon" className="h-9 w-9 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700">
+                                                    <Check className="h-4 w-4" />
+                                                    <span className="sr-only">Setujui</span>
+                                                </Button>
+                                            </>
+                                        )}
                                     </div>
-                                )}
                                 </TableCell>
                             </TableRow>
-                        </LeaveRequestDialog>
                         ))}
                     </TableBody>
                 </Table>
