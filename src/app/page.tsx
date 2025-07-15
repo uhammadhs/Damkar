@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 export default function LoginPage() {
   return (
@@ -25,16 +26,22 @@ export default function LoginPage() {
         <CardContent>
           <form className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="nip">Nomor Induk Pegawai (NIP)</Label>
-              <Input id="nip" placeholder="Masukkan NIP Anda" required type="text" />
+              <Label htmlFor="nip">NIP / Username</Label>
+              <Input id="nip" placeholder="Masukkan NIP atau Username" required type="text" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input id="password" required type="password" placeholder="••••••••" />
             </div>
             <Button asChild className="w-full" type="submit">
-              <Link href="/dashboard">Login</Link>
+              <Link href="/dashboard">Login Anggota</Link>
             </Button>
+             <Button asChild className="w-full" variant="secondary" type="submit">
+              <Link href="/admin/dashboard">Login Admin</Link>
+            </Button>
+            <div className="relative my-4">
+                <Separator />
+            </div>
             <Button variant="link" size="sm" className="w-full" asChild>
               <Link href="#">Lupa Password?</Link>
             </Button>
