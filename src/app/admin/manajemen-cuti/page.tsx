@@ -1,6 +1,7 @@
 
 "use client"
 
+import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,15 +9,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Check, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
-const leaveRequests = [
+const initialLeaveRequests = [
   { id: 1, name: "Anggota Damkar 1", nip: "199001012020121001", type: "Cuti Sakit", dates: "25-26 Des 2023", duration: 2, reason: "Surat dokter terlampir. Lorem ipsum dolor sit amet, consectetur adipiscing elit.", status: "Menunggu" },
   { id: 2, name: "Anggota Damkar 2", nip: "199102022020121002", type: "Cuti Tahunan", dates: "10-11 Nov 2023", duration: 2, reason: "Keperluan keluarga, menghadiri acara pernikahan di luar kota.", status: "Disetujui" },
   { id: 3, name: "Anggota Damkar 3", nip: "199203032020121003", type: "Izin", dates: "01 Nov 2023", duration: 1, reason: "Mengantar anak sekolah pada hari pertama masuk.", status: "Ditolak" },
   { id: 4, name: "Anggota Damkar 4", nip: "199304042020121004", type: "Cuti Tahunan", dates: "28-29 Des 2023", duration: 2, reason: "Liburan akhir tahun bersama keluarga besar.", status: "Menunggu" },
 ];
 
-type LeaveRequest = typeof leaveRequests[0];
+type LeaveRequest = typeof initialLeaveRequests[0];
 
 const getStatusColor = (status: string): string => {
     switch (status) {
@@ -32,7 +34,19 @@ const getStatusColor = (status: string): string => {
 }
 
 export default function ManajemenCutiPage() {
+  const [leaveRequests, setLeaveRequests] = React.useState(initialLeaveRequests);
+  const { toast } = useToast();
+
+  const handleUpdateRequest = (id: number, status: "Disetujui" | "Ditolak") => {
+    setLeaveRequests(prev => prev.map(req => req.id === id ? { ...req, status } : req));
+    toast({
+        title: "Sukses",
+        description: `Pengajuan cuti telah ${status.toLowerCase()}.`,
+    });
+  };
+
   const waitingRequests = leaveRequests.filter(req => req.status === "Menunggu");
+  const allRequests = leaveRequests;
 
   return (
     <Card>
@@ -42,15 +56,15 @@ export default function ManajemenCutiPage() {
         </CardHeader>
         <CardContent>
             <Tabs defaultValue="menunggu">
-                <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex">
+                <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="menunggu">Menunggu ({waitingRequests.length})</TabsTrigger>
-                    <TabsTrigger value="semua">Semua ({leaveRequests.length})</TabsTrigger>
+                    <TabsTrigger value="semua">Semua ({allRequests.length})</TabsTrigger>
                 </TabsList>
                 <TabsContent value="menunggu">
-                     <LeaveRequestTable requests={waitingRequests} />
+                     <LeaveRequestTable requests={waitingRequests} onUpdateRequest={handleUpdateRequest} />
                 </TabsContent>
                  <TabsContent value="semua">
-                    <LeaveRequestTable requests={leaveRequests} />
+                    <LeaveRequestTable requests={allRequests} onUpdateRequest={handleUpdateRequest} />
                 </TabsContent>
             </Tabs>
         </CardContent>
@@ -58,7 +72,7 @@ export default function ManajemenCutiPage() {
   );
 }
 
-function LeaveRequestTable({ requests }: { requests: LeaveRequest[] }) {
+function LeaveRequestTable({ requests, onUpdateRequest }: { requests: LeaveRequest[], onUpdateRequest: (id: number, status: "Disetujui" | "Ditolak") => void }) {
     if (requests.length === 0) {
         return <p className="py-10 text-center text-muted-foreground">Tidak ada pengajuan cuti.</p>
     }
@@ -69,7 +83,7 @@ function LeaveRequestTable({ requests }: { requests: LeaveRequest[] }) {
             <div className="space-y-4 md:hidden">
                 {requests.map((req) => (
                     <Card key={req.id}>
-                        <CardHeader className="p-4">
+                        <CardHeader className="p-4 pb-2">
                             <div className="flex items-start justify-between gap-4">
                                 <CardTitle className="text-base font-semibold leading-tight">{req.name}</CardTitle>
                                 <Badge className={`${getStatusColor(req.status)} shrink-0`}>{req.status}</Badge>
@@ -78,20 +92,20 @@ function LeaveRequestTable({ requests }: { requests: LeaveRequest[] }) {
                                 {req.type} &middot; {req.dates} ({req.duration} hari)
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="p-4 pt-0">
+                        <CardContent className="p-4 pt-2">
                             <p className="text-sm text-muted-foreground italic line-clamp-2">"{req.reason}"</p>
                         </CardContent>
                         <CardFooter className="flex p-4 pt-0 gap-2">
-                             <LeaveRequestDialog request={req}>
+                             <LeaveRequestDialog request={req} onUpdateRequest={onUpdateRequest}>
                                 <Button variant="outline" className="w-full">Lihat Detail</Button>
                             </LeaveRequestDialog>
                             {req.status === 'Menunggu' && (
                                 <>
-                                <Button variant="outline" size="icon" className="h-10 w-10 text-destructive border-destructive hover:bg-destructive/10">
+                                <Button variant="outline" size="icon" className="h-10 w-10 text-destructive border-destructive hover:bg-destructive/10" onClick={() => onUpdateRequest(req.id, "Ditolak")}>
                                     <X className="h-4 w-4" />
                                     <span className="sr-only">Tolak</span>
                                 </Button>
-                                <Button variant="outline" size="icon" className="h-10 w-10 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700">
+                                <Button variant="outline" size="icon" className="h-10 w-10 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700" onClick={() => onUpdateRequest(req.id, "Disetujui")}>
                                     <Check className="h-4 w-4" />
                                     <span className="sr-only">Setujui</span>
                                 </Button>
@@ -128,16 +142,16 @@ function LeaveRequestTable({ requests }: { requests: LeaveRequest[] }) {
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-2">
-                                        <LeaveRequestDialog request={req}>
+                                        <LeaveRequestDialog request={req} onUpdateRequest={onUpdateRequest}>
                                             <Button variant="outline" size="sm">Lihat Detail</Button>
                                         </LeaveRequestDialog>
                                         {req.status === 'Menunggu' && (
                                             <>
-                                                <Button variant="outline" size="icon" className="h-9 w-9 text-destructive border-destructive hover:bg-destructive/10">
+                                                <Button variant="outline" size="icon" className="h-9 w-9 text-destructive border-destructive hover:bg-destructive/10" onClick={() => onUpdateRequest(req.id, "Ditolak")}>
                                                     <X className="h-4 w-4" />
                                                     <span className="sr-only">Tolak</span>
                                                 </Button>
-                                                <Button variant="outline" size="icon" className="h-9 w-9 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700">
+                                                <Button variant="outline" size="icon" className="h-9 w-9 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700" onClick={() => onUpdateRequest(req.id, "Disetujui")}>
                                                     <Check className="h-4 w-4" />
                                                     <span className="sr-only">Setujui</span>
                                                 </Button>
@@ -154,9 +168,16 @@ function LeaveRequestTable({ requests }: { requests: LeaveRequest[] }) {
     )
 }
 
-function LeaveRequestDialog({ request, children }: { request: LeaveRequest, children: React.ReactNode }) {
+function LeaveRequestDialog({ request, children, onUpdateRequest }: { request: LeaveRequest, children: React.ReactNode, onUpdateRequest: (id: number, status: "Disetujui" | "Ditolak") => void }) {
+    const [open, setOpen] = React.useState(false);
+
+    const handleAction = (status: "Disetujui" | "Ditolak") => {
+        onUpdateRequest(request.id, status);
+        setOpen(false);
+    }
+    
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
@@ -197,11 +218,11 @@ function LeaveRequestDialog({ request, children }: { request: LeaveRequest, chil
                 </div>
                 {request.status === 'Menunggu' && (
                     <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
-                        <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
+                        <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10" onClick={() => handleAction("Ditolak")}>
                             <X className="h-4 w-4" />
                             <span className="ml-2">Tolak Pengajuan</span>
                         </Button>
-                        <Button className="bg-green-600 hover:bg-green-700 text-white">
+                        <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleAction("Disetujui")}>
                             <Check className="h-4 w-4" />
                             <span className="ml-2">Setujui Pengajuan</span>
                         </Button>
@@ -211,5 +232,3 @@ function LeaveRequestDialog({ request, children }: { request: LeaveRequest, chil
         </Dialog>
     )
 }
-
-    
