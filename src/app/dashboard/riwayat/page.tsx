@@ -1,4 +1,9 @@
+
+"use client"
+
+import * as React from "react"
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
@@ -26,8 +31,10 @@ const getStatusColor = (status: string): string => {
     }
 }
 
-
 export default function RiwayatPage() {
+  const [showAll, setShowAll] = React.useState(false);
+  const displayedHistory = showAll ? leaveHistory : leaveHistory.slice(0, 5);
+
   return (
     <Card>
       <CardHeader>
@@ -39,7 +46,7 @@ export default function RiwayatPage() {
       <CardContent>
         {/* Mobile View: List of Cards */}
         <div className="space-y-4 md:hidden">
-          {leaveHistory.map((req, index) => (
+          {displayedHistory.map((req, index) => (
             <div key={req.id}>
               <div className="flex items-start justify-between">
                 <div className="flex-1 space-y-1">
@@ -50,7 +57,7 @@ export default function RiwayatPage() {
                 </div>
                 <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
               </div>
-              {index < leaveHistory.length - 1 && <Separator className="my-4" />}
+              {index < displayedHistory.length - 1 && <Separator className="my-4" />}
             </div>
           ))}
         </div>
@@ -58,7 +65,11 @@ export default function RiwayatPage() {
         {/* Desktop View: Table */}
         <div className="hidden md:block">
             <Table>
-                <TableCaption>Daftar lengkap riwayat pengajuan cuti Anda.</TableCaption>
+                <TableCaption>
+                  {showAll 
+                    ? "Daftar lengkap riwayat pengajuan cuti Anda."
+                    : `Menampilkan 5 dari ${leaveHistory.length} riwayat.`}
+                </TableCaption>
                 <TableHeader>
                     <TableRow>
                     <TableHead>Jenis Cuti</TableHead>
@@ -69,7 +80,7 @@ export default function RiwayatPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {leaveHistory.map((req) => (
+                    {displayedHistory.map((req) => (
                     <TableRow key={req.id}>
                         <TableCell className="font-medium">{req.type}</TableCell>
                         <TableCell>{req.dates}</TableCell>
@@ -83,6 +94,14 @@ export default function RiwayatPage() {
                 </TableBody>
             </Table>
         </div>
+        
+        {!showAll && leaveHistory.length > 5 && (
+            <div className="mt-6 flex justify-center">
+                <Button onClick={() => setShowAll(true)} variant="outline">
+                    Lihat Semua Riwayat
+                </Button>
+            </div>
+        )}
       </CardContent>
     </Card>
   );
