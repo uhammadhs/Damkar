@@ -29,10 +29,10 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
 const initialMembers = [
-  { id: 1, name: "Anggota Damkar 1", nip: "199001012020121001", pangkat: "Pranata Komputer Ahli Pertama", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A1" },
-  { id: 2, name: "Anggota Damkar 2", nip: "199102022020121002", pangkat: "Analis Kebakaran", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A2" },
-  { id: 3, name: "Anggota Damkar 3", nip: "199203032020121003", pangkat: "Pemadam Kebakaran Pelaksana", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A3" },
-  { id: 4, name: "Anggota Damkar 4", nip: "199304042020121004", pangkat: "Pranata Komputer Ahli Pertama", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A4" },
+  { id: 1, name: "Anggota Damkar 1", nip: "199001012020121001", pangkat: "Pranata Komputer Ahli Pertama", username: "anggota1", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A1" },
+  { id: 2, name: "Anggota Damkar 2", nip: "199102022020121002", pangkat: "Analis Kebakaran", username: "anggota2", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A2" },
+  { id: 3, name: "Anggota Damkar 3", nip: "199203032020121003", pangkat: "Pemadam Kebakaran Pelaksana", username: "anggota3", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A3" },
+  { id: 4, name: "Anggota Damkar 4", nip: "199304042020121004", pangkat: "Pranata Komputer Ahli Pertama", username: "anggota4", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A4" },
 ];
 
 type Member = typeof initialMembers[0];
@@ -40,6 +40,7 @@ type Member = typeof initialMembers[0];
 export default function AnggotaPage() {
   const [members, setMembers] = React.useState<Member[]>(initialMembers);
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
   const { toast } = useToast();
 
   const handleAddMember = (event: React.FormEvent<HTMLFormElement>) => {
@@ -48,8 +49,10 @@ export default function AnggotaPage() {
     const name = formData.get("name") as string;
     const nip = formData.get("nip") as string;
     const pangkat = formData.get("pangkat") as string;
-
-    if (!name || !nip || !pangkat) {
+    const username = formData.get("username") as string;
+    
+    // Simple validation
+    if (!name || !nip || !pangkat || !username) {
         toast({
             title: "Gagal",
             description: "Semua field harus diisi.",
@@ -63,15 +66,17 @@ export default function AnggotaPage() {
       name,
       nip,
       pangkat,
+      username,
       avatarUrl: `https://placehold.co/40x40.png`,
       avatarFallback: name.substring(0, 2).toUpperCase(),
     };
 
     setMembers(prev => [...prev, newMember]);
-    setIsAddDialogOpen(false);
+    setIsAddDialogOpen(false); // Close dialog on success
+    (event.target as HTMLFormElement).reset(); // Reset form fields
     toast({
         title: "Sukses",
-        description: "Anggota baru berhasil ditambahkan.",
+        description: `Anggota baru "${name}" berhasil ditambahkan.`,
     });
   };
 
@@ -80,9 +85,14 @@ export default function AnggotaPage() {
     toast({
       title: "Sukses",
       description: "Anggota telah dihapus.",
-      variant: "destructive"
     });
   };
+
+  const filteredMembers = members.filter(member => 
+    member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.nip.includes(searchTerm) ||
+    member.pangkat.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <Card>
@@ -95,7 +105,12 @@ export default function AnggotaPage() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Cari anggota..." className="pl-8 sm:w-auto" />
+                    <Input 
+                      placeholder="Cari anggota..." 
+                      className="pl-8 sm:w-auto"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                     <DialogTrigger asChild>
@@ -108,7 +123,7 @@ export default function AnggotaPage() {
                         <DialogHeader>
                             <DialogTitle className="font-headline">Tambah Anggota Baru</DialogTitle>
                             <DialogDescription>
-                                Isi detail anggota untuk menambahkannya ke sistem.
+                                Isi detail anggota untuk membuat akun baru.
                             </DialogDescription>
                         </DialogHeader>
                         <form id="add-member-form" onSubmit={handleAddMember} className="grid gap-4 py-4">
@@ -123,6 +138,14 @@ export default function AnggotaPage() {
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="pangkat" className="text-right">Pangkat</Label>
                                 <Input id="pangkat" name="pangkat" className="col-span-3" placeholder="Contoh: Analis Kebakaran" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="username" className="text-right">Username</Label>
+                                <Input id="username" name="username" className="col-span-3" placeholder="Untuk login" />
+                            </div>
+                             <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="password" className="text-right">Password</Label>
+                                <Input id="password" name="password" type="password" className="col-span-3" placeholder="••••••••" />
                             </div>
                         </form>
                         <DialogFooter>
@@ -142,13 +165,13 @@ export default function AnggotaPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nama</TableHead>
-                <TableHead className="hidden md:table-cell">NIP</TableHead>
-                <TableHead>Pangkat</TableHead>
+                <TableHead className="hidden sm:table-cell">NIP</TableHead>
+                <TableHead className="hidden md:table-cell">Pangkat</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {members.map((member) => (
+              {filteredMembers.map((member) => (
                 <TableRow key={member.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -156,11 +179,14 @@ export default function AnggotaPage() {
                           <AvatarImage src={member.avatarUrl} alt={member.name} data-ai-hint="male portrait" />
                           <AvatarFallback>{member.avatarFallback}</AvatarFallback>
                       </Avatar>
-                      <div className="font-medium">{member.name}</div>
+                      <div className="flex flex-col">
+                        <div className="font-medium">{member.name}</div>
+                        <div className="text-sm text-muted-foreground md:hidden">{member.pangkat}</div>
+                      </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{member.nip}</TableCell>
-                  <TableCell>{member.pangkat}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{member.nip}</TableCell>
+                  <TableCell className="hidden md:table-cell">{member.pangkat}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -182,12 +208,14 @@ export default function AnggotaPage() {
             </TableBody>
           </Table>
         </div>
-        {members.length === 0 && (
+        {filteredMembers.length === 0 && (
           <p className="py-10 text-center text-muted-foreground">
-            Tidak ada anggota yang terdaftar.
+            {searchTerm ? "Anggota tidak ditemukan." : "Tidak ada anggota yang terdaftar."}
           </p>
         )}
       </CardContent>
     </Card>
   );
 }
+
+    
