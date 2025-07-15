@@ -1,4 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
+"use client"
+
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -65,34 +68,36 @@ function LeaveRequestTable({ requests }: { requests: LeaveRequest[] }) {
             {/* Mobile View: List of Cards */}
             <div className="space-y-4 md:hidden">
                 {requests.map((req) => (
-                    <Card key={req.id} className="p-0">
-                         <LeaveRequestDialog request={req}>
-                            <div className="p-4 cursor-pointer hover:bg-muted/50">
-                                <div className="flex items-start justify-between gap-2">
-                                   <div className="flex-1 space-y-2">
-                                        <p className="font-semibold">{req.name}</p>
-                                        <p className="text-sm">
-                                            {req.type} - {req.dates} ({req.duration} hari)
-                                        </p>
-                                        <p className="text-sm text-muted-foreground italic truncate">"{req.reason}"</p>
-                                   </div>
-                                   <Badge className={`${getStatusColor(req.status)} shrink-0`}>{req.status}</Badge>
-                                </div>
+                    <Card key={req.id}>
+                        <CardHeader className="p-4">
+                            <div className="flex items-start justify-between gap-4">
+                                <CardTitle className="text-base font-semibold leading-tight">{req.name}</CardTitle>
+                                <Badge className={`${getStatusColor(req.status)} shrink-0`}>{req.status}</Badge>
                             </div>
-                        </LeaveRequestDialog>
-
-                        {req.status === 'Menunggu' && (
-                             <div className="border-t p-4 flex justify-end gap-2">
-                                <Button variant="outline" size="sm" className="h-8 text-destructive border-destructive hover:bg-destructive/10">
+                            <CardDescription className="text-sm">
+                                {req.type} &middot; {req.dates} ({req.duration} hari)
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                            <p className="text-sm text-muted-foreground italic line-clamp-2">"{req.reason}"</p>
+                        </CardContent>
+                        <CardFooter className="flex p-4 pt-0 gap-2">
+                             <LeaveRequestDialog request={req}>
+                                <Button variant="outline" className="w-full">Lihat Detail</Button>
+                            </LeaveRequestDialog>
+                            {req.status === 'Menunggu' && (
+                                <>
+                                <Button variant="outline" size="icon" className="h-10 w-10 text-destructive border-destructive hover:bg-destructive/10">
                                     <X className="h-4 w-4" />
-                                    <span className="ml-1">Tolak</span>
+                                    <span className="sr-only">Tolak</span>
                                 </Button>
-                                <Button variant="outline" size="sm" className="h-8 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700">
+                                <Button variant="outline" size="icon" className="h-10 w-10 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700">
                                     <Check className="h-4 w-4" />
-                                    <span className="ml-1">Setujui</span>
+                                    <span className="sr-only">Setujui</span>
                                 </Button>
-                            </div>
-                        )}
+                                </>
+                            )}
+                        </CardFooter>
                     </Card>
                 ))}
             </div>
@@ -206,3 +211,5 @@ function LeaveRequestDialog({ request, children }: { request: LeaveRequest, chil
         </Dialog>
     )
 }
+
+    
