@@ -40,6 +40,8 @@ type Member = typeof initialMembers[0];
 export default function AnggotaPage() {
   const [members, setMembers] = React.useState<Member[]>(initialMembers);
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
+  const [editingMember, setEditingMember] = React.useState<Member | null>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
   const { toast } = useToast();
 
@@ -51,7 +53,6 @@ export default function AnggotaPage() {
     const pangkat = formData.get("pangkat") as string;
     const username = formData.get("username") as string;
     
-    // Simple validation
     if (!name || !nip || !pangkat || !username) {
         toast({
             title: "Gagal",
@@ -72,11 +73,44 @@ export default function AnggotaPage() {
     };
 
     setMembers(prev => [...prev, newMember]);
-    setIsAddDialogOpen(false); // Close dialog on success
-    (event.target as HTMLFormElement).reset(); // Reset form fields
+    setIsAddDialogOpen(false);
+    (event.target as HTMLFormElement).reset();
     toast({
         title: "Sukses",
         description: `Anggota baru "${name}" berhasil ditambahkan.`,
+    });
+  };
+
+  const handleEditMember = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingMember) return;
+
+    const formData = new FormData(event.currentTarget);
+    const name = formData.get("name") as string;
+    const nip = formData.get("nip") as string;
+    const pangkat = formData.get("pangkat") as string;
+    const username = formData.get("username") as string;
+    
+    if (!name || !nip || !pangkat || !username) {
+        toast({
+            title: "Gagal",
+            description: "Semua field harus diisi.",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    setMembers(prev => 
+      prev.map(member => 
+        member.id === editingMember.id ? { ...member, name, nip, pangkat, username } : member
+      )
+    );
+    
+    setIsEditDialogOpen(false);
+    setEditingMember(null);
+    toast({
+        title: "Sukses",
+        description: `Data anggota "${name}" berhasil diperbarui.`,
     });
   };
 
@@ -86,6 +120,11 @@ export default function AnggotaPage() {
       title: "Sukses",
       description: "Anggota telah dihapus.",
     });
+  };
+
+  const openEditDialog = (member: Member) => {
+    setEditingMember(member);
+    setIsEditDialogOpen(true);
   };
 
   const filteredMembers = members.filter(member => 
@@ -196,7 +235,7 @@ export default function AnggotaPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEditDialog(member)}>Edit</DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteMember(member.id)}>
                           Hapus
                         </DropdownMenuItem>
@@ -214,8 +253,46 @@ export default function AnggotaPage() {
           </p>
         )}
       </CardContent>
+
+      {/* Edit Member Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+              <DialogTitle className="font-headline">Edit Data Anggota</DialogTitle>
+              <DialogDescription>
+                  Perbarui detail anggota. Klik simpan jika sudah selesai.
+              </DialogDescription>
+          </DialogHeader>
+          <form id="edit-member-form" onSubmit={handleEditMember} className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-name" className="text-right">Nama</Label>
+                  <Input id="edit-name" name="name" defaultValue={editingMember?.name} className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-nip" className="text-right">NIP</Label>
+                  <Input id="edit-nip" name="nip" defaultValue={editingMember?.nip} className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-pangkat" className="text-right">Pangkat</Label>
+                  <Input id="edit-pangkat" name="pangkat" defaultValue={editingMember?.pangkat} className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-username" className="text-right">Username</Label>
+                  <Input id="edit-username" name="username" defaultValue={editingMember?.username} className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-password" className="text-right">Password</Label>
+                  <Input id="edit-password" name="password" type="password" className="col-span-3" placeholder="Kosongkan jika tidak berubah" />
+              </div>
+          </form>
+          <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="secondary">Batal</Button>
+              </DialogClose>
+              <Button type="submit" form="edit-member-form">Simpan Perubahan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
-
-    
