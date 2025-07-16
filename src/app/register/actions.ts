@@ -38,9 +38,8 @@ export async function registerUser(formData: FormData) {
     email,
     password,
     options: {
-      // This is a more reliable way to set the redirect URL.
-      // It will redirect the user to the login page after verification.
-      emailRedirectTo: `/`,
+      // Redirect the user to the verified page after they click the link
+      emailRedirectTo: `/auth/verified`,
       data: {
         name,
         nip,
