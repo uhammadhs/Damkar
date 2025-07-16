@@ -1,10 +1,11 @@
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, BookCopy, BarChart } from "lucide-react";
 
 const stats = [
-    { title: "Total Anggota", value: "150", icon: Users, description: "Jumlah total anggota terdaftar." },
-    { title: "Pengajuan Cuti (Bulan Ini)", value: "25", icon: BookCopy, description: "Total pengajuan cuti bulan ini." },
-    { title: "Tingkat Kehadiran", value: "95%", icon: BarChart, description: "Rata-rata kehadiran bulan ini." },
+    { title: "Total Anggota", value: "150", icon: Users },
+    { title: "Pengajuan Cuti (Bulan Ini)", value: "25", icon: BookCopy },
+    { title: "Tingkat Kehadiran", value: "95%", icon: BarChart },
 ]
 
 export default function AdminDashboardPage() {
@@ -19,7 +20,6 @@ export default function AdminDashboardPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold font-headline">{stat.value}</div>
-                            <p className="text-xs text-muted-foreground">{stat.description}</p>
                         </CardContent>
                     </Card>
                 ))}

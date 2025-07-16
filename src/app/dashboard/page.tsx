@@ -37,12 +37,12 @@ export default function DashboardPage() {
        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
          <div>
             <h2 className="text-2xl font-bold font-headline">Selamat Datang, Anggota Damkar!</h2>
-            <p className="text-muted-foreground">Berikut adalah ringkasan informasi cuti Anda.</p>
+            <p className="text-muted-foreground">Ini ringkasan informasi cuti Anda.</p>
          </div>
           <Button asChild className="hidden md:inline-flex">
             <Link href="/dashboard/ajukan-cuti">
               <Plus />
-              Ajukan Cuti Baru
+              Ajukan Cuti
             </Link>
           </Button>
       </div>
@@ -51,7 +51,6 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="font-headline">Sisa Cuti Anda</CardTitle>
-            <CardDescription>Visualisasi sisa cuti tahunan Anda.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 sm:grid-cols-2">
             <div className="flex items-center justify-center">
@@ -76,8 +75,7 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Status Pengajuan Terkini</CardTitle>
-             <CardDescription>3 pengajuan terakhir Anda.</CardDescription>
+            <CardTitle className="font-headline">Pengajuan Terkini</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {recentLeaveRequests.map((req, index) => (
