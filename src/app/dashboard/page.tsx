@@ -36,8 +36,7 @@ export default function DashboardPage() {
     <div className="relative space-y-6">
        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
          <div>
-            <h2 className="text-2xl font-bold font-headline">Selamat Datang, Anggota Damkar!</h2>
-            <p className="text-muted-foreground">Ini ringkasan informasi cuti Anda.</p>
+            <h2 className="text-2xl font-bold font-headline">Dasbor Anda</h2>
          </div>
           <Button asChild className="hidden md:inline-flex">
             <Link href="/dashboard/ajukan-cuti">

@@ -110,7 +110,7 @@ export default function DashboardLayout({
           <SidebarTrigger className="md:hidden" />
           <div className="flex-1">
             <h2 className="text-lg font-semibold font-headline">
-              Dashboard Anggota
+              Dashboard
             </h2>
           </div>
           <div className="flex items-center gap-2">
