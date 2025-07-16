@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Users } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Profile } from "./page";
 import { EditMemberDialog } from "./edit-member-dialog";
 import { deleteMember } from "./actions";
+import { AddMemberDialog } from "./add-member-dialog";
 
 interface MemberTableProps {
   profiles: Profile[];
@@ -63,6 +64,23 @@ export function MemberTable({ profiles }: MemberTableProps) {
     }
     return name.substring(0, 2).toUpperCase();
   };
+  
+  if (profiles.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-10 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+          <Users className="h-10 w-10 text-muted-foreground" />
+        </div>
+        <h2 className="mt-6 text-xl font-semibold font-headline">Belum Ada Anggota</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Anda belum memiliki anggota. Tambahkan anggota pertama untuk memulai.
+        </p>
+        <div className="mt-6">
+          <AddMemberDialog />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -114,11 +132,6 @@ export function MemberTable({ profiles }: MemberTableProps) {
           </TableBody>
         </Table>
       </div>
-      {profiles.length === 0 && (
-        <p className="py-10 text-center text-muted-foreground">
-          Tidak ada anggota yang ditemukan.
-        </p>
-      )}
 
       {/* Edit Member Dialog */}
       {editingMember && (
