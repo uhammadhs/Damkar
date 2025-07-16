@@ -12,10 +12,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from "@/hooks/use-toast";
 
 const initialLeaveRequests = [
-  { id: 1, name: "Anggota Damkar 1", nip: "199001012020121001", dates: "25-26 Des 2023", duration: 2, reason: "Surat dokter terlampir. Lorem ipsum dolor sit amet, consectetur adipiscing elit.", status: "Menunggu" },
-  { id: 2, name: "Anggota Damkar 2", nip: "199102022020121002", dates: "10-11 Nov 2023", duration: 2, reason: "Keperluan keluarga, menghadiri acara pernikahan di luar kota.", status: "Disetujui" },
-  { id: 3, name: "Anggota Damkar 3", nip: "199203032020121003", dates: "01 Nov 2023", duration: 1, reason: "Mengantar anak sekolah pada hari pertama masuk.", status: "Ditolak" },
-  { id: 4, name: "Anggota Damkar 4", nip: "199304042020121004", dates: "28-29 Des 2023", duration: 2, reason: "Liburan akhir tahun bersama keluarga besar.", status: "Menunggu" },
+  { id: 1, name: "Anggota Damkar 1", nip: "199001012020121001", dates: "25-26 Des 2023", duration: 2, title: "Izin Sakit", reason: "Surat dokter terlampir. Lorem ipsum dolor sit amet, consectetur adipiscing elit.", status: "Menunggu" },
+  { id: 2, name: "Anggota Damkar 2", nip: "199102022020121002", dates: "10-11 Nov 2023", duration: 2, title: "Keperluan Keluarga", reason: "Keperluan keluarga, menghadiri acara pernikahan di luar kota.", status: "Disetujui" },
+  { id: 3, name: "Anggota Damkar 3", nip: "199203032020121003", dates: "01 Nov 2023", duration: 1, title: "Anak Masuk Sekolah", reason: "Mengantar anak sekolah pada hari pertama masuk.", status: "Ditolak" },
+  { id: 4, name: "Anggota Damkar 4", nip: "199304042020121004", dates: "28-29 Des 2023", duration: 2, title: "Cuti Tahunan", reason: "Liburan akhir tahun bersama keluarga besar.", status: "Menunggu" },
 ];
 
 type LeaveRequest = typeof initialLeaveRequests[0];
@@ -85,16 +85,16 @@ function LeaveRequestTable({ requests, onUpdateRequest }: { requests: LeaveReque
                     <Card key={req.id}>
                         <CardHeader className="p-4 pb-2">
                             <div className="flex items-start justify-between gap-4">
-                                <CardTitle className="text-base font-semibold leading-tight">{req.name}</CardTitle>
+                                <div>
+                                    <CardTitle className="text-base font-semibold leading-tight">{req.title}</CardTitle>
+                                    <CardDescription className="text-sm">{req.name}</CardDescription>
+                                </div>
                                 <Badge className={`${getStatusColor(req.status)} shrink-0`}>{req.status}</Badge>
                             </div>
-                            <CardDescription className="text-sm">
+                            <CardDescription className="text-sm pt-2">
                                 {req.dates} ({req.duration} hari)
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="p-4 pt-2">
-                            <p className="text-sm text-muted-foreground italic line-clamp-2">"{req.reason}"</p>
-                        </CardContent>
                         <CardFooter className="flex p-4 pt-0 gap-2">
                              <LeaveRequestDialog request={req} onUpdateRequest={onUpdateRequest}>
                                 <Button variant="outline" className="w-full">Lihat Detail</Button>
@@ -122,8 +122,8 @@ function LeaveRequestTable({ requests, onUpdateRequest }: { requests: LeaveReque
                     <TableHeader>
                         <TableRow>
                         <TableHead>Nama Anggota</TableHead>
+                        <TableHead>Judul Pengajuan</TableHead>
                         <TableHead>Tanggal</TableHead>
-                        <TableHead>Alasan</TableHead>
                         <TableHead className="text-center">Status</TableHead>
                         <TableHead className="text-right">Aksi</TableHead>
                         </TableRow>
@@ -132,11 +132,11 @@ function LeaveRequestTable({ requests, onUpdateRequest }: { requests: LeaveReque
                         {requests.map((req) => (
                             <TableRow key={req.id}>
                                 <TableCell className="font-medium">{req.name}</TableCell>
+                                <TableCell className="max-w-xs truncate">{req.title}</TableCell>
                                 <TableCell>
                                     <div>{req.dates}</div>
                                     <div className="text-xs text-muted-foreground">{req.duration} hari</div>
                                 </TableCell>
-                                <TableCell className="max-w-xs truncate">{req.reason}</TableCell>
                                 <TableCell className="text-center">
                                     <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
                                 </TableCell>
@@ -181,7 +181,7 @@ function LeaveRequestDialog({ request, children, onUpdateRequest }: { request: L
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle className="font-headline">Detail Pengajuan Cuti</DialogTitle>
+                    <DialogTitle className="font-headline">{request.title}</DialogTitle>
                     <DialogDescription>
                         Pengajuan oleh {request.name}
                     </DialogDescription>

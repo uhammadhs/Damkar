@@ -14,7 +14,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 
@@ -93,6 +92,11 @@ export default function AjukanCutiPage() {
                                 />
                             </PopoverContent>
                         </Popover>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="title">Judul Pengajuan</Label>
+                        <Input id="title" placeholder="Contoh: Izin Sakit, Cuti Tahunan" required />
                     </div>
                    
                     <div className="space-y-2">

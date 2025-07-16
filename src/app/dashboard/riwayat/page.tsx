@@ -13,19 +13,20 @@ type LeaveHistoryItem = {
   id: number;
   dates: string;
   duration: number;
+  title: string;
   reason: string;
   status: string;
 };
 
 // Mock data
 const allLeaveHistory: LeaveHistoryItem[] = [
-  { id: 1, dates: "25-26 Des 2023", duration: 2, reason: "Surat dokter terlampir", status: "Menunggu" },
-  { id: 2, dates: "10-11 Nov 2023", duration: 2, reason: "Keperluan keluarga", status: "Disetujui" },
-  { id: 3, dates: "01 Nov 2023", duration: 1, reason: "Mengantar anak sekolah", status: "Ditolak" },
-  { id: 4, dates: "15-16 Okt 2023", duration: 2, reason: "Acara pernikahan saudara", status: "Disetujui" },
-  { id: 5, dates: "05 Okt 2023", duration: 1, reason: "Demam dan flu", status: "Disetujui" },
-  { id: 6, dates: "20 Sep 2023", duration: 1, reason: "Menjenguk orang tua sakit", status: "Disetujui" },
-  { id: 7, dates: "01-03 Sep 2023", duration: 3, reason: "Liburan", status: "Disetujui" },
+  { id: 1, dates: "25-26 Des 2023", duration: 2, title: "Izin Sakit", reason: "Surat dokter terlampir", status: "Menunggu" },
+  { id: 2, dates: "10-11 Nov 2023", duration: 2, title: "Keperluan Keluarga", reason: "Keperluan keluarga", status: "Disetujui" },
+  { id: 3, dates: "01 Nov 2023", duration: 1, title: "Anak Masuk Sekolah", reason: "Mengantar anak sekolah", status: "Ditolak" },
+  { id: 4, dates: "15-16 Okt 2023", duration: 2, title: "Pernikahan Saudara", reason: "Acara pernikahan saudara", status: "Disetujui" },
+  { id: 5, dates: "05 Okt 2023", duration: 1, title: "Sakit", reason: "Demam dan flu", status: "Disetujui" },
+  { id: 6, dates: "20 Sep 2023", duration: 1, title: "Keluarga Sakit", reason: "Menjenguk orang tua sakit", status: "Disetujui" },
+  { id: 7, dates: "01-03 Sep 2023", duration: 3, title: "Cuti Tahunan", reason: "Liburan", status: "Disetujui" },
 ];
 
 const getStatusColor = (status: string): string => {
@@ -60,8 +61,8 @@ export default function RiwayatPage() {
             <Card key={req.id} className="p-4">
                 <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-1">
-                        <p className="font-medium">{req.dates}</p>
-                        <p className="text-sm text-muted-foreground">{req.duration} hari</p>
+                        <p className="font-medium">{req.title}</p>
+                        <p className="text-sm text-muted-foreground">{req.dates} ({req.duration} hari)</p>
                         <p className="text-xs text-muted-foreground italic">"{req.reason}"</p>
                     </div>
                     <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
@@ -80,6 +81,7 @@ export default function RiwayatPage() {
                 </TableCaption>
                 <TableHeader>
                     <TableRow>
+                    <TableHead>Judul</TableHead>
                     <TableHead>Tanggal</TableHead>
                     <TableHead className="text-center">Durasi</TableHead>
                     <TableHead>Alasan</TableHead>
@@ -89,7 +91,8 @@ export default function RiwayatPage() {
                 <TableBody>
                     {displayedHistory.map((req) => (
                     <TableRow key={req.id}>
-                        <TableCell className="font-medium">{req.dates}</TableCell>
+                        <TableCell className="font-medium">{req.title}</TableCell>
+                        <TableCell>{req.dates}</TableCell>
                         <TableCell className="text-center">{req.duration} hari</TableCell>
                         <TableCell>{req.reason}</TableCell>
                         <TableCell className="text-right">
