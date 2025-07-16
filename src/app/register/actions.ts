@@ -6,8 +6,6 @@ import { z } from 'zod';
 
 const RegisterSchema = z.object({
     name: z.string().min(3, "Nama lengkap harus diisi"),
-    nip: z.string().min(10, "NIP tidak valid"),
-    pangkat: z.string().min(3, "Pangkat harus diisi"),
     email: z.string().email("Format email tidak valid"),
     password: z.string().min(6, "Password minimal 6 karakter"),
 });
@@ -18,8 +16,6 @@ export async function registerUser(formData: FormData) {
 
   const rawData = {
     name: formData.get('name') as string,
-    nip: formData.get('nip') as string,
-    pangkat: formData.get('pangkat') as string,
     email: formData.get('email') as string,
     password: formData.get('password') as string,
   };
@@ -31,19 +27,16 @@ export async function registerUser(formData: FormData) {
       return { success: false, message: errorMessages };
   }
 
-  const { name, nip, pangkat, email, password } = validation.data;
+  const { name, email, password } = validation.data;
 
   // 1. Create the user in Supabase Auth
   const { data: { user }, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      // Redirect the user to the verified page after they click the link
       emailRedirectTo: `/auth/verified`,
       data: {
         name,
-        nip,
-        pangkat,
       }
     }
   });
@@ -58,14 +51,10 @@ export async function registerUser(formData: FormData) {
   }
 
   // 2. The `handle_new_user` trigger has already created a basic profile.
-  // Now, we update it with the additional details from the form.
+  // Now, we update it with the name from the form.
   const { error: updateProfileError } = await supabase
     .from('profiles')
-    .update({
-      name,
-      nip,
-      pangkat,
-    })
+    .update({ name })
     .eq('id', user.id);
 
   if (updateProfileError) {

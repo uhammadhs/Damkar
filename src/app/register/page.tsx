@@ -60,14 +60,6 @@ export default function RegisterPage() {
               <Label htmlFor="name">Nama Lengkap</Label>
               <Input id="name" name="name" placeholder="Contoh: Budi Sanjaya" required />
             </div>
-             <div className="space-y-2">
-              <Label htmlFor="nip">NIP (Nomor Induk Pegawai)</Label>
-              <Input id="nip" name="nip" placeholder="Contoh: 199505052020121005" required />
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="pangkat">Pangkat / Golongan</Label>
-              <Input id="pangkat" name="pangkat" placeholder="Contoh: Analis Kebakaran Ahli Pertama" required />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" name="email" placeholder="contoh@email.com" required type="email" />
