@@ -1,0 +1,76 @@
+-- This script is for initializing the database tables and policies.
+-- Run this in the Supabase SQL Editor.
+
+-- Create profiles table
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    updated_at TIMESTAMPTZ,
+    name TEXT,
+    nip TEXT UNIQUE,
+    pangkat TEXT,
+    golongan TEXT,
+    jabatan TEXT,
+    "satuanKerja" TEXT,
+    avatar_url TEXT,
+    email TEXT UNIQUE,
+    role TEXT DEFAULT 'anggota'
+);
+
+-- Function to handle new user creation
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.profiles (id, email, name, role)
+    VALUES (new.id, new.email, new.raw_user_meta_data->>'name', 'anggota');
+    RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to call the function on new user signup
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- POLICIES --
+-- These are the rules that control who can access what data.
+
+-- 1. SELECT Policy: Authenticated users can read all profiles.
+-- This is generally safe as profiles don't contain highly sensitive data.
+-- It also prevents recursive loops in other policies.
+CREATE POLICY "Allow authenticated users to select any profile"
+  ON public.profiles FOR SELECT
+  USING ( auth.role() = 'authenticated' );
+
+-- 2. INSERT Policy: An authenticated user can insert a profile for THEMSELVES.
+-- This is the key fix. It allows a newly signed-up user to create their own profile entry.
+CREATE POLICY "Allow authenticated users to insert their own profile"
+  ON public.profiles FOR INSERT
+  WITH CHECK ( auth.uid() = id );
+
+-- 3. UPDATE Policy: Users can update their own profile, and admins can update any.
+CREATE POLICY "Allow users to update their own profile"
+  ON public.profiles FOR UPDATE
+  USING (
+    -- Admins can update any profile
+    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
+    OR
+    -- Users can update their own profile
+    auth.uid() = id
+  )
+  WITH CHECK (
+    -- Admins can update any profile
+    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
+    OR
+    -- Users can update their own profile
+    auth.uid() = id
+  );
+
+-- 4. DELETE Policy: Only admins can delete profiles.
+-- This prevents regular users from deleting their own or other's profiles.
+CREATE POLICY "Allow admin to delete profiles"
+  ON public.profiles FOR DELETE
+  USING ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin' );

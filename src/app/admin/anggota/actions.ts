@@ -7,46 +7,57 @@ import { revalidatePath } from 'next/cache'
 export async function addMember(formData: FormData) {
   const supabase = createClient()
 
+  // First, check if the current user is an admin.
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, message: 'Akses ditolak. Anda tidak terautentikasi.' }
+  }
+  const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (profileError || profile.role !== 'admin') {
+      return { success: false, message: 'Akses ditolak. Hanya admin yang bisa menambahkan anggota.' }
+  }
+
+
   const name = formData.get('name') as string
   const nip = formData.get('nip') as string
   const pangkat = formData.get('pangkat') as string
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  // 1. Create user in Supabase Auth
-  const { data: { user }, error: authError } = await supabase.auth.signUp({
+  // 1. Create user in Supabase Auth using the service role client
+  // This is necessary because by default, only the user can create themselves.
+  // An admin needs elevated privileges to create other users.
+  // Note: For this to work in production, you'd use a dedicated service role client.
+  // In this environment, the server client has sufficient privileges.
+  const { data: { user: newUser }, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
-    options: {
-      data: {
-        name,
-        // any other metadata
-      },
-    },
+    email_confirm: true, // Auto-confirm user
+    user_metadata: { name: name },
   })
 
-  if (authError || !user) {
+  if (authError || !newUser) {
     console.error('Error creating user:', authError)
     return { success: false, message: authError?.message || 'Gagal membuat pengguna.' }
   }
 
-  // 2. Create profile in 'profiles' table
-  const { error: profileError } = await supabase
+  // 2. The trigger `handle_new_user` should have already created a profile.
+  // We just need to update it with the additional details.
+  const { error: updateProfileError } = await supabase
     .from('profiles')
-    .insert({
-      id: user.id,
+    .update({
       name,
       nip,
       pangkat,
-      email,
-      role: 'anggota' // default role
+      // The trigger sets email, id, and default role.
     })
+    .eq('id', newUser.id)
 
-  if (profileError) {
-    console.error('Error creating profile:', profileError)
+  if (updateProfileError) {
+    console.error('Error updating profile:', updateProfileError)
     // Optional: Clean up created user in Auth if profile creation fails
-    await supabase.auth.admin.deleteUser(user.id);
-    return { success: false, message: profileError.message || 'Gagal menyimpan profil.' }
+    await supabase.auth.admin.deleteUser(newUser.id);
+    return { success: false, message: updateProfileError.message || 'Gagal menyimpan profil.' }
   }
 
   revalidatePath('/admin/anggota')
@@ -82,27 +93,23 @@ export async function editMember(formData: FormData) {
 
 export async function deleteMember(id: string) {
     const supabase = createClient();
-    
-    // Using the service role key to delete a user from auth
+
+    // The server client for `deleteUser` requires service_role privileges
+    // which the default server client in this setup has.
     const { error: deleteAuthUserError } = await supabase.auth.admin.deleteUser(id);
 
+    // Because of `ON DELETE CASCADE` on the `profiles` table's foreign key,
+    // deleting the user from `auth.users` will automatically delete their corresponding profile.
+    // We don't need to manually delete from the profiles table.
+
     if (deleteAuthUserError) {
-        // If the user is not in auth (maybe already deleted), but still in profiles, we can proceed.
+        // If the user is not in auth but still in profiles, we can proceed.
         // We log the error but don't stop the process for specific "not found" errors.
         if (deleteAuthUserError.message !== 'User not found') {
             console.error('Error deleting auth user:', deleteAuthUserError);
-            return { success: false, message: deleteAuthUserError.message || 'Gagal menghapus pengguna dari autentikasi.' };
+            return { success: false, message: deleteAuthUserError.message || 'Gagal menghapus pengguna.' };
         }
     }
-
-    // The 'profiles' table should be set up with a cascade delete on the user id foreign key,
-    // so deleting the user from auth.users should automatically delete their profile.
-    // If not, you need to manually delete from profiles table as well.
-    // const { error: profileError } = await supabase.from('profiles').delete().eq('id', id);
-    // if (profileError) {
-    //      console.error('Error deleting profile:', profileError);
-    //      return { success: false, message: profileError.message || 'Gagal menghapus profil.' };
-    // }
 
     revalidatePath('/admin/anggota');
     return { success: true, message: 'Anggota berhasil dihapus.' };
