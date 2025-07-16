@@ -8,9 +8,9 @@ import { Separator } from "@/components/ui/separator";
 import { LeaveDonutChart } from "@/components/siap-cuti/leave-donut-chart";
 
 const recentLeaveRequests = [
-  { id: 1, type: "Cuti Sakit", dates: "25-26 Des 2023", duration: 2, reason: "Surat dokter terlampir", status: "Menunggu" },
-  { id: 2, type: "Cuti Tahunan", dates: "10-11 Nov 2023", duration: 2, reason: "Keperluan keluarga", status: "Disetujui" },
-  { id: 3, type: "Izin", dates: "01 Nov 2023", duration: 1, reason: "Mengantar anak sekolah", status: "Ditolak" },
+  { id: 1, dates: "25-26 Des 2023", duration: 2, reason: "Surat dokter terlampir", status: "Menunggu" },
+  { id: 2, dates: "10-11 Nov 2023", duration: 2, reason: "Keperluan keluarga", status: "Disetujui" },
+  { id: 3, dates: "01 Nov 2023", duration: 1, reason: "Mengantar anak sekolah", status: "Ditolak" },
 ];
 
 
@@ -84,8 +84,8 @@ export default function DashboardPage() {
               <div key={req.id}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
-                    <p className="font-medium">{req.type}</p>
-                    <p className="text-sm text-muted-foreground">{req.dates} ({req.duration} hari)</p>
+                    <p className="font-medium">{req.dates}</p>
+                    <p className="text-sm text-muted-foreground">{req.duration} hari</p>
                   </div>
                   <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
                 </div>

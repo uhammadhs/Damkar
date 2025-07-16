@@ -12,10 +12,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from "@/hooks/use-toast";
 
 const initialLeaveRequests = [
-  { id: 1, name: "Anggota Damkar 1", nip: "199001012020121001", type: "Cuti Sakit", dates: "25-26 Des 2023", duration: 2, reason: "Surat dokter terlampir. Lorem ipsum dolor sit amet, consectetur adipiscing elit.", status: "Menunggu" },
-  { id: 2, name: "Anggota Damkar 2", nip: "199102022020121002", type: "Cuti Tahunan", dates: "10-11 Nov 2023", duration: 2, reason: "Keperluan keluarga, menghadiri acara pernikahan di luar kota.", status: "Disetujui" },
-  { id: 3, name: "Anggota Damkar 3", nip: "199203032020121003", type: "Izin", dates: "01 Nov 2023", duration: 1, reason: "Mengantar anak sekolah pada hari pertama masuk.", status: "Ditolak" },
-  { id: 4, name: "Anggota Damkar 4", nip: "199304042020121004", type: "Cuti Tahunan", dates: "28-29 Des 2023", duration: 2, reason: "Liburan akhir tahun bersama keluarga besar.", status: "Menunggu" },
+  { id: 1, name: "Anggota Damkar 1", nip: "199001012020121001", dates: "25-26 Des 2023", duration: 2, reason: "Surat dokter terlampir. Lorem ipsum dolor sit amet, consectetur adipiscing elit.", status: "Menunggu" },
+  { id: 2, name: "Anggota Damkar 2", nip: "199102022020121002", dates: "10-11 Nov 2023", duration: 2, reason: "Keperluan keluarga, menghadiri acara pernikahan di luar kota.", status: "Disetujui" },
+  { id: 3, name: "Anggota Damkar 3", nip: "199203032020121003", dates: "01 Nov 2023", duration: 1, reason: "Mengantar anak sekolah pada hari pertama masuk.", status: "Ditolak" },
+  { id: 4, name: "Anggota Damkar 4", nip: "199304042020121004", dates: "28-29 Des 2023", duration: 2, reason: "Liburan akhir tahun bersama keluarga besar.", status: "Menunggu" },
 ];
 
 type LeaveRequest = typeof initialLeaveRequests[0];
@@ -89,7 +89,7 @@ function LeaveRequestTable({ requests, onUpdateRequest }: { requests: LeaveReque
                                 <Badge className={`${getStatusColor(req.status)} shrink-0`}>{req.status}</Badge>
                             </div>
                             <CardDescription className="text-sm">
-                                {req.type} &middot; {req.dates} ({req.duration} hari)
+                                {req.dates} ({req.duration} hari)
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="p-4 pt-2">
@@ -122,7 +122,7 @@ function LeaveRequestTable({ requests, onUpdateRequest }: { requests: LeaveReque
                     <TableHeader>
                         <TableRow>
                         <TableHead>Nama Anggota</TableHead>
-                        <TableHead>Jenis & Tanggal</TableHead>
+                        <TableHead>Tanggal</TableHead>
                         <TableHead>Alasan</TableHead>
                         <TableHead className="text-center">Status</TableHead>
                         <TableHead className="text-right">Aksi</TableHead>
@@ -133,8 +133,8 @@ function LeaveRequestTable({ requests, onUpdateRequest }: { requests: LeaveReque
                             <TableRow key={req.id}>
                                 <TableCell className="font-medium">{req.name}</TableCell>
                                 <TableCell>
-                                    <div>{req.type}</div>
-                                    <div className="text-xs text-muted-foreground">{req.dates} ({req.duration} hari)</div>
+                                    <div>{req.dates}</div>
+                                    <div className="text-xs text-muted-foreground">{req.duration} hari</div>
                                 </TableCell>
                                 <TableCell className="max-w-xs truncate">{req.reason}</TableCell>
                                 <TableCell className="text-center">
@@ -198,10 +198,6 @@ function LeaveRequestDialog({ request, children, onUpdateRequest }: { request: L
                      <div className="grid grid-cols-3 items-center gap-4">
                         <span className="text-sm font-medium text-muted-foreground">NIP</span>
                         <span className="col-span-2 font-semibold">{request.nip}</span>
-                    </div>
-                    <div className="grid grid-cols-3 items-center gap-4">
-                        <span className="text-sm font-medium text-muted-foreground">Jenis Cuti</span>
-                        <span className="col-span-2 font-semibold">{request.type}</span>
                     </div>
                     <div className="grid grid-cols-3 items-center gap-4">
                         <span className="text-sm font-medium text-muted-foreground">Tanggal</span>
