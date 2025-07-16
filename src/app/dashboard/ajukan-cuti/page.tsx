@@ -55,62 +55,44 @@ export default function AjukanCutiPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <div className="grid gap-4 md:grid-cols-2">
-                         <div className="space-y-2">
-                            <Label htmlFor="leave-type">Jenis Cuti</Label>
-                            <Select required>
-                                <SelectTrigger id="leave-type">
-                                    <SelectValue placeholder="Pilih jenis cuti" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="tahunan">Cuti Tahunan</SelectItem>
-                                    <SelectItem value="sakit">Cuti Sakit</SelectItem>
-                                    <SelectItem value="penting">Cuti Alasan Penting</SelectItem>
-                                    <SelectItem value="bersama">Cuti Bersama</SelectItem>
-                                    <SelectItem value="izin">Izin</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="leave-dates">Tanggal Cuti</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        id="leave-dates"
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full justify-start text-left font-normal",
-                                            !date && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {date?.from ? (
-                                            date.to ? (
-                                                <>
-                                                    {format(date.from, "LLL dd, y")} -{" "}
-                                                    {format(date.to, "LLL dd, y")}
-                                                </>
-                                            ) : (
-                                                format(date.from, "LLL dd, y")
-                                            )
+                    <div className="space-y-2">
+                        <Label htmlFor="leave-dates">Tanggal Cuti</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    id="leave-dates"
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !date && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {date?.from ? (
+                                        date.to ? (
+                                            <>
+                                                {format(date.from, "LLL dd, y")} -{" "}
+                                                {format(date.to, "LLL dd, y")}
+                                            </>
                                         ) : (
-                                            <span>Pilih rentang tanggal</span>
-                                        )}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        initialFocus
-                                        mode="range"
-                                        defaultMonth={date?.from}
-                                        selected={date}
-                                        onSelect={setDate}
-                                        numberOfMonths={2}
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
+                                            format(date.from, "LLL dd, y")
+                                        )
+                                    ) : (
+                                        <span>Pilih rentang tanggal</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={date?.from}
+                                    selected={date}
+                                    onSelect={setDate}
+                                    numberOfMonths={2}
+                                />
+                            </PopoverContent>
+                        </Popover>
                     </div>
                    
                     <div className="space-y-2">
