@@ -1,74 +1,101 @@
+
+"use client"
+
+import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BarChart, PieChart, Calendar as CalendarIcon, Users } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+
+const memberLeaveData = [
+  { id: 1, name: "Anggota Damkar 1", nip: "199001012020121001", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A1", jatahCuti: 12, cutiTerpakai: 5 },
+  { id: 2, name: "Anggota Damkar 2", nip: "199102022020121002", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A2", jatahCuti: 12, cutiTerpakai: 10 },
+  { id: 3, name: "Anggota Damkar 3", nip: "199203032020121003", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A3", jatahCuti: 12, cutiTerpakai: 2 },
+  { id: 4, name: "Anggota Damkar 4", nip: "199304042020121004", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A4", jatahCuti: 12, cutiTerpakai: 7 },
+  { id: 5, name: "Anggota Damkar 5", nip: "199405052020121005", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A5", jatahCuti: 12, cutiTerpakai: 0 },
+  { id: 6, name: "Anggota Damkar 6", nip: "199506062020121006", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A6", jatahCuti: 12, cutiTerpakai: 12 },
+];
 
 export default function LaporanPage() {
-    return (
-        <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">Laporan Cuti dan Kehadiran</CardTitle>
-                    <CardDescription>Analisis data cuti dan kehadiran anggota.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Cuti Disetujui</CardTitle>
-                                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold font-headline">78 Hari</div>
-                                <p className="text-xs text-muted-foreground">dalam 3 bulan terakhir</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Anggota Paling Sering Cuti</CardTitle>
-                                <Users className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold font-headline">Anggota Damkar 2</div>
-                                <p className="text-xs text-muted-foreground">Total 12 hari cuti</p>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Tingkat Kehadiran Rata-rata</CardTitle>
-                                <BarChart className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold font-headline">95%</div>
-                                <p className="text-xs text-muted-foreground">Bulan ini</p>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </CardContent>
-            </Card>
+    const [searchTerm, setSearchTerm] = React.useState("");
 
-            <div className="grid gap-6 md:grid-cols-2">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline">Tren Pengajuan Cuti</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                         <div className="flex items-center justify-center h-64 bg-secondary rounded-md">
-                            <BarChart className="h-16 w-16 text-muted-foreground" />
-                         </div>
-                         <p className="text-center text-sm text-muted-foreground mt-2">Grafik tren pengajuan cuti akan ditampilkan di sini.</p>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline">Distribusi Jenis Cuti</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                         <div className="flex items-center justify-center h-64 bg-secondary rounded-md">
-                            <PieChart className="h-16 w-16 text-muted-foreground" />
-                         </div>
-                         <p className="text-center text-sm text-muted-foreground mt-2">Grafik distribusi jenis cuti akan ditampilkan di sini.</p>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
+    const filteredData = memberLeaveData.filter(member =>
+        member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        member.nip.includes(searchTerm)
+    );
+
+    return (
+        <Card>
+            <CardHeader>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <CardTitle className="font-headline">Laporan Jatah Cuti Anggota</CardTitle>
+                        <CardDescription>Rincian penggunaan cuti tahunan untuk setiap anggota.</CardDescription>
+                    </div>
+                     <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Cari nama atau NIP..."
+                            className="pl-8 sm:w-[300px]"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[300px]">Nama Anggota</TableHead>
+                                <TableHead className="hidden md:table-cell">NIP</TableHead>
+                                <TableHead className="text-center">Jatah Cuti</TableHead>
+                                <TableHead className="text-center">Cuti Terpakai</TableHead>
+                                <TableHead className="text-center">Sisa Cuti</TableHead>
+                                <TableHead className="w-[200px] text-center">Penggunaan</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredData.map((member) => {
+                                const sisaCuti = member.jatahCuti - member.cutiTerpakai;
+                                const progressValue = (member.cutiTerpakai / member.jatahCuti) * 100;
+
+                                return (
+                                    <TableRow key={member.id}>
+                                        <TableCell>
+                                             <div className="flex items-center gap-3">
+                                                <Avatar className="hidden h-9 w-9 sm:flex">
+                                                    <AvatarImage src={member.avatarUrl} alt={member.name} data-ai-hint="male portrait" />
+                                                    <AvatarFallback>{member.avatarFallback}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="font-medium">{member.name}</div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="hidden md:table-cell">{member.nip}</TableCell>
+                                        <TableCell className="text-center font-medium">{member.jatahCuti}</TableCell>
+                                        <TableCell className="text-center font-medium">{member.cutiTerpakai}</TableCell>
+                                        <TableCell className="text-center font-bold text-primary">{sisaCuti}</TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col items-center gap-1">
+                                                <Progress value={progressValue} aria-label={`${progressValue.toFixed(0)}% cuti terpakai`} />
+                                                <span className="text-xs text-muted-foreground">{member.cutiTerpakai}/{member.jatahCuti} Hari</span>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </div>
+                {filteredData.length === 0 && (
+                    <p className="py-10 text-center text-muted-foreground">
+                        Anggota tidak ditemukan.
+                    </p>
+                )}
+            </CardContent>
+        </Card>
     )
 }
