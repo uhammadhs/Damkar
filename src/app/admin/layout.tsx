@@ -128,118 +128,119 @@ export default function AdminLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-16 items-center gap-4 border-b bg-background/95 px-4 pt-2 md:pt-0">
-          
-          <div className="flex-1">
-            <h2 className="text-lg font-semibold font-headline">
-              {getPageTitle()}
-            </h2>
-          </div>
-          <div className="flex items-center gap-2">
-             <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                >
-                <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                <span className="sr-only">Toggle theme</span>
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative rounded-full">
-                  <Bell className="h-5 w-5" />
-                   <Badge className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full p-0 text-xs">2</Badge>
-                  <span className="sr-only">Toggle notifications</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Pengajuan Cuti dari Anggota 1</DropdownMenuItem>
-                <DropdownMenuItem>Pengajuan Cuti dari Anggota 4</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropdownMenu>
+        <div className="flex h-svh flex-col">
+          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur">
+            <div className="flex-1">
+              <h2 className="text-lg font-semibold font-headline">
+                {getPageTitle()}
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full"
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  >
+                  <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                  <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                  <span className="sr-only">Toggle theme</span>
+              </Button>
+              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full">
-                        <Avatar className="h-8 w-8">
-                            <AvatarImage src="https://placehold.co/40x40.png" alt="Admin" data-ai-hint="male portrait" />
-                            <AvatarFallback>A</AvatarFallback>
-                        </Avatar>
-                        <span className="sr-only">Toggle user menu</span>
-                    </Button>
+                  <Button variant="ghost" size="icon" className="relative rounded-full">
+                    <Bell className="h-5 w-5" />
+                    <Badge className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full p-0 text-xs">2</Badge>
+                    <span className="sr-only">Toggle notifications</span>
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Admin</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Logout</span>
-                    </DropdownMenuItem>
+                  <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>Pengajuan Cuti dari Anggota 1</DropdownMenuItem>
+                  <DropdownMenuItem>Pengajuan Cuti dari Anggota 4</DropdownMenuItem>
                 </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
-        <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
-        {/* Mobile Bottom Nav */}
-        <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-2 md:hidden">
-          <div className="grid grid-cols-4 gap-2">
-            <Button
-              variant={pathname === "/admin/dashboard" ? "secondary" : "ghost"}
-              className="flex h-12 flex-col items-center justify-center gap-1"
-              asChild
-            >
-              <Link href="/admin/dashboard">
-                <LayoutDashboard className="h-5 w-5" />
-                <span className="text-xs">Dashboard</span>
-              </Link>
-            </Button>
-            <Button
-              variant={
-                pathname.startsWith("/admin/manajemen-cuti")
-                  ? "secondary"
-                  : "ghost"
-              }
-              className="flex h-12 flex-col items-center justify-center gap-1"
-              asChild
-            >
-              <Link href="/admin/manajemen-cuti">
-                <BookCopy className="h-5 w-5" />
-                <span className="text-xs">Cuti</span>
-              </Link>
-            </Button>
-             <Button
-              variant={
-                pathname.startsWith("/admin/laporan")
-                  ? "secondary"
-                  : "ghost"
-              }
-              className="flex h-12 flex-col items-center justify-center gap-1"
-              asChild
-            >
-              <Link href="/admin/laporan">
-                <LineChart className="h-5 w-5" />
-                <span className="text-xs">Laporan</span>
-              </Link>
-            </Button>
-            <Button
-              variant={
-                pathname.startsWith("/admin/anggota")
-                  ? "secondary"
-                  : "ghost"
-              }
-              className="flex h-12 flex-col items-center justify-center gap-1"
-              asChild
-            >
-              <Link href="/admin/anggota">
-                <Users className="h-5 w-5" />
-                <span className="text-xs">Anggota</span>
-              </Link>
-            </Button>
-          </div>
-        </footer>
+              </DropdownMenu>
+              <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="rounded-full">
+                          <Avatar className="h-8 w-8">
+                              <AvatarImage src="https://placehold.co/40x40.png" alt="Admin" data-ai-hint="male portrait" />
+                              <AvatarFallback>A</AvatarFallback>
+                          </Avatar>
+                          <span className="sr-only">Toggle user menu</span>
+                      </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Admin</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleLogout}>
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Logout</span>
+                      </DropdownMenuItem>
+                  </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </header>
+          <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
+          {/* Mobile Bottom Nav */}
+          <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-2 md:hidden">
+            <div className="grid grid-cols-4 gap-2">
+              <Button
+                variant={pathname === "/admin/dashboard" ? "secondary" : "ghost"}
+                className="flex h-12 flex-col items-center justify-center gap-1"
+                asChild
+              >
+                <Link href="/admin/dashboard">
+                  <LayoutDashboard className="h-5 w-5" />
+                  <span className="text-xs">Dashboard</span>
+                </Link>
+              </Button>
+              <Button
+                variant={
+                  pathname.startsWith("/admin/manajemen-cuti")
+                    ? "secondary"
+                    : "ghost"
+                }
+                className="flex h-12 flex-col items-center justify-center gap-1"
+                asChild
+              >
+                <Link href="/admin/manajemen-cuti">
+                  <BookCopy className="h-5 w-5" />
+                  <span className="text-xs">Cuti</span>
+                </Link>
+              </Button>
+              <Button
+                variant={
+                  pathname.startsWith("/admin/laporan")
+                    ? "secondary"
+                    : "ghost"
+                }
+                className="flex h-12 flex-col items-center justify-center gap-1"
+                asChild
+              >
+                <Link href="/admin/laporan">
+                  <LineChart className="h-5 w-5" />
+                  <span className="text-xs">Laporan</span>
+                </Link>
+              </Button>
+              <Button
+                variant={
+                  pathname.startsWith("/admin/anggota")
+                    ? "secondary"
+                    : "ghost"
+                }
+                className="flex h-12 flex-col items-center justify-center gap-1"
+                asChild
+              >
+                <Link href="/admin/anggota">
+                  <Users className="h-5 w-5" />
+                  <span className="text-xs">Anggota</span>
+                </Link>
+              </Button>
+            </div>
+          </footer>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )
