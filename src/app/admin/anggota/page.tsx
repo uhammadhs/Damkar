@@ -32,6 +32,7 @@ export default async function AnggotaPage({
   let queryBuilder = supabase
     .from("profiles")
     .select(`id, email, name, nip, pangkat, role, avatar_url`)
+    .eq('role', 'anggota') // Hanya tampilkan pengguna dengan peran 'anggota'
     .order("name", { ascending: true });
 
   if (query) {
