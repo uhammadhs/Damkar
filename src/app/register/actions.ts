@@ -2,6 +2,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
 import { z } from 'zod';
 
 const RegisterSchema = z.object({
@@ -14,6 +15,7 @@ const RegisterSchema = z.object({
 
 
 export async function registerUser(formData: FormData) {
+  const origin = headers().get('origin')
   const supabase = createClient()
 
   const rawData = {
@@ -41,6 +43,7 @@ export async function registerUser(formData: FormData) {
       // This metadata is accessible on the server after signup,
       // but the trigger is a more reliable way to create the profile.
       // We will update the profile after creation.
+      emailRedirectTo: `${origin}/`, // Force the correct redirect URL
       data: {
         name,
         nip,
