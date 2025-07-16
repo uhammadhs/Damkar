@@ -21,7 +21,7 @@ export default function LoginPage() {
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const email = formData.get("email") as string; // Using email for Supabase Auth
+    const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
     if (!email || !password) {
@@ -38,10 +38,10 @@ export default function LoginPage() {
       password,
     });
 
-    if (error) {
+    if (error || !data.user) {
        toast({
         title: "Login Gagal",
-        description: error.message || "Email atau password salah.",
+        description: error?.message || "Email atau password salah.",
         variant: "destructive",
       });
       return;
@@ -55,12 +55,14 @@ export default function LoginPage() {
         .single();
     
     if (profileError || !profile) {
+        // If profile doesn't exist, log them out and show error.
+        // The profile should be created by a trigger. If not, something is wrong.
         toast({
             title: "Login Gagal",
-            description: "Tidak dapat menemukan data profil pengguna.",
+            description: "Tidak dapat menemukan data profil pengguna. Silakan hubungi admin.",
             variant: "destructive"
         });
-        await supabase.auth.signOut(); // Log out if profile doesn't exist
+        await supabase.auth.signOut();
         return;
     }
 
@@ -119,7 +121,7 @@ export default function LoginPage() {
                 <Link href="#">Lupa Password?</Link>
               </Button>
               <p className="px-8 text-center text-xs text-muted-foreground">
-                Admin pertama? Buat akun via Supabase lalu ubah `role` menjadi `admin`.
+                 Pengguna pertama? Buat akun via Supabase dashboard lalu ubah `role` menjadi `admin` di tabel `profiles`.
               </p>
             </div>
           </form>
@@ -128,4 +130,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
