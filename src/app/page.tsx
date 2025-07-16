@@ -141,12 +141,15 @@ export default function LoginPage() {
                 <Separator />
             </div>
             <div className="flex flex-col items-center space-y-2">
+               <p className="px-8 text-center text-sm text-muted-foreground">
+                 Belum punya akun?{" "}
+                <Link href="/register" className="underline underline-offset-4 hover:text-primary">
+                    Daftar di sini
+                </Link>
+              </p>
               <Button variant="link" size="sm" asChild>
                 <Link href="#">Lupa Password?</Link>
               </Button>
-              <p className="px-8 text-center text-xs text-muted-foreground">
-                 Pengguna pertama? Buat akun via Supabase dashboard lalu ubah `role` menjadi `admin` di tabel `profiles`.
-              </p>
             </div>
           </form>
         </CardContent>
