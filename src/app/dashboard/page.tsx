@@ -6,13 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { LeaveDonutChart } from "@/components/siap-cuti/leave-donut-chart";
-
-const recentLeaveRequests = [
-  { id: 1, title: "Izin Sakit", dates: "25-26 Des 2023", duration: 2, status: "Menunggu" },
-  { id: 2, title: "Keperluan Keluarga", dates: "10-11 Nov 2023", duration: 2, status: "Disetujui" },
-  { id: 3, title: "Anak Masuk Sekolah", dates: "01 Nov 2023", duration: 1, status: "Ditolak" },
-];
-
+import { createClient } from "@/lib/supabase/server";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
 const getStatusColor = (status: string): string => {
     switch (status) {
@@ -27,10 +23,41 @@ const getStatusColor = (status: string): string => {
     }
 }
 
-export default function DashboardPage() {
-  const sisaCuti = 10;
-  const totalCuti = 12;
-  const cutiTerpakai = totalCuti - sisaCuti;
+export default async function DashboardPage() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return <div>Pengguna tidak ditemukan.</div>;
+  }
+
+  // Ambil jatah cuti untuk tahun ini
+  const currentYear = new Date().getFullYear();
+  const { data: leaveBalance, error: balanceError } = await supabase
+    .from('leave_balances')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('year', currentYear)
+    .single();
+
+  // Ambil 3 pengajuan cuti terakhir
+  const { data: recentLeaveRequests, error: requestsError } = await supabase
+    .from('leave_requests')
+    .select('*, leave_types(name)')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(3);
+
+  if (balanceError) {
+    console.error("Error fetching leave balance:", balanceError);
+  }
+  if (requestsError) {
+    console.error("Error fetching recent requests:", requestsError);
+  }
+
+  const totalCuti = leaveBalance?.total_days || 12;
+  const cutiTerpakai = leaveBalance?.used_days || 0;
+  const sisaCuti = totalCuti - cutiTerpakai;
 
   return (
     <div className="relative space-y-6">
@@ -46,7 +73,7 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="font-headline">Sisa Cuti Anda</CardTitle>
+            <CardTitle className="font-headline">Sisa Cuti Anda ({currentYear})</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-6 sm:grid-cols-2">
             <div className="flex items-center justify-center">
@@ -74,18 +101,24 @@ export default function DashboardPage() {
             <CardTitle className="font-headline">Pengajuan Terkini</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {recentLeaveRequests.map((req, index) => (
-              <div key={req.id}>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <p className="font-medium">{req.title}</p>
-                    <p className="text-sm text-muted-foreground">{req.dates} ({req.duration} hari)</p>
+            {recentLeaveRequests && recentLeaveRequests.length > 0 ? (
+              recentLeaveRequests.map((req, index) => (
+                <div key={req.id}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <p className="font-medium">{req.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(req.start_date), "d MMM", { locale: id })} - {format(new Date(req.end_date), "d MMM yyyy", { locale: id })} ({req.duration} hari)
+                      </p>
+                    </div>
+                    <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
                   </div>
-                  <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
+                  {index < recentLeaveRequests.length - 1 && <Separator className="my-3" />}
                 </div>
-                {index < recentLeaveRequests.length - 1 && <Separator className="my-3" />}
-              </div>
-            ))}
+              ))
+            ) : (
+                <p className="text-sm text-muted-foreground">Belum ada pengajuan cuti.</p>
+            )}
           </CardContent>
         </Card>
       </div>

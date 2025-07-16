@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,15 +10,26 @@ import { Check, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { createClient } from "@/lib/supabase/client";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { updateLeaveRequestStatus } from "./actions";
 
-const initialLeaveRequests = [
-  { id: 1, name: "Anggota Damkar 1", nip: "199001012020121001", dates: "25-26 Des 2023", duration: 2, title: "Izin Sakit", reason: "Surat dokter terlampir. Lorem ipsum dolor sit amet, consectetur adipiscing elit.", status: "Menunggu" },
-  { id: 2, name: "Anggota Damkar 2", nip: "199102022020121002", dates: "10-11 Nov 2023", duration: 2, title: "Keperluan Keluarga", reason: "Keperluan keluarga, menghadiri acara pernikahan di luar kota.", status: "Disetujui" },
-  { id: 3, name: "Anggota Damkar 3", nip: "199203032020121003", dates: "01 Nov 2023", duration: 1, title: "Anak Masuk Sekolah", reason: "Mengantar anak sekolah pada hari pertama masuk.", status: "Ditolak" },
-  { id: 4, name: "Anggota Damkar 4", nip: "199304042020121004", dates: "28-29 Des 2023", duration: 2, title: "Cuti Tahunan", reason: "Liburan akhir tahun bersama keluarga besar.", status: "Menunggu" },
-];
-
-type LeaveRequest = typeof initialLeaveRequests[0];
+type LeaveRequest = {
+  id: number;
+  created_at: string;
+  duration: number;
+  end_date: string;
+  reason: string | null;
+  start_date: string;
+  status: string;
+  title: string;
+  attachment_url: string | null;
+  profiles: {
+    name: string | null;
+    nip: string | null;
+  } | null;
+};
 
 const getStatusColor = (status: string): string => {
     switch (status) {
@@ -34,19 +45,85 @@ const getStatusColor = (status: string): string => {
 }
 
 export default function ManajemenCutiPage() {
-  const [leaveRequests, setLeaveRequests] = React.useState(initialLeaveRequests);
+  const supabase = createClient();
+  const [leaveRequests, setLeaveRequests] = React.useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const { toast } = useToast();
 
-  const handleUpdateRequest = (id: number, status: "Disetujui" | "Ditolak") => {
+  const fetchRequests = React.useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('leave_requests')
+      .select(`
+        *,
+        profiles (name, nip)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error("Error fetching leave requests:", error);
+      toast({ title: "Gagal", description: "Tidak dapat memuat data pengajuan.", variant: "destructive" });
+    } else {
+      setLeaveRequests(data as LeaveRequest[]);
+    }
+    setLoading(false);
+  }, [supabase, toast]);
+
+  React.useEffect(() => {
+    fetchRequests();
+    
+    const channel = supabase
+      .channel('leave_requests_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leave_requests' },
+        (payload) => {
+          console.log('Change received!', payload)
+          fetchRequests(); // Re-fetch on any change
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+
+  }, [supabase, fetchRequests]);
+
+  const handleUpdateRequest = async (id: number, status: "Disetujui" | "Ditolak") => {
+    const originalRequests = [...leaveRequests];
+    // Optimistic update
     setLeaveRequests(prev => prev.map(req => req.id === id ? { ...req, status } : req));
-    toast({
-        title: "Sukses",
-        description: `Pengajuan cuti telah ${status.toLowerCase()}.`,
-    });
+
+    const result = await updateLeaveRequestStatus(id, status);
+    
+    if (result.success) {
+      toast({
+          title: "Sukses",
+          description: result.message,
+      });
+    } else {
+      // Revert on failure
+      setLeaveRequests(originalRequests);
+      toast({
+        title: "Gagal",
+        description: result.message,
+        variant: "destructive",
+      });
+    }
+    // No need to call fetchRequests() here because the subscription will handle it.
   };
 
   const waitingRequests = leaveRequests.filter(req => req.status === "Menunggu");
   const allRequests = leaveRequests;
+
+  if (loading) {
+    return (
+        <Card>
+            <CardContent className="pt-6 text-center text-muted-foreground">
+                <p>Memuat data pengajuan cuti...</p>
+            </CardContent>
+        </Card>
+    );
+  }
 
   return (
     <Card>
@@ -72,6 +149,10 @@ function LeaveRequestTable({ requests, onUpdateRequest }: { requests: LeaveReque
     if (requests.length === 0) {
         return <p className="py-10 text-center text-muted-foreground">Tidak ada pengajuan cuti.</p>
     }
+    
+    const formatDateRange = (start: string, end: string) => {
+        return `${format(new Date(start), 'd MMM', { locale: id })} - ${format(new Date(end), 'd MMM yyyy', { locale: id })}`;
+    }
 
     return (
         <div className="mt-4">
@@ -82,14 +163,14 @@ function LeaveRequestTable({ requests, onUpdateRequest }: { requests: LeaveReque
                         <CardHeader className="p-4 pb-2">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
-                                    <CardTitle className="text-base font-semibold leading-tight">{req.title}</CardTitle>
-                                    <CardDescription className="text-sm">{req.name}</CardDescription>
+                                    <p className="text-base font-semibold leading-tight">{req.title}</p>
+                                    <p className="text-sm text-muted-foreground">{req.profiles?.name || 'Nama Tidak Ditemukan'}</p>
                                 </div>
                                 <Badge className={`${getStatusColor(req.status)} shrink-0`}>{req.status}</Badge>
                             </div>
-                            <CardDescription className="text-sm pt-2">
-                                {req.dates} ({req.duration} hari)
-                            </CardDescription>
+                            <p className="text-sm pt-2 text-muted-foreground">
+                                {formatDateRange(req.start_date, req.end_date)} ({req.duration} hari)
+                            </p>
                         </CardHeader>
                         <CardFooter className="flex p-4 pt-0 gap-2">
                              <LeaveRequestDialog request={req} onUpdateRequest={onUpdateRequest}>
@@ -97,11 +178,11 @@ function LeaveRequestTable({ requests, onUpdateRequest }: { requests: LeaveReque
                             </LeaveRequestDialog>
                             {req.status === 'Menunggu' && (
                                 <>
-                                <Button variant="outline" size="icon" className="h-10 w-10 text-destructive border-destructive hover:bg-destructive/10" onClick={() => onUpdateRequest(req.id, "Ditolak")}>
+                                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 text-destructive border-destructive hover:bg-destructive/10" onClick={() => onUpdateRequest(req.id, "Ditolak")}>
                                     <X className="h-4 w-4" />
                                     <span className="sr-only">Tolak</span>
                                 </Button>
-                                <Button variant="outline" size="icon" className="h-10 w-10 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700" onClick={() => onUpdateRequest(req.id, "Disetujui")}>
+                                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700" onClick={() => onUpdateRequest(req.id, "Disetujui")}>
                                     <Check className="h-4 w-4" />
                                     <span className="sr-only">Setujui</span>
                                 </Button>
@@ -127,10 +208,10 @@ function LeaveRequestTable({ requests, onUpdateRequest }: { requests: LeaveReque
                     <TableBody>
                         {requests.map((req) => (
                             <TableRow key={req.id}>
-                                <TableCell className="font-medium">{req.name}</TableCell>
+                                <TableCell className="font-medium">{req.profiles?.name || 'Nama Tidak Ditemukan'}</TableCell>
                                 <TableCell className="max-w-xs truncate">{req.title}</TableCell>
                                 <TableCell>
-                                    <div>{req.dates}</div>
+                                    <div>{formatDateRange(req.start_date, req.end_date)}</div>
                                     <div className="text-xs text-muted-foreground">{req.duration} hari</div>
                                 </TableCell>
                                 <TableCell className="text-center">
@@ -179,7 +260,7 @@ function LeaveRequestDialog({ request, children, onUpdateRequest }: { request: L
                 <DialogHeader>
                     <DialogTitle className="font-headline">{request.title}</DialogTitle>
                     <DialogDescription>
-                        Pengajuan oleh {request.name}
+                        Pengajuan oleh {request.profiles?.name || 'N/A'}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -189,15 +270,15 @@ function LeaveRequestDialog({ request, children, onUpdateRequest }: { request: L
                     </div>
                      <div className="grid grid-cols-3 items-center gap-4">
                         <span className="text-sm font-medium text-muted-foreground">Nama</span>
-                        <span className="col-span-2 font-semibold">{request.name}</span>
+                        <span className="col-span-2 font-semibold">{request.profiles?.name || 'N/A'}</span>
                     </div>
                      <div className="grid grid-cols-3 items-center gap-4">
                         <span className="text-sm font-medium text-muted-foreground">NIP</span>
-                        <span className="col-span-2 font-semibold">{request.nip}</span>
+                        <span className="col-span-2 font-semibold">{request.profiles?.nip || 'N/A'}</span>
                     </div>
                     <div className="grid grid-cols-3 items-center gap-4">
                         <span className="text-sm font-medium text-muted-foreground">Tanggal</span>
-                        <span className="col-span-2 font-semibold">{request.dates}</span>
+                        <span className="col-span-2 font-semibold">{format(new Date(request.start_date), 'd MMM', { locale: id })} - {format(new Date(request.end_date), 'd MMM yyyy', { locale: id })}</span>
                     </div>
                     <div className="grid grid-cols-3 items-center gap-4">
                         <span className="text-sm font-medium text-muted-foreground">Durasi</span>

@@ -4,8 +4,9 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { Calendar as CalendarIcon, Upload } from "lucide-react"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import type { DateRange } from "react-day-picker"
+import { id } from 'date-fns/locale'
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -16,6 +17,15 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { submitLeaveRequest } from "./actions"
+
+// We assume this data will be fetched from the DB
+// For now, we use a client-side fetch in a useEffect
+type LeaveType = {
+    id: number;
+    name: string;
+};
 
 export default function AjukanCutiPage() {
     const router = useRouter();
@@ -23,17 +33,50 @@ export default function AjukanCutiPage() {
     const [date, setDate] = React.useState<DateRange | undefined>(undefined);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [fileName, setFileName] = React.useState<string | null>(null);
+    const [leaveTypes, setLeaveTypes] = React.useState<LeaveType[]>([]);
+    const formRef = React.useRef<HTMLFormElement>(null);
 
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    React.useEffect(() => {
+        // In a real app, you would fetch this from your server component
+        // but for simplicity, we'll keep it static for now
+        // This should be fetched in the main server component and passed as a prop
+        const fetchLeaveTypes = async () => {
+             // This is a placeholder. In a real scenario, this data would come from a server component fetch.
+            const types = [
+                { id: 1, name: 'Cuti Tahunan' },
+                { id: 2, name: 'Cuti Sakit' },
+                { id: 3, name: 'Cuti Alasan Penting' },
+                { id: 4, name: 'Cuti Melahirkan' },
+                { id: 5, name: 'Cuti Besar' },
+            ];
+            setLeaveTypes(types);
+        };
+        fetchLeaveTypes();
+    }, []);
+
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        // Here you would typically handle form submission, e.g., send data to an API.
         
-        toast({
-            title: "Pengajuan Terkirim",
-            description: "Pengajuan cuti Anda telah berhasil dikirim dan sedang menunggu persetujuan.",
-        });
+        const formData = new FormData(event.currentTarget);
+        if (date?.from) formData.set('start_date', format(date.from, 'yyyy-MM-dd'));
+        if (date?.to) formData.set('end_date', format(date.to, 'yyyy-MM-dd'));
 
-        router.push("/dashboard");
+        const result = await submitLeaveRequest(formData);
+
+        if (result.success) {
+            toast({
+                title: "Pengajuan Terkirim",
+                description: result.message,
+            });
+            router.push("/dashboard/riwayat");
+        } else {
+             toast({
+                title: "Pengajuan Gagal",
+                description: result.message,
+                variant: "destructive",
+            });
+        }
     }
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,7 +89,7 @@ export default function AjukanCutiPage() {
 
     return (
         <Card>
-            <form onSubmit={handleSubmit}>
+            <form ref={formRef} onSubmit={handleSubmit}>
                 <CardHeader>
                     <CardTitle className="font-headline">Formulir Pengajuan Cuti</CardTitle>
                     <CardDescription>
@@ -54,6 +97,22 @@ export default function AjukanCutiPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                         <Label htmlFor="leave_type_id">Jenis Cuti</Label>
+                         <Select name="leave_type_id" required>
+                             <SelectTrigger id="leave_type_id">
+                                <SelectValue placeholder="Pilih jenis cuti..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {leaveTypes.map((type) => (
+                                    <SelectItem key={type.id} value={String(type.id)}>
+                                        {type.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="leave-dates">Tanggal Cuti</Label>
                         <Popover>
@@ -70,11 +129,11 @@ export default function AjukanCutiPage() {
                                     {date?.from ? (
                                         date.to ? (
                                             <>
-                                                {format(date.from, "LLL dd, y")} -{" "}
-                                                {format(date.to, "LLL dd, y")}
+                                                {format(date.from, "d LLL, y", { locale: id })} -{" "}
+                                                {format(date.to, "d LLL, y", { locale: id })}
                                             </>
                                         ) : (
-                                            format(date.from, "LLL dd, y")
+                                            format(date.from, "d LLL, y", { locale: id })
                                         )
                                     ) : (
                                         <span>Pilih rentang tanggal</span>
@@ -96,18 +155,19 @@ export default function AjukanCutiPage() {
 
                     <div className="space-y-2">
                         <Label htmlFor="title">Judul Pengajuan</Label>
-                        <Input id="title" placeholder="Contoh: Izin Sakit, Cuti Tahunan" required />
+                        <Input name="title" id="title" placeholder="Contoh: Izin Sakit, Cuti Tahunan" required />
                     </div>
                    
                     <div className="space-y-2">
                         <Label htmlFor="reason">Alasan Cuti</Label>
-                        <Textarea id="reason" placeholder="Jelaskan alasan Anda mengajukan cuti..." required />
+                        <Textarea name="reason" id="reason" placeholder="Jelaskan alasan Anda mengajukan cuti..." required />
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="attachment">Lampiran (Opsional)</Label>
                          <Input 
                             id="attachment" 
+                            name="attachment"
                             type="file" 
                             className="hidden" 
                             ref={fileInputRef}

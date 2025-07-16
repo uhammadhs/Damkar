@@ -11,32 +11,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { createClient } from "@/lib/supabase/client";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
-// Define the type for a single leave history item
 type LeaveHistoryItem = {
   id: number;
-  dates: string;
+  start_date: string;
+  end_date: string;
   duration: number;
   title: string;
-  reason: string;
+  reason: string | null;
   status: string;
-  year: number;
+  created_at: string;
+  leave_types: { name: string } | null;
 };
-
-// Mock data
-const allLeaveHistory: LeaveHistoryItem[] = [
-  // 2024
-  { id: 8, dates: "05-06 Jan 2024", duration: 2, title: "Cuti Tahunan", reason: "Liburan awal tahun", status: "Disetujui", year: 2024 },
-  
-  // 2023
-  { id: 1, dates: "25-26 Des 2023", duration: 2, title: "Izin Sakit", reason: "Surat dokter terlampir", status: "Menunggu", year: 2023 },
-  { id: 2, dates: "10-11 Nov 2023", duration: 2, title: "Keperluan Keluarga", reason: "Keperluan keluarga", status: "Disetujui", year: 2023 },
-  { id: 3, dates: "01 Nov 2023", duration: 1, title: "Anak Masuk Sekolah", reason: "Mengantar anak sekolah", status: "Ditolak", year: 2023 },
-  { id: 4, dates: "15-16 Okt 2023", duration: 2, title: "Pernikahan Saudara", reason: "Acara pernikahan saudara", status: "Disetujui", year: 2023 },
-  { id: 5, dates: "05 Okt 2023", duration: 1, title: "Sakit", reason: "Demam dan flu", status: "Disetujui", year: 2023 },
-  { id: 6, dates: "20 Sep 2023", duration: 1, title: "Keluarga Sakit", reason: "Menjenguk orang tua sakit", status: "Disetujui", year: 2023 },
-  { id: 7, dates: "01-03 Sep 2023", duration: 3, title: "Cuti Tahunan", reason: "Liburan", status: "Disetujui", year: 2023 },
-];
 
 const getStatusColor = (status: string): string => {
     switch (status) {
@@ -52,13 +41,53 @@ const getStatusColor = (status: string): string => {
 }
 
 export default function RiwayatPage() {
+  const supabase = createClient();
+  const [allLeaveHistory, setAllLeaveHistory] = React.useState<LeaveHistoryItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = React.useState<number>(currentYear);
 
-  const availableYears = Array.from(new Set(allLeaveHistory.map(item => item.year))).sort((a, b) => b - a);
+  React.useEffect(() => {
+    const fetchHistory = async () => {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('leave_requests')
+        .select(`
+          id,
+          start_date,
+          end_date,
+          duration,
+          title,
+          reason,
+          status,
+          created_at,
+          leave_types (name)
+        `)
+        .eq('user_id', user.id)
+        .order('start_date', { ascending: false });
 
-  const filteredHistory = allLeaveHistory.filter(item => item.year === selectedYear);
+      if (error) {
+        console.error("Error fetching leave history:", error);
+      } else if (data) {
+        setAllLeaveHistory(data as LeaveHistoryItem[]);
+      }
+      setLoading(false);
+    };
 
+    fetchHistory();
+  }, [supabase]);
+
+  const availableYears = Array.from(new Set(allLeaveHistory.map(item => new Date(item.start_date).getFullYear()))).sort((a, b) => b - a);
+
+  const filteredHistory = allLeaveHistory.filter(item => new Date(item.start_date).getFullYear() === selectedYear);
+  
   return (
     <Card>
       <CardHeader>
@@ -75,7 +104,7 @@ export default function RiwayatPage() {
                         <SelectValue placeholder="Pilih Tahun" />
                     </SelectTrigger>
                     <SelectContent>
-                        {availableYears.map(year => (
+                        {(availableYears.length > 0 ? availableYears : [currentYear]).map(year => (
                              <SelectItem key={year} value={String(year)}>Tahun {year}</SelectItem>
                         ))}
                     </SelectContent>
@@ -84,57 +113,65 @@ export default function RiwayatPage() {
         </div>
       </CardHeader>
       <CardContent>
-         {/* Mobile View: List of Cards */}
-        <div className="space-y-4 md:hidden">
-            {filteredHistory.length > 0 ? (
-                filteredHistory.map((req) => (
-                    <Card key={req.id} className="p-4">
-                        <div className="flex items-start justify-between">
-                            <div className="flex-1 space-y-1">
-                                <p className="font-medium">{req.title}</p>
-                                <p className="text-sm text-muted-foreground">{req.dates} ({req.duration} hari)</p>
-                                <p className="text-xs text-muted-foreground italic">"{req.reason}"</p>
-                            </div>
-                            <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
-                        </div>
-                    </Card>
-                ))
-            ) : (
-                <p className="py-10 text-center text-muted-foreground">Tidak ada riwayat cuti untuk tahun {selectedYear}.</p>
-            )}
-        </div>
+        {loading ? (
+            <p className="py-10 text-center text-muted-foreground">Memuat riwayat...</p>
+        ) : (
+            <>
+                {/* Mobile View: List of Cards */}
+                <div className="space-y-4 md:hidden">
+                    {filteredHistory.length > 0 ? (
+                        filteredHistory.map((req) => (
+                            <Card key={req.id} className="p-4">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1 space-y-1">
+                                        <p className="font-medium">{req.title}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                          {format(new Date(req.start_date), 'd MMM', { locale: id })} - {format(new Date(req.end_date), 'd MMM yyyy', { locale: id })} ({req.duration} hari)
+                                        </p>
+                                        <p className="text-xs text-muted-foreground italic">"{req.reason}"</p>
+                                    </div>
+                                    <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
+                                </div>
+                            </Card>
+                        ))
+                    ) : (
+                        <p className="py-10 text-center text-muted-foreground">Tidak ada riwayat cuti untuk tahun {selectedYear}.</p>
+                    )}
+                </div>
 
-        {/* Desktop View: Table */}
-        <div className="hidden md:block">
-           {filteredHistory.length > 0 ? (
-                <table className="w-full caption-bottom text-sm">
-                    <thead>
-                        <tr className="border-b">
-                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Judul</th>
-                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tanggal</th>
-                            <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Durasi</th>
-                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Alasan</th>
-                            <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredHistory.map((req) => (
-                        <tr key={req.id} className="border-b">
-                            <td className="p-4 align-middle font-medium">{req.title}</td>
-                            <td className="p-4 align-middle">{req.dates}</td>
-                            <td className="p-4 align-middle text-center">{req.duration} hari</td>
-                            <td className="p-4 align-middle">{req.reason}</td>
-                            <td className="p-4 align-middle text-right">
-                            <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
-                            </td>
-                        </tr>
-                        ))}
-                    </tbody>
-                </table>
-           ) : (
-                <p className="py-10 text-center text-muted-foreground">Tidak ada riwayat cuti untuk tahun {selectedYear}.</p>
-           )}
-        </div>
+                {/* Desktop View: Table */}
+                <div className="hidden md:block">
+                {filteredHistory.length > 0 ? (
+                        <table className="w-full caption-bottom text-sm">
+                            <thead>
+                                <tr className="border-b">
+                                    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Judul</th>
+                                    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tanggal</th>
+                                    <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Durasi</th>
+                                    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Alasan</th>
+                                    <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredHistory.map((req) => (
+                                <tr key={req.id} className="border-b">
+                                    <td className="p-4 align-middle font-medium">{req.title}</td>
+                                    <td className="p-4 align-middle">{format(new Date(req.start_date), 'd MMM', { locale: id })} - {format(new Date(req.end_date), 'd MMM yyyy', { locale: id })}</td>
+                                    <td className="p-4 align-middle text-center">{req.duration} hari</td>
+                                    <td className="p-4 align-middle">{req.reason}</td>
+                                    <td className="p-4 align-middle text-right">
+                                    <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
+                                    </td>
+                                </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                ) : (
+                        <p className="py-10 text-center text-muted-foreground">Tidak ada riwayat cuti untuk tahun {selectedYear}.</p>
+                )}
+                </div>
+            </>
+        )}
       </CardContent>
     </Card>
   );

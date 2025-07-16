@@ -10,6 +10,116 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      leave_balances: {
+        Row: {
+          id: number
+          total_days: number
+          used_days: number
+          user_id: string
+          year: number
+        }
+        Insert: {
+          id?: number
+          total_days: number
+          used_days?: number
+          user_id: string
+          year: number
+        }
+        Update: {
+          id?: number
+          total_days?: number
+          used_days?: number
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_balances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_requests: {
+        Row: {
+          attachment_url: string | null
+          created_at: string
+          duration: number
+          end_date: string
+          id: number
+          leave_type_id: number
+          reason: string | null
+          start_date: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          created_at?: string
+          duration: number
+          end_date: string
+          id?: number
+          leave_type_id: number
+          reason?: string | null
+          start_date: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attachment_url?: string | null
+          created_at?: string
+          duration?: number
+          end_date?: string
+          id?: number
+          leave_type_id?: number
+          reason?: string | null
+          start_date?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_types: {
+        Row: {
+          description: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          description?: string | null
+          id?: number
+          name: string
+        }
+        Update: {
+          description?: string | null
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -68,6 +178,14 @@ export type Database = {
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      update_leave_balance: {
+        Args: {
+          p_user_id: string
+          p_year: number
+          p_days_to_add: number
+        }
+        Returns: undefined
       }
     }
     Enums: {
