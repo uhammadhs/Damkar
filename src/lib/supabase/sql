@@ -1,76 +1,102 @@
--- This script is for initializing the database tables and policies.
--- Run this in the Supabase SQL Editor.
+-- This script can be used to set up the database schema for the SIAP CUTI application.
+-- For a fresh Supabase project, you can run this entire script in the SQL Editor.
 
--- Create profiles table
-CREATE TABLE IF NOT EXISTS public.profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    updated_at TIMESTAMPTZ,
-    name TEXT,
-    nip TEXT UNIQUE,
-    pangkat TEXT,
-    golongan TEXT,
-    jabatan TEXT,
-    "satuanKerja" TEXT,
-    avatar_url TEXT,
-    email TEXT UNIQUE,
-    role TEXT DEFAULT 'anggota'
-);
-
--- Function to handle new user creation
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO public.profiles (id, email, name, role)
-    VALUES (new.id, new.email, new.raw_user_meta_data->>'name', 'anggota');
-    RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Trigger to call the function on new user signup
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
-
--- Enable Row Level Security (RLS)
+--
+-- 1. Enable Row Level Security (RLS) for the 'profiles' table.
+--
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- POLICIES --
--- These are the rules that control who can access what data.
+--
+-- 2. Create Policies for the 'profiles' table.
+--    These policies control who can access and modify the data.
+--
 
--- 1. SELECT Policy: Authenticated users can read all profiles.
--- This is generally safe as profiles don't contain highly sensitive data.
--- It also prevents recursive loops in other policies.
+-- POLICY 1: Allow authenticated users to see any profile.
+-- This is generally safe as profiles usually don't contain highly sensitive data.
 CREATE POLICY "Allow authenticated users to select any profile"
   ON public.profiles FOR SELECT
-  USING ( auth.role() = 'authenticated' );
+  USING (auth.role() = 'authenticated');
 
--- 2. INSERT Policy: An authenticated user can insert a profile for THEMSELVES.
--- This is the key fix. It allows a newly signed-up user to create their own profile entry.
+
+-- POLICY 2: Allow users to insert a profile ONLY for themselves.
+-- The user's ID must match the ID being inserted. This is crucial for new user sign-ups.
 CREATE POLICY "Allow authenticated users to insert their own profile"
   ON public.profiles FOR INSERT
-  WITH CHECK ( auth.uid() = id );
+  WITH CHECK (auth.uid() = id);
 
--- 3. UPDATE Policy: Users can update their own profile, and admins can update any.
+
+-- POLICY 3: Allow users to update their own profile.
 CREATE POLICY "Allow users to update their own profile"
   ON public.profiles FOR UPDATE
-  USING (
-    -- Admins can update any profile
-    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
-    OR
-    -- Users can update their own profile
-    auth.uid() = id
-  )
-  WITH CHECK (
-    -- Admins can update any profile
-    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
-    OR
-    -- Users can update their own profile
-    auth.uid() = id
-  );
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
 
--- 4. DELETE Policy: Only admins can delete profiles.
--- This prevents regular users from deleting their own or other's profiles.
-CREATE POLICY "Allow admin to delete profiles"
-  ON public.profiles FOR DELETE
-  USING ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin' );
+
+-- POLICY 4: Allow admins to manage (update/delete) all profiles.
+-- This uses a helper function `get_user_role()` to avoid recursive checks.
+CREATE POLICY "Allow admin to manage all profiles"
+  ON public.profiles FOR ALL
+  USING (public.get_user_role() = 'admin')
+  WITH CHECK (public.get_user_role() = 'admin');
+
+
+--
+-- 3. Create a helper function to get the user's role.
+--    This function is used in RLS policies to safely check a user's role
+--    without causing an infinite recursion error.
+--
+CREATE OR REPLACE FUNCTION public.get_user_role()
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN NULL;
+  ELSE
+    RETURN (
+      SELECT role
+      FROM public.profiles
+      WHERE id = auth.uid()
+      LIMIT 1
+    );
+  END IF;
+END;
+$$;
+
+
+--
+-- 4. Create a trigger function to automatically create a profile for new users.
+--    When a new user signs up via Supabase Auth, this function is triggered
+--    to create a corresponding entry in the 'profiles' table.
+--
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, name, role)
+  VALUES (new.id, new.email, new.raw_user_meta_data ->> 'name', 'anggota');
+  RETURN new;
+END;
+$$;
+
+
+--
+-- 5. Create the trigger on the 'auth.users' table.
+--    This connects the `handle_new_user` function to the user creation event.
+--
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+
+--
+-- Final check: Ensure the function and trigger are owned by the correct roles.
+-- This is usually handled by Supabase, but good to be aware of.
+--
+-- GRANT EXECUTE ON FUNCTION public.get_user_role() TO authenticated;
+-- GRANT EXECUTE ON FUNCTION public.handle_new_user() TO supabase_auth_admin;

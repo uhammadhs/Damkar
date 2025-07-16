@@ -12,11 +12,12 @@ export async function addMember(formData: FormData) {
   if (!user) {
     return { success: false, message: 'Akses ditolak. Anda tidak terautentikasi.' }
   }
-  const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (profileError || profile.role !== 'admin') {
+  
+  // Use the helper function to get the role, which is safer with RLS
+  const { data: role, error: rpcError } = await supabase.rpc('get_user_role');
+  if (rpcError || role !== 'admin') {
       return { success: false, message: 'Akses ditolak. Hanya admin yang bisa menambahkan anggota.' }
   }
-
 
   const name = formData.get('name') as string
   const nip = formData.get('nip') as string
@@ -24,11 +25,8 @@ export async function addMember(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  // 1. Create user in Supabase Auth using the service role client
-  // This is necessary because by default, only the user can create themselves.
-  // An admin needs elevated privileges to create other users.
-  // Note: For this to work in production, you'd use a dedicated service role client.
-  // In this environment, the server client has sufficient privileges.
+  // 1. Create user in Supabase Auth using the admin client.
+  // This bypasses RLS for user creation, which is necessary.
   const { data: { user: newUser }, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
@@ -41,8 +39,9 @@ export async function addMember(formData: FormData) {
     return { success: false, message: authError?.message || 'Gagal membuat pengguna.' }
   }
 
-  // 2. The trigger `handle_new_user` should have already created a profile.
-  // We just need to update it with the additional details.
+  // 2. The trigger `handle_new_user` should have already created a basic profile.
+  // Now, we update it with the additional details.
+  // This update is performed by the admin and is allowed by the "Admin can manage" policy.
   const { error: updateProfileError } = await supabase
     .from('profiles')
     .update({
@@ -94,8 +93,7 @@ export async function editMember(formData: FormData) {
 export async function deleteMember(id: string) {
     const supabase = createClient();
 
-    // The server client for `deleteUser` requires service_role privileges
-    // which the default server client in this setup has.
+    // Use the admin API to delete the user from auth.
     const { error: deleteAuthUserError } = await supabase.auth.admin.deleteUser(id);
 
     // Because of `ON DELETE CASCADE` on the `profiles` table's foreign key,
