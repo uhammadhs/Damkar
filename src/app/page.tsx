@@ -114,12 +114,18 @@ export default function LoginPage() {
             <div className="relative my-2">
                 <Separator />
             </div>
-            <Button variant="link" size="sm" className="w-full" asChild>
-              <Link href="#">Lupa Password?</Link>
-            </Button>
+            <div className="flex flex-col items-center space-y-2">
+              <Button variant="link" size="sm" asChild>
+                <Link href="#">Lupa Password?</Link>
+              </Button>
+              <p className="px-8 text-center text-xs text-muted-foreground">
+                Admin pertama? Buat akun via Supabase lalu ubah `role` menjadi `admin`.
+              </p>
+            </div>
           </form>
         </CardContent>
       </Card>
     </div>
   );
 }
+
