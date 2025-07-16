@@ -28,7 +28,6 @@ export default function AdminDashboardPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Aktivitas Terkini</CardTitle>
-                    <CardDescription>Pantau aktivitas terbaru dalam sistem.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <p>Konten aktivitas terkini akan ditampilkan di sini.</p>

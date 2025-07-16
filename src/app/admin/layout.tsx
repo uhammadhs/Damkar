@@ -51,7 +51,7 @@ export default function AdminLayout({
   const { setTheme, theme } = useTheme()
 
   const getPageTitle = () => {
-    if (pathname.startsWith("/admin/dashboard")) return "Dashboard Admin"
+    if (pathname.startsWith("/admin/dashboard")) return "Dashboard"
     if (pathname.startsWith("/admin/manajemen-cuti")) return "Manajemen Cuti"
     if (pathname.startsWith("/admin/laporan")) return "Laporan"
     if (pathname.startsWith("/admin/anggota")) return "Manajemen Anggota"
