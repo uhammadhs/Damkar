@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -12,18 +13,6 @@ const recentLeaveRequests = [
   { id: 3, type: "Izin", dates: "01 Nov 2023", duration: 1, reason: "Mengantar anak sekolah", status: "Ditolak" },
 ];
 
-const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
-  switch (status) {
-    case 'Menunggu':
-      return 'secondary';
-    case 'Disetujui':
-      return 'default'; // Will be green due to custom theme later
-    case 'Ditolak':
-      return 'destructive';
-    default:
-      return 'outline';
-  }
-};
 
 const getStatusColor = (status: string): string => {
     switch (status) {
@@ -45,6 +34,19 @@ export default function DashboardPage() {
 
   return (
     <div className="relative space-y-6">
+       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+         <div>
+            <h2 className="text-2xl font-bold font-headline">Selamat Datang, Anggota Damkar!</h2>
+            <p className="text-muted-foreground">Berikut adalah ringkasan informasi cuti Anda.</p>
+         </div>
+          <Button asChild className="hidden md:inline-flex">
+            <Link href="/dashboard/ajukan-cuti">
+              <Plus />
+              Ajukan Cuti Baru
+            </Link>
+          </Button>
+      </div>
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -75,6 +77,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="font-headline">Status Pengajuan Terkini</CardTitle>
+             <CardDescription>3 pengajuan terakhir Anda.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {recentLeaveRequests.map((req, index) => (
@@ -83,11 +86,10 @@ export default function DashboardPage() {
                   <div className="space-y-1">
                     <p className="font-medium">{req.type}</p>
                     <p className="text-sm text-muted-foreground">{req.dates} ({req.duration} hari)</p>
-                    <p className="text-xs text-muted-foreground italic">"{req.reason}"</p>
                   </div>
                   <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
                 </div>
-                {index < recentLeaveRequests.length - 1 && <Separator className="my-4" />}
+                {index < recentLeaveRequests.length - 1 && <Separator className="my-3" />}
               </div>
             ))}
           </CardContent>
