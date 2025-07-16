@@ -2,12 +2,13 @@
 "use client"
 
 import * as React from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 
 const memberLeaveData = [
   { id: 1, name: "Anggota Damkar 1", nip: "199001012020121001", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A1", jatahCuti: 12, cutiTerpakai: 5 },
@@ -46,7 +47,51 @@ export default function LaporanPage() {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="overflow-x-auto">
+                 {/* Mobile View: List of Cards */}
+                 <div className="space-y-4 md:hidden">
+                    {filteredData.map((member) => {
+                         const sisaCuti = member.jatahCuti - member.cutiTerpakai;
+                         const progressValue = (member.cutiTerpakai / member.jatahCuti) * 100;
+                        return (
+                            <Card key={member.id}>
+                                <CardHeader className="flex flex-row items-center gap-4 p-4">
+                                     <Avatar>
+                                        <AvatarImage src={member.avatarUrl} alt={member.name} data-ai-hint="male portrait" />
+                                        <AvatarFallback>{member.avatarFallback}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <CardTitle className="text-base">{member.name}</CardTitle>
+                                        <CardDescription>{member.nip}</CardDescription>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-4 pt-0">
+                                     <div className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Jatah</span>
+                                            <span className="font-medium">{member.jatahCuti} hari</span>
+                                        </div>
+                                         <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Terpakai</span>
+                                            <span className="font-medium">{member.cutiTerpakai} hari</span>
+                                        </div>
+                                         <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Sisa</span>
+                                            <span className="font-bold text-primary">{sisaCuti} hari</span>
+                                        </div>
+                                    </div>
+                                    <Separator className="my-4" />
+                                    <div className="flex flex-col items-center gap-1">
+                                        <Progress value={progressValue} aria-label={`${progressValue.toFixed(0)}% cuti terpakai`} />
+                                        <span className="text-xs text-muted-foreground">Penggunaan: {member.cutiTerpakai}/{member.jatahCuti} Hari</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
+                </div>
+
+                {/* Desktop View: Table */}
+                <div className="hidden overflow-x-auto md:block">
                     <Table>
                         <TableHeader>
                             <TableRow>
