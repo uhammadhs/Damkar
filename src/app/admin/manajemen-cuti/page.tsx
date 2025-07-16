@@ -50,11 +50,7 @@ export default function ManajemenCutiPage() {
 
   return (
     <Card>
-        <CardHeader>
-            <CardTitle className="font-headline">Manajemen Pengajuan Cuti</CardTitle>
-            <CardDescription>Tinjau dan proses pengajuan cuti dari anggota.</CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
             <Tabs defaultValue="menunggu">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="menunggu">Menunggu ({waitingRequests.length})</TabsTrigger>
