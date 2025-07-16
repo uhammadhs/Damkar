@@ -136,11 +136,7 @@ export default function AnggotaPage() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <CardTitle className="font-headline">Manajemen Anggota</CardTitle>
-                <CardDescription>Tambah, edit, atau hapus data anggota.</CardDescription>
-            </div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
