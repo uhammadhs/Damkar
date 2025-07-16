@@ -1,3 +1,4 @@
+
 -- 1. Create a table for public profiles
 CREATE TABLE profiles (
   id uuid NOT NULL PRIMARY KEY,
@@ -8,6 +9,9 @@ CREATE TABLE profiles (
   email TEXT,
   avatar_url TEXT,
   role TEXT NOT NULL DEFAULT 'anggota',
+  golongan TEXT,
+  jabatan TEXT,
+  satuanKerja TEXT,
 
   CONSTRAINT id_fk FOREIGN KEY(id) REFERENCES auth.users(id) ON DELETE CASCADE
 );
@@ -69,3 +73,4 @@ BEGIN
   RETURN user_role;
 END;
 $$ LANGUAGE plpgsql;
+
