@@ -2,7 +2,6 @@
 "use client"
 
 import * as React from "react";
-import { Edit, ShieldCheck } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -115,7 +114,6 @@ export default function ProfilPage() {
               <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
                 <DialogTrigger asChild>
                   <Button>
-                    <Edit />
                     Edit Profil
                   </Button>
                 </DialogTrigger>
@@ -164,7 +162,6 @@ export default function ProfilPage() {
               <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline">
-                    <ShieldCheck />
                     Ubah Password
                   </Button>
                 </DialogTrigger>
