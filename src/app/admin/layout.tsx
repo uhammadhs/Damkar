@@ -2,7 +2,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   Bell,
   Users,
@@ -12,6 +12,8 @@ import {
   BookCopy,
   Moon,
   Sun,
+  User,
+  LogOut,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -37,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function AdminLayout({
   children,
@@ -44,6 +47,7 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const { setTheme, theme } = useTheme()
 
   const getPageTitle = () => {
@@ -53,6 +57,11 @@ export default function AdminLayout({
     if (pathname.startsWith("/admin/anggota")) return "Manajemen Anggota"
     return "Admin SIAP CUTI"
   }
+
+  const handleLogout = () => {
+    // In a real app, you'd clear session/token here
+    router.push('/');
+  };
 
   return (
     <SidebarProvider>
@@ -127,9 +136,6 @@ export default function AdminLayout({
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            <p className="hidden text-sm text-muted-foreground md:block">
-              Selamat Datang, Admin!
-            </p>
              <Button
                 variant="ghost"
                 size="icon"
@@ -154,6 +160,25 @@ export default function AdminLayout({
                 <DropdownMenuItem>Pengajuan Cuti dari Anggota 1</DropdownMenuItem>
                 <DropdownMenuItem>Pengajuan Cuti dari Anggota 4</DropdownMenuItem>
               </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                        <Avatar className="h-8 w-8">
+                            <AvatarImage src="https://placehold.co/40x40.png" alt="Admin" data-ai-hint="male portrait" />
+                            <AvatarFallback>A</AvatarFallback>
+                        </Avatar>
+                        <span className="sr-only">Toggle user menu</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Admin</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Logout</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </header>
@@ -219,5 +244,3 @@ export default function AdminLayout({
     </SidebarProvider>
   )
 }
-
-    

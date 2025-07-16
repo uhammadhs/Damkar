@@ -2,7 +2,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   Bell,
   History,
@@ -11,6 +11,7 @@ import {
   User,
   Moon,
   Sun,
+  LogOut,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -36,6 +37,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function DashboardLayout({
   children,
@@ -43,7 +45,13 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const { setTheme, theme } = useTheme()
+
+  const handleLogout = () => {
+    // In a real app, you'd clear session/token here
+    router.push('/');
+  };
 
   return (
     <SidebarProvider>
@@ -106,9 +114,6 @@ export default function DashboardLayout({
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            <p className="hidden text-sm text-muted-foreground md:block">
-              Selamat Pagi, Anggota!
-            </p>
              <Button
                 variant="ghost"
                 size="icon"
@@ -133,6 +138,31 @@ export default function DashboardLayout({
                 <DropdownMenuItem>Pengajuan cuti Anda telah disetujui.</DropdownMenuItem>
                  <DropdownMenuItem>Password akan segera berakhir.</DropdownMenuItem>
               </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                        <Avatar className="h-8 w-8">
+                            <AvatarImage src="https://placehold.co/40x40.png" alt="Anggota" data-ai-hint="male portrait" />
+                            <AvatarFallback>U</AvatarFallback>
+                        </Avatar>
+                        <span className="sr-only">Toggle user menu</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Anggota</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/profil">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profil</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Logout</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </header>
@@ -184,5 +214,3 @@ export default function DashboardLayout({
     </SidebarProvider>
   )
 }
-
-    
