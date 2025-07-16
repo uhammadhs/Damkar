@@ -1,11 +1,16 @@
+
+"use client"
+
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 
-export const metadata: Metadata = {
-  title: 'SIAP CUTI',
-  description: 'Sistem Informasi Approval Cuti',
-};
+// This is a client component, so we can't use metadata export
+// export const metadata: Metadata = {
+//   title: 'SIAP CUTI',
+//   description: 'Sistem Informasi Approval Cuti',
+// };
 
 export default function RootLayout({
   children,
@@ -13,8 +18,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <title>SIAP CUTI</title>
+        <meta name="description" content="Sistem Informasi Approval Cuti" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -23,9 +30,18 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        {children}
-        <Toaster />
+         <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+            <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
 }
+
+    
