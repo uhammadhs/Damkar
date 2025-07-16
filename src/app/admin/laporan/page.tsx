@@ -2,13 +2,20 @@
 "use client"
 
 import * as React from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const memberLeaveData = [
   { id: 1, name: "Anggota Damkar 1", nip: "199001012020121001", avatarUrl: "https://placehold.co/40x40.png", avatarFallback: "A1", jatahCuti: 12, cutiTerpakai: 5 },
@@ -21,6 +28,11 @@ const memberLeaveData = [
 
 export default function LaporanPage() {
     const [searchTerm, setSearchTerm] = React.useState("");
+    const currentYear = new Date().getFullYear();
+    const [selectedYear, setSelectedYear] = React.useState<number>(currentYear);
+
+    // In a real app, years would come from the data
+    const availableYears = [currentYear, currentYear - 1];
 
     const filteredData = memberLeaveData.filter(member =>
         member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -35,11 +47,21 @@ export default function LaporanPage() {
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Cari nama atau NIP..."
-                            className="pl-8 sm:w-[300px]"
+                            className="pl-8 sm:w-[250px]"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
+                    <Select value={String(selectedYear)} onValueChange={(value) => setSelectedYear(Number(value))}>
+                        <SelectTrigger className="w-full sm:w-[180px]">
+                            <SelectValue placeholder="Pilih Tahun" />
+                        </SelectTrigger>
+                        <SelectContent>
+                             {availableYears.map(year => (
+                                <SelectItem key={year} value={String(year)}>Tahun {year}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </CardHeader>
             <CardContent>
@@ -56,8 +78,8 @@ export default function LaporanPage() {
                                         <AvatarFallback>{member.avatarFallback}</AvatarFallback>
                                     </Avatar>
                                     <div>
-                                        <CardTitle className="text-base">{member.name}</CardTitle>
-                                        <CardDescription>{member.nip}</CardDescription>
+                                        <p className="text-base font-semibold">{member.name}</p>
+                                        <p className="text-sm text-muted-foreground">{member.nip}</p>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-4 pt-0">
