@@ -1,76 +1,80 @@
+-- supabase.sql
 
--- 1. Create a table for public profiles
-CREATE TABLE profiles (
+-- 1. Create Profiles Table
+-- This table will store user profile information.
+CREATE TABLE public.profiles (
   id uuid NOT NULL PRIMARY KEY,
-  updated_at TIMESTAMP WITH TIME ZONE,
-  name TEXT,
-  nip TEXT,
-  pangkat TEXT,
-  email TEXT,
-  avatar_url TEXT,
-  role TEXT NOT NULL DEFAULT 'anggota',
-  golongan TEXT,
-  jabatan TEXT,
-  satuanKerja TEXT,
-
-  CONSTRAINT id_fk FOREIGN KEY(id) REFERENCES auth.users(id) ON DELETE CASCADE
+  updated_at timestamp with time zone,
+  name character varying,
+  nip character varying,
+  pangkat character varying,
+  avatar_url character varying,
+  role character varying DEFAULT 'anggota'::character varying,
+  email character varying,
+  golongan character varying,
+  jabatan character varying,
+  "satuanKerja" character varying,
+  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
 );
 
--- 2. Add a check constraint to the role column
-ALTER TABLE profiles
-  ADD CONSTRAINT role_check CHECK (role IN ('admin', 'anggota'));
+-- 2. Enable Row Level Security (RLS)
+-- Important for securing user data.
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- 3. Set up Row Level Security (RLS)
--- Enable RLS for the profiles table
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
--- Policy: Allow public read access for authenticated users
-CREATE POLICY "Public profiles are viewable by authenticated users." ON profiles
-  FOR SELECT USING (auth.role() = 'authenticated');
-
--- Policy: Allow users to insert their own profile
-CREATE POLICY "Users can insert their own profile." ON profiles
-  FOR INSERT WITH CHECK (auth.uid() = id);
-
--- Policy: Allow users to update their own profile
-CREATE POLICY "Users can update their own profile." ON profiles
-  FOR UPDATE USING (auth.uid() = id);
-
--- Policy: Allow admins to manage all profiles (optional, but recommended for admin features)
-CREATE POLICY "Admins can manage all profiles." ON profiles
-  FOR ALL USING (
-    (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin'
-  );
-
-
--- 4. Create a trigger function to create a profile on new user signup
+-- 3. Create Function to Handle New Users
+-- This function automatically creates a profile when a new user signs up in Supabase Auth.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles (id, email, name, role)
-  VALUES (
-    new.id,
-    new.email,
-    new.raw_user_meta_data->>'name',
-    'anggota' -- Default role is 'anggota'
-  );
+  VALUES (new.id, new.email, new.raw_user_meta_data->>'name', 'anggota');
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 5. Create the trigger
+-- 4. Create Trigger for New User Function
+-- This trigger calls the handle_new_user function whenever a new user is added to auth.users.
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 6. Function to get user role (useful for RLS policies in other tables)
-CREATE OR REPLACE FUNCTION get_user_role()
-RETURNS TEXT AS $$
-DECLARE
-  user_role TEXT;
-BEGIN
-  SELECT role INTO user_role FROM public.profiles WHERE id = auth.uid();
-  RETURN user_role;
-END;
-$$ LANGUAGE plpgsql;
+-- 5. Create Function to Get User Role
+-- A safe way to get the current user's role without causing recursion in RLS policies.
+CREATE OR REPLACE FUNCTION public.get_user_role()
+RETURNS text
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT role FROM public.profiles WHERE id = auth.uid();
+$$;
 
+-- 6. Row Level Security Policies for 'profiles' table
+
+-- CLEANUP: Drop all old policies first to ensure a clean slate.
+DROP POLICY IF EXISTS "Allow authenticated users to insert their own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Allow authenticated users to select any profile" ON public.profiles;
+DROP POLICY IF EXISTS "Allow users to update their own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Admins can update any profile" ON public.profiles;
+DROP POLICY IF EXISTS "Admins can delete any profile" ON public.profiles;
+DROP POLICY IF EXISTS "Allow admin to manage all profiles" ON public.profiles;
+
+
+-- POLICY: Allow authenticated users to view all profiles.
+CREATE POLICY "Allow authenticated users to select any profile" ON public.profiles
+  FOR SELECT USING (auth.role() = 'authenticated');
+
+-- POLICY: Allow users to insert their own profile.
+CREATE POLICY "Allow authenticated users to insert their own profile" ON public.profiles
+  FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- POLICY: Allow users to update their own profile.
+CREATE POLICY "Allow users to update their own profile" ON public.profiles
+  FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+-- POLICY: Allow admins to update any profile.
+CREATE POLICY "Admins can update any profile" ON public.profiles
+  FOR UPDATE USING (public.get_user_role() = 'admin');
+
+-- POLICY: Allow admins to delete any profile.
+CREATE POLICY "Admins can delete any profile" ON public.profiles
+  FOR DELETE USING (public.get_user_role() = 'admin');
