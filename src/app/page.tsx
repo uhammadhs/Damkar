@@ -11,41 +11,74 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const supabase = createClient();
 
-  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const username = formData.get("username") as string;
+    const email = formData.get("email") as string; // Using email for Supabase Auth
     const password = formData.get("password") as string;
 
-    if (!username || !password) {
+    if (!email || !password) {
       toast({
         title: "Login Gagal",
-        description: "Username dan password harus diisi.",
+        description: "Email dan password harus diisi.",
         variant: "destructive",
       });
       return;
     }
 
-    // Simulasi pengecekan peran (role)
-    if (username.toLowerCase() === 'admin') {
-      // Di aplikasi nyata, Anda akan memverifikasi password di sini
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+       toast({
+        title: "Login Gagal",
+        description: error.message || "Email atau password salah.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check for user role from profiles table
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+    
+    if (profileError || !profile) {
+        toast({
+            title: "Login Gagal",
+            description: "Tidak dapat menemukan data profil pengguna.",
+            variant: "destructive"
+        });
+        await supabase.auth.signOut(); // Log out if profile doesn't exist
+        return;
+    }
+
+
+    if (profile.role === 'admin') {
       toast({
         title: "Login Berhasil",
         description: "Selamat datang, Admin!",
       });
       router.push('/admin/dashboard');
+      router.refresh();
     } else {
-       // Di aplikasi nyata, Anda akan memverifikasi password di sini
       toast({
         title: "Login Berhasil",
-        description: `Selamat datang, ${username}!`,
+        description: `Selamat datang!`,
       });
       router.push('/dashboard');
+      router.refresh();
     }
   };
 
@@ -68,8 +101,8 @@ export default function LoginPage() {
         <CardContent>
           <form className="space-y-4" onSubmit={handleLogin}>
             <div className="space-y-2">
-              <Label htmlFor="username">NIP / Username</Label>
-              <Input id="username" name="username" placeholder="Masukkan NIP atau Username" required type="text" />
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" name="email" placeholder="contoh@email.com" required type="email" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>

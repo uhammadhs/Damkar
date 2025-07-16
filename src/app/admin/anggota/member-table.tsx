@@ -1,0 +1,137 @@
+
+"use client"
+
+import * as React from "react";
+import { MoreHorizontal } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import type { Profile } from "./page";
+import { EditMemberDialog } from "./edit-member-dialog";
+import { deleteMember } from "./actions";
+
+interface MemberTableProps {
+  profiles: Profile[];
+}
+
+export function MemberTable({ profiles }: MemberTableProps) {
+  const [editingMember, setEditingMember] = React.useState<Profile | null>(null);
+  const { toast } = useToast();
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus anggota ini? Aksi ini tidak dapat dibatalkan.")) {
+      return;
+    }
+    const result = await deleteMember(id);
+    if (result.success) {
+      toast({
+        title: "Sukses",
+        description: result.message,
+      });
+    } else {
+      toast({
+        title: "Gagal",
+        description: result.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openEditDialog = (member: Profile) => {
+    setEditingMember(member);
+  };
+  
+  const getAvatarFallback = (name: string | null) => {
+    if (!name) return "??";
+    const parts = name.split(" ");
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  return (
+    <>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nama</TableHead>
+              <TableHead className="hidden sm:table-cell">NIP</TableHead>
+              <TableHead className="hidden md:table-cell">Pangkat</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {profiles.map((profile) => (
+              <TableRow key={profile.id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="hidden h-9 w-9 sm:flex">
+                      <AvatarImage src={profile.avatar_url || ''} alt={profile.name || ''} data-ai-hint="male portrait" />
+                      <AvatarFallback>{getAvatarFallback(profile.name)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <div className="font-medium">{profile.name || 'No Name'}</div>
+                      <div className="text-sm text-muted-foreground md:hidden">{profile.pangkat}</div>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">{profile.nip}</TableCell>
+                <TableCell className="hidden md:table-cell">{profile.pangkat}</TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button aria-haspopup="true" size="icon" variant="ghost">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Toggle menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openEditDialog(profile)}>Edit</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(profile.id)}>
+                        Hapus
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      {profiles.length === 0 && (
+        <p className="py-10 text-center text-muted-foreground">
+          Tidak ada anggota yang ditemukan.
+        </p>
+      )}
+
+      {/* Edit Member Dialog */}
+      {editingMember && (
+        <EditMemberDialog
+          member={editingMember}
+          isOpen={!!editingMember}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingMember(null);
+            }
+          }}
+        />
+      )}
+    </>
+  );
+}

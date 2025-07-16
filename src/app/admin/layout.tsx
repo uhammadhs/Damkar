@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { createClient } from "@/lib/supabase/client"
 
 export default function AdminLayout({
   children,
@@ -49,6 +50,7 @@ export default function AdminLayout({
   const pathname = usePathname()
   const router = useRouter()
   const { setTheme, theme } = useTheme()
+  const supabase = createClient()
 
   const getPageTitle = () => {
     if (pathname.startsWith("/admin/dashboard")) return "Dashboard"
@@ -58,9 +60,10 @@ export default function AdminLayout({
     return "Admin SIAP CUTI"
   }
 
-  const handleLogout = () => {
-    // In a real app, you'd clear session/token here
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     router.push('/');
+    router.refresh();
   };
 
   return (
@@ -130,7 +133,11 @@ export default function AdminLayout({
       <SidebarInset>
         <div className="flex h-svh flex-col">
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur">
-            <div className="flex-1">
+            <div className="flex-1 md:hidden">
+              {/* This trigger is now only for mobile */}
+              <SidebarTrigger />
+            </div>
+            <div className="hidden flex-1 md:block">
               <h2 className="text-lg font-semibold font-headline">
                 {getPageTitle()}
               </h2>
