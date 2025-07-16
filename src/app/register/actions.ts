@@ -2,7 +2,6 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { headers } from 'next/headers'
 import { z } from 'zod';
 
 const RegisterSchema = z.object({
@@ -15,7 +14,6 @@ const RegisterSchema = z.object({
 
 
 export async function registerUser(formData: FormData) {
-  const origin = headers().get('origin')
   const supabase = createClient()
 
   const rawData = {
@@ -40,10 +38,9 @@ export async function registerUser(formData: FormData) {
     email,
     password,
     options: {
-      // This metadata is accessible on the server after signup,
-      // but the trigger is a more reliable way to create the profile.
-      // We will update the profile after creation.
-      emailRedirectTo: `${origin}/`, // Force the correct redirect URL
+      // This is a more reliable way to set the redirect URL.
+      // It will redirect the user to the login page after verification.
+      emailRedirectTo: `/`,
       data: {
         name,
         nip,
@@ -63,9 +60,6 @@ export async function registerUser(formData: FormData) {
 
   // 2. The `handle_new_user` trigger has already created a basic profile.
   // Now, we update it with the additional details from the form.
-  // This is allowed by the policy: "Allow authenticated users to insert their own profile"
-  // (because signUp authenticates the user for the current transaction)
-  // and "Allow users to update their own profile".
   const { error: updateProfileError } = await supabase
     .from('profiles')
     .update({
