@@ -33,15 +33,16 @@ export default function LoginPage() {
       return;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error || !data.user) {
-       toast({
+    if (authError || !authData.user) {
+      console.error('Login error details:', authError);
+      toast({
         title: "Login Gagal",
-        description: error?.message || "Email atau password salah.",
+        description: authError?.message || "Email atau password salah. Periksa kembali.",
         variant: "destructive",
       });
       return;
@@ -51,19 +52,43 @@ export default function LoginPage() {
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', data.user.id)
+        .eq('id', authData.user.id)
         .single();
     
-    if (profileError || !profile) {
-        // If profile doesn't exist, log them out and show error.
-        // The profile should be created by a trigger. If not, something is wrong.
-        toast({
+    // This is a recovery mechanism. If a user exists in auth but not in profiles,
+    // create a profile for them. This might happen if the signup trigger fails.
+    if (profileError && profileError.code === 'PGRST116') { // PGRST116 = "The result contains 0 rows"
+      const { data: newProfile, error: insertError } = await supabase
+        .from('profiles')
+        .insert({ id: authData.user.id, email: authData.user.email, role: 'anggota' })
+        .select('role')
+        .single();
+      
+      if (insertError) {
+         toast({
             title: "Login Gagal",
-            description: "Tidak dapat menemukan data profil pengguna. Silakan hubungi admin.",
+            description: "Gagal membuat data profil. Hubungi admin.",
             variant: "destructive"
         });
         await supabase.auth.signOut();
         return;
+      }
+      // Continue login with the newly created profile
+      if (newProfile.role === 'admin') {
+         router.push('/admin/dashboard');
+      } else {
+         router.push('/dashboard');
+      }
+      router.refresh();
+      return;
+    } else if (profileError) {
+       toast({
+        title: "Login Gagal",
+        description: `Tidak dapat mengambil data profil: ${profileError.message}`,
+        variant: "destructive"
+      });
+      await supabase.auth.signOut();
+      return;
     }
 
 
@@ -73,15 +98,14 @@ export default function LoginPage() {
         description: "Selamat datang, Admin!",
       });
       router.push('/admin/dashboard');
-      router.refresh();
     } else {
       toast({
         title: "Login Berhasil",
         description: `Selamat datang!`,
       });
       router.push('/dashboard');
-      router.refresh();
     }
+    router.refresh();
   };
 
   return (
