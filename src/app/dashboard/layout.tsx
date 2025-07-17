@@ -1,7 +1,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { DashboardLayoutClient } from "./layout-client";
-import type { Database } from "@/types/supabase";
+import { redirect } from "next/navigation";
 
 type Notification = {
   id: number;
@@ -18,10 +18,16 @@ export default async function DashboardLayout({
 
   const { data: { user } } = await supabase.auth.getUser();
 
+  if (!user) {
+    // If no user is found, redirect to the login page.
+    // This is a crucial security measure.
+    redirect('/');
+  }
+
   let notifications: Notification[] = [];
   let notificationCount = 0;
 
-  if (user) {
+  try {
     // A more complex query would be needed for a real "is_read" system,
     // but for now we show recent status changes.
     const { data, error } = await supabase
@@ -33,13 +39,17 @@ export default async function DashboardLayout({
       .limit(5);
 
     if (error) {
-      console.error("Error fetching user notifications:", error);
-    } else {
-      notifications = data;
-      // In a real app, you'd count only unread notifications.
-      // For this demo, we'll count all non-pending ones.
-      notificationCount = data.length; 
+      throw error;
     }
+    
+    notifications = data;
+    // In a real app, you'd count only unread notifications.
+    // For this demo, we'll count all non-pending ones.
+    notificationCount = data.length; 
+
+  } catch (error) {
+    console.error("Error fetching user notifications:", error);
+    // Gracefully handle the error, the page will render without notifications
   }
     
   return (
