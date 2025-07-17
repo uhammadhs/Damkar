@@ -29,16 +29,20 @@ export async function registerUser(formData: FormData) {
 
   const { name, email, password } = validation.data;
 
-  // 1. Create the user in Supabase Auth
-  const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+  // Sign up the user. The `handle_new_user` trigger in the database
+  // will automatically create a corresponding profile entry.
+  // We also pass the name in user_metadata so it can be used by the trigger or self-healing mechanisms.
+  const { data, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `/auth/verified`,
+      // This data is useful for the profile creation trigger
       data: {
-        name,
-      }
-    }
+        name: name,
+      },
+      // The user will be redirected to this page after clicking the verification link
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/verified`,
+    },
   });
 
   if (signUpError) {
@@ -46,24 +50,12 @@ export async function registerUser(formData: FormData) {
     return { success: false, message: signUpError.message };
   }
 
-  if (!user) {
+  if (!data.user) {
     return { success: false, message: 'Gagal membuat pengguna, silakan coba lagi.' };
   }
-
-  // 2. The `handle_new_user` trigger has already created a basic profile.
-  // Now, we update it with the name from the form.
-  const { error: updateProfileError } = await supabase
-    .from('profiles')
-    .update({ name })
-    .eq('id', user.id);
-
-  if (updateProfileError) {
-    console.error('Error updating profile after signup:', updateProfileError);
-    // If profile update fails, the user is created but with an empty profile.
-    // This isn't ideal, but better than failing the whole process.
-    // They can update their profile later.
-    return { success: false, message: `Akun dibuat, tapi gagal menyimpan detail profil: ${updateProfileError.message}` };
-  }
+  
+  // No need to manually update profile here, as the trigger should handle it.
+  // This simplifies the action and makes it more reliable.
 
   return { success: true, message: 'Pendaftaran berhasil. Silakan cek email Anda untuk verifikasi.' };
 }

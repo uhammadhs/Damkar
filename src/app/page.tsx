@@ -12,24 +12,24 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const supabase = createClient();
+  const [error, setError] = React.useState<string | null>(null);
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setError(null);
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
     if (!email || !password) {
-      toast({
-        title: "Login Gagal",
-        description: "Email dan password harus diisi.",
-        variant: "destructive",
-      });
+      setError("Email dan password harus diisi.");
       return;
     }
 
@@ -40,45 +40,26 @@ export default function LoginPage() {
 
     if (authError || !authData.user) {
       console.error('Login error details:', authError);
-      toast({
-        title: "Login Gagal",
-        description: authError?.message || "Email atau password salah. Periksa kembali.",
-        variant: "destructive",
-      });
+      setError(authError?.message || "Email atau password salah. Periksa kembali.");
       return;
     }
     
-    // Fetch profile with more robust error handling
-    const { data: profiles, error: profileError } = await supabase
+    // Fetch profile with robust error handling
+    const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', authData.user.id)
+        .single();
     
-    if (profileError) {
-       toast({
-        title: "Login Gagal",
-        description: `Gagal memuat data profil. Silakan hubungi admin. (Error: ${profileError.message})`,
-        variant: "destructive"
-      });
+    if (profileError || !profile) {
+      if (profileError?.code === 'PGRST116') { // "JSON object requested, multiple (or no) rows returned" and no rows were returned
+         setError("Profil pengguna tidak ditemukan. Silakan hubungi admin untuk mendaftarkan profil Anda.");
+      } else {
+         setError(`Gagal memuat data profil. Silakan hubungi admin. (Error: ${profileError?.message})`);
+      }
       await supabase.auth.signOut();
       return;
     }
-
-    if (!profiles || profiles.length === 0) {
-      toast({
-        title: "Login Gagal",
-        description: "Profil pengguna tidak ditemukan. Silakan hubungi admin untuk mendaftarkan profil Anda.",
-        variant: "destructive"
-      });
-      await supabase.auth.signOut();
-      return;
-    }
-    
-    if (profiles.length > 1) {
-        console.warn(`Peringatan: Ditemukan duplikat profil untuk user ID ${authData.user.id}. Menggunakan profil pertama.`)
-    }
-
-    const profile = profiles[0];
 
     if (profile.role === 'admin') {
       toast({
@@ -113,6 +94,13 @@ export default function LoginPage() {
           <CardDescription>Sistem Izin Siaga dan Berhalangan</CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Login Gagal</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           <form className="space-y-4" onSubmit={handleLogin}>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
