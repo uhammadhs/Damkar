@@ -6,40 +6,44 @@ import { format } from "date-fns";
 
 export default async function AdminDashboardPage() {
     const supabase = createClient();
+    let totalMembers = 0;
+    let monthlyRequests = 0;
+    let approvedRequests = 0;
     
-    // Fetch total members
-    const { count: totalMembers, error: membersError } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('role', 'anggota');
+    try {
+        const { count: membersCount, error: membersError } = await supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('role', 'anggota');
+        if (membersError) throw membersError;
+        totalMembers = membersCount || 0;
 
-    // Fetch leave requests this month
-    const today = new Date();
-    const firstDayOfMonth = format(new Date(today.getFullYear(), today.getMonth(), 1), 'yyyy-MM-dd');
-    const { count: monthlyRequests, error: requestsError } = await supabase
-        .from('leave_requests')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', firstDayOfMonth);
+        const today = new Date();
+        const firstDayOfMonth = format(new Date(today.getFullYear(), today.getMonth(), 1), 'yyyy-MM-dd');
+        
+        const { count: monthlyCount, error: requestsError } = await supabase
+            .from('leave_requests')
+            .select('*', { count: 'exact', head: true })
+            .gte('created_at', firstDayOfMonth);
+        if (requestsError) throw requestsError;
+        monthlyRequests = monthlyCount || 0;
+        
+        const { count: approvedCount, error: approvedError } = await supabase
+            .from('leave_requests')
+            .select('*', { count: 'exact', head: true })
+            .gte('created_at', firstDayOfMonth)
+            .eq('status', 'Disetujui');
+        if (approvedError) throw approvedError;
+        approvedRequests = approvedCount || 0;
 
-    // Fetch approved leave requests this month
-    const { count: approvedRequests, error: approvedError } = await supabase
-        .from('leave_requests')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', firstDayOfMonth)
-        .eq('status', 'Disetujui');
-
-    if (membersError) console.error("Error fetching members count:", membersError);
-    if (requestsError) console.error("Error fetching requests count:", requestsError);
-    if (approvedError) console.error("Error fetching approved requests count:", approvedError);
-
-    // Calculate presence rate (this is a simplified example)
-    const presenceRate = monthlyRequests && approvedRequests != null ? 
-        (((monthlyRequests - approvedRequests) / monthlyRequests) * 100).toFixed(0) + '%' : 'N/A';
+    } catch(error) {
+        console.error("Error fetching admin dashboard stats:", error);
+    }
     
     const stats = [
-        { title: "Total Anggota", value: totalMembers ?? 0, icon: Users },
-        { title: "Pengajuan Cuti (Bulan Ini)", value: monthlyRequests ?? 0, icon: BookCopy },
-        { title: "Pengajuan Disetujui", value: approvedRequests ?? 0, icon: CheckCircle },
+        { title: "Total Anggota", value: totalMembers, icon: Users },
+        { title: "Pengajuan Cuti (Bulan Ini)", value: monthlyRequests, icon: BookCopy },
+        { title: "Pengajuan Disetujui", value: approvedRequests, icon: CheckCircle },
     ];
 
     return (

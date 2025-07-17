@@ -26,68 +26,66 @@ export default function LoginPage() {
     event.preventDefault();
     setError(null);
     setIsLoading(true);
-    
-    const formData = new FormData(event.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
 
-    if (!email || !password) {
-      setError("Email dan password harus diisi.");
-      setIsLoading(false);
-      return;
-    }
+    try {
+      const formData = new FormData(event.currentTarget);
+      const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
 
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+      if (!email || !password) {
+        throw new Error("Email dan password harus diisi.");
+      }
 
-    if (authError || !authData.user) {
-      setError(authError?.message || "Email atau password salah. Periksa kembali.");
-      setIsLoading(false);
-      return;
-    }
-    
-    const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', authData.user.id);
-    
-    if (profileError) {
-       setError(`Gagal memuat data profil. Silakan hubungi admin. (Error: ${profileError.message})`);
-       setIsLoading(false);
-       return;
-    }
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (!profiles || profiles.length === 0) {
-        setError("Profil pengguna tidak ditemukan. Silakan hubungi admin untuk mendaftarkan profil Anda.");
+      if (authError || !authData.user) {
+        throw new Error(authError?.message || "Email atau password salah. Periksa kembali.");
+      }
+      
+      const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authData.user.id);
+      
+      if (profileError) {
+        throw new Error(`Gagal memuat data profil. (Error: ${profileError.message})`);
+      }
+
+      if (!profiles || profiles.length === 0) {
+        throw new Error("Profil pengguna tidak ditemukan. Silakan hubungi admin untuk mendaftarkan profil Anda.");
+      }
+      
+      const profile = profiles[0];
+
+      if (profile && profile.role === 'admin') {
+        toast({
+          title: "Login Berhasil",
+          description: "Selamat datang, Admin!",
+        });
+        router.push('/admin/dashboard');
+      } else {
+        toast({
+          title: "Login Berhasil",
+          description: `Selamat datang!`,
+        });
+        router.push('/dashboard');
+      }
+      
+      router.refresh();
+
+    } catch (e: any) {
+        setError(e.message);
+        toast({
+            title: "Login Gagal",
+            description: e.message,
+            variant: "destructive",
+        });
+    } finally {
         setIsLoading(false);
-        return;
     }
-    
-    // If multiple profiles are found, take the first one and log a warning.
-    if (profiles.length > 1) {
-        console.warn(`Peringatan: Ditemukan ${profiles.length} profil untuk pengguna ID ${authData.user.id}. Menggunakan profil pertama.`);
-    }
-
-    const profile = profiles[0];
-
-    // Handle case where profile exists but role might be null
-    if (profile && profile.role === 'admin') {
-      toast({
-        title: "Login Berhasil",
-        description: "Selamat datang, Admin!",
-      });
-      router.push('/admin/dashboard');
-    } else {
-      toast({
-        title: "Login Berhasil",
-        description: `Selamat datang!`,
-      });
-      router.push('/dashboard');
-    }
-    
-    router.refresh();
   };
 
   return (

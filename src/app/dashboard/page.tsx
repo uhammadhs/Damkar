@@ -28,32 +28,43 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return <div>Pengguna tidak ditemukan.</div>;
+    return <div>Pengguna tidak ditemukan. Silakan login kembali.</div>;
   }
 
-  // Ambil jatah cuti untuk tahun ini
-  const currentYear = new Date().getFullYear();
-  const { data: leaveBalance, error: balanceError } = await supabase
-    .from('leave_balances')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('year', currentYear)
-    .single();
+  let leaveBalance = null;
+  let recentLeaveRequests = [];
 
-  // Ambil 3 pengajuan cuti terakhir
-  const { data: recentLeaveRequests, error: requestsError } = await supabase
-    .from('leave_requests')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(3);
+  try {
+      const currentYear = new Date().getFullYear();
+      const { data: balanceData, error: balanceError } = await supabase
+        .from('leave_balances')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('year', currentYear)
+        .single();
+      
+      if (balanceError && balanceError.code !== 'PGRST116') { // Ignore 'no rows' error
+          throw balanceError;
+      }
+      leaveBalance = balanceData;
 
-  if (balanceError) {
-    console.error("Error fetching leave balance:", balanceError);
+      const { data: requestsData, error: requestsError } = await supabase
+        .from('leave_requests')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (requestsError) {
+          throw requestsError;
+      }
+      recentLeaveRequests = requestsData || [];
+
+  } catch (error) {
+      console.error("Dashboard data fetching error:", error);
+      // We can still render the page with default values
   }
-  if (requestsError) {
-    console.error("Error fetching recent requests:", requestsError);
-  }
+
 
   const totalCuti = leaveBalance?.total_days || 12;
   const cutiTerpakai = leaveBalance?.used_days || 0;
@@ -73,7 +84,7 @@ export default async function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="font-headline">Sisa Cuti Anda ({currentYear})</CardTitle>
+            <CardTitle className="font-headline">Sisa Cuti Anda ({new Date().getFullYear()})</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-6 sm:grid-cols-2">
             <div className="flex items-center justify-center">
