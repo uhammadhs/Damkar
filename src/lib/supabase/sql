@@ -1,102 +1,160 @@
--- This script can be used to set up the database schema for the SIAP CUTI application.
--- For a fresh Supabase project, you can run this entire script in the SQL Editor.
+-- Buat tabel untuk profil pengguna
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT UNIQUE,
+  name TEXT,
+  nip TEXT,
+  pangkat TEXT,
+  golongan TEXT,
+  jabatan TEXT,
+  satuanKerja TEXT,
+  avatar_url TEXT,
+  role TEXT DEFAULT 'anggota',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
---
--- 1. Enable Row Level Security (RLS) for the 'profiles' table.
---
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+-- Buat tabel untuk jenis cuti
+CREATE TABLE leave_types (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT
+);
 
---
--- 2. Create Policies for the 'profiles' table.
---    These policies control who can access and modify the data.
---
+-- Buat tabel untuk pengajuan cuti
+CREATE TABLE leave_requests (
+  id SERIAL PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  leave_type_id INTEGER REFERENCES leave_types(id),
+  title TEXT NOT NULL,
+  reason TEXT,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  duration INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'Menunggu', -- Menunggu, Disetujui, Ditolak
+  attachment_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
--- POLICY 1: Allow authenticated users to see any profile.
--- This is generally safe as profiles usually don't contain highly sensitive data.
-CREATE POLICY "Allow authenticated users to select any profile"
-  ON public.profiles FOR SELECT
-  USING (auth.role() = 'authenticated');
+-- Buat tabel untuk jatah cuti tahunan
+CREATE TABLE leave_balances (
+  id SERIAL PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  year INTEGER NOT NULL,
+  total_days INTEGER NOT NULL DEFAULT 12,
+  used_days INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(user_id, year)
+);
 
+-- Isi data awal untuk jenis cuti
+INSERT INTO leave_types (name, description) VALUES
+('Cuti Tahunan', 'Hak cuti tahunan untuk pegawai'),
+('Cuti Sakit', 'Izin tidak masuk karena sakit, memerlukan surat dokter jika lebih dari 2 hari'),
+('Cuti Alasan Penting', 'Izin untuk keperluan mendesak seperti keluarga sakit keras atau meninggal'),
+('Cuti Melahirkan', 'Cuti untuk persalinan'),
+('Cuti Besar', 'Cuti untuk pegawai yang telah mengabdi dalam jangka waktu tertentu');
 
--- POLICY 2: Allow users to insert a profile ONLY for themselves.
--- The user's ID must match the ID being inserted. This is crucial for new user sign-ups.
-CREATE POLICY "Allow authenticated users to insert their own profile"
-  ON public.profiles FOR INSERT
-  WITH CHECK (auth.uid() = id);
-
-
--- POLICY 3: Allow users to update their own profile.
-CREATE POLICY "Allow users to update their own profile"
-  ON public.profiles FOR UPDATE
-  USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id);
-
-
--- POLICY 4: Allow admins to manage (update/delete) all profiles.
--- This uses a helper function `get_user_role()` to avoid recursive checks.
-CREATE POLICY "Allow admin to manage all profiles"
-  ON public.profiles FOR ALL
-  USING (public.get_user_role() = 'admin')
-  WITH CHECK (public.get_user_role() = 'admin');
-
-
---
--- 3. Create a helper function to get the user's role.
---    This function is used in RLS policies to safely check a user's role
---    without causing an infinite recursion error.
---
-CREATE OR REPLACE FUNCTION public.get_user_role()
-RETURNS TEXT
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RETURN NULL;
-  ELSE
-    RETURN (
-      SELECT role
-      FROM public.profiles
-      WHERE id = auth.uid()
-      LIMIT 1
-    );
-  END IF;
-END;
-$$;
-
-
---
--- 4. Create a trigger function to automatically create a profile for new users.
---    When a new user signs up via Supabase Auth, this function is triggered
---    to create a corresponding entry in the 'profiles' table.
---
+-- Fungsi untuk menangani pengguna baru
+-- Memasukkan data ke tabel profiles dan leave_balances
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
+SECURITY DEFINER SET search_path = public
 AS $$
 BEGIN
+  -- Insert into profiles
   INSERT INTO public.profiles (id, email, name, role)
-  VALUES (new.id, new.email, new.raw_user_meta_data ->> 'name', 'anggota');
+  VALUES (
+    new.id, 
+    new.email, 
+    -- Gunakan nama dari metadata, atau ambil dari email jika tidak ada
+    COALESCE(new.raw_user_meta_data->>'name', SPLIT_PART(new.email, '@', 1)), 
+    'anggota'
+  );
+  
+  -- Insert into leave_balances for the current year
+  INSERT INTO public.leave_balances (user_id, year, total_days, used_days)
+  VALUES (new.id, EXTRACT(YEAR FROM NOW()), 12, 0);
+  
   RETURN new;
 END;
 $$;
 
 
---
--- 5. Create the trigger on the 'auth.users' table.
---    This connects the `handle_new_user` function to the user creation event.
---
-CREATE OR REPLACE TRIGGER on_auth_user_created
+-- Trigger untuk fungsi handle_new_user setiap kali user baru dibuat
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
+-- Fungsi untuk mendapatkan peran pengguna
+CREATE OR REPLACE FUNCTION get_user_role()
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER -- Penting agar bisa mengakses tabel profiles
+AS $$
+DECLARE
+  user_role TEXT;
+BEGIN
+  SELECT role INTO user_role FROM public.profiles WHERE id = auth.uid();
+  RETURN user_role;
+END;
+$$;
 
---
--- Final check: Ensure the function and trigger are owned by the correct roles.
--- This is usually handled by Supabase, but good to be aware of.
---
--- GRANT EXECUTE ON FUNCTION public.get_user_role() TO authenticated;
--- GRANT EXECUTE ON FUNCTION public.handle_new_user() TO supabase_auth_admin;
+
+-- Fungsi RPC untuk mengupdate saldo cuti secara atomik
+CREATE OR REPLACE FUNCTION update_leave_balance(p_user_id UUID, p_year INTEGER, p_days_to_add INTEGER)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE leave_balances
+    SET used_days = used_days + p_days_to_add
+    WHERE user_id = p_user_id AND year = p_year;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Set up Row Level Security (RLS)
+
+-- PROFILES
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow authenticated users to select any profile" ON public.profiles;
+CREATE POLICY "Allow authenticated users to select any profile" ON public.profiles
+  FOR SELECT USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Allow users to insert their own profile" ON public.profiles;
+CREATE POLICY "Allow users to insert their own profile" ON public.profiles
+  FOR INSERT WITH CHECK (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Allow users to update their own profile" ON public.profiles;
+CREATE POLICY "Allow users to update their own profile" ON public.profiles
+  FOR UPDATE USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Admins can manage all profiles" ON public.profiles;
+CREATE POLICY "Admins can manage all profiles" ON public.profiles
+  FOR ALL USING (get_user_role() = 'admin');
+
+-- LEAVE TYPES
+ALTER TABLE leave_types ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow authenticated users to read leave types" ON public.leave_types;
+CREATE POLICY "Allow authenticated users to read leave types" ON public.leave_types
+  FOR SELECT USING (auth.role() = 'authenticated');
+
+-- LEAVE REQUESTS
+ALTER TABLE leave_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage their own leave requests" ON public.leave_requests;
+CREATE POLICY "Users can manage their own leave requests" ON public.leave_requests
+  FOR ALL USING (auth.uid() = user_id);
+  
+DROP POLICY IF EXISTS "Admins can manage all leave requests" ON public.leave_requests;
+CREATE POLICY "Admins can manage all leave requests" ON public.leave_requests
+  FOR ALL USING (get_user_role() = 'admin');
+
+-- LEAVE BALANCES
+ALTER TABLE leave_balances ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can read their own leave balance" ON public.leave_balances;
+CREATE POLICY "Users can read their own leave balance" ON public.leave_balances
+  FOR SELECT USING (auth.uid() = user_id);
+  
+DROP POLICY IF EXISTS "Admins can manage all leave balances" ON public.leave_balances;
+CREATE POLICY "Admins can manage all leave balances" ON public.leave_balances
+  FOR ALL USING (get_user_role() = 'admin');
