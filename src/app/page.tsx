@@ -40,7 +40,7 @@ export default function LoginPage() {
 
     if (authError || !authData.user) {
       console.error('Login error details:', authError);
-      setError(authError?.message || "Email atau password salah. Periksa kembali.");
+      setError("Email atau password salah. Periksa kembali.");
       return;
     }
     
