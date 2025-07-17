@@ -27,67 +27,62 @@ export default function LoginPage() {
     setError(null);
     setIsLoading(true);
 
-    const formData = new FormData(event.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    try {
+      const formData = new FormData(event.currentTarget);
+      const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
 
-    // 1. Sign in with Supabase
-    const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+      // 1. Sign in with Supabase
+      const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (authError || !user) {
-      setError(authError?.message || "Email atau password salah. Periksa kembali.");
+      if (authError || !user) {
+        throw new Error("Email atau password salah. Periksa kembali.");
+      }
+
+      // 2. Fetch the user's profile to determine their role
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile) {
+        // This can happen if RLS is wrong or profile doesn't exist
+        await supabase.auth.signOut(); // Log out to prevent broken state
+        throw new Error("Profil pengguna tidak ditemukan. Silakan hubungi admin.");
+      }
+
+      // 3. Redirect based on role
+      if (profile.role === 'admin') {
+        toast({
+          title: "Login Berhasil",
+          description: "Selamat datang, Admin!",
+        });
+        router.push('/admin/dashboard');
+      } else {
+        toast({
+          title: "Login Berhasil",
+          description: `Selamat datang!`,
+        });
+        router.push('/dashboard');
+      }
+      
+      // router.refresh() is implicitly handled by router.push() in App Router
+      // No need to manually call it or setIsLoading(false) on success, as the page will unmount.
+
+    } catch (err: any) {
+      const errorMessage = err.message || "Terjadi kesalahan saat login.";
+      setError(errorMessage);
       toast({
         title: "Login Gagal",
-        description: authError?.message || "Email atau password salah. Periksa kembali.",
+        description: errorMessage,
         variant: "destructive",
       });
-      setIsLoading(false);
-      return;
+      setIsLoading(false); // Ensure loading is stopped on error
     }
-
-    // 2. Fetch the user's profile to determine their role
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-       setError("Profil pengguna tidak ditemukan. Silakan hubungi admin.");
-       toast({
-         title: "Login Gagal",
-         description: "Profil pengguna tidak ditemukan. Silakan hubungi admin.",
-         variant: "destructive",
-       });
-       setIsLoading(false);
-       // Also sign out the user if their profile is missing to prevent a broken state
-       await supabase.auth.signOut();
-       return;
-    }
-
-    // 3. Refresh the router to ensure the new session is picked up by server components
-    router.refresh();
-
-    // 4. Redirect based on role
-    if (profile.role === 'admin') {
-      toast({
-        title: "Login Berhasil",
-        description: "Selamat datang, Admin!",
-      });
-      router.push('/admin/dashboard');
-    } else {
-      toast({
-        title: "Login Berhasil",
-        description: `Selamat datang!`,
-      });
-      router.push('/dashboard');
-    }
-    
-    // We don't call setIsLoading(false) here because the page will navigate away.
-    // If navigation fails for some reason, the user can refresh.
   };
 
   return (
