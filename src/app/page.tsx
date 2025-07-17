@@ -73,8 +73,6 @@ export default function LoginPage() {
         });
         router.push('/dashboard');
       }
-      
-      router.refresh();
 
     } catch (e: any) {
         setError(e.message);
