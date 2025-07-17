@@ -1,14 +1,30 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, BookCopy, BarChart, CheckCircle } from "lucide-react";
-import { format } from "date-fns";
+import { Users, BookCopy, BarChart, CheckCircle, ArrowRight } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
+import { id } from "date-fns/locale";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import type { Database } from "@/types/supabase";
+
+type RecentRequest = {
+    id: number;
+    title: string;
+    created_at: string;
+    profiles: {
+        name: string | null;
+        avatar_url: string | null;
+    } | null;
+};
 
 export default async function AdminDashboardPage() {
     const supabase = createClient();
     let totalMembers = 0;
     let monthlyRequests = 0;
     let approvedRequests = 0;
+    let recentRequests: RecentRequest[] = [];
     
     try {
         const { count: membersCount, error: membersError } = await supabase
@@ -36,6 +52,21 @@ export default async function AdminDashboardPage() {
         if (approvedError) throw approvedError;
         approvedRequests = approvedCount || 0;
 
+        const { data: recentRequestsData, error: recentRequestsError } = await supabase
+            .from('leave_requests')
+            .select(`
+                id,
+                title,
+                created_at,
+                profiles (name, avatar_url)
+            `)
+            .eq('status', 'Menunggu')
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        if (recentRequestsError) throw recentRequestsError;
+        recentRequests = recentRequestsData as RecentRequest[];
+
     } catch(error) {
         console.error("Error fetching admin dashboard stats:", error);
     }
@@ -45,6 +76,15 @@ export default async function AdminDashboardPage() {
         { title: "Pengajuan Cuti (Bulan Ini)", value: monthlyRequests, icon: BookCopy },
         { title: "Pengajuan Disetujui", value: approvedRequests, icon: CheckCircle },
     ];
+
+    const getAvatarFallback = (name: string | null) => {
+        if (!name) return "??";
+        const parts = name.split(" ");
+        if (parts.length > 1) {
+          return (parts[0][0] + parts[1][0]).toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
+    };
 
     return (
         <div className="space-y-6">
@@ -68,7 +108,38 @@ export default async function AdminDashboardPage() {
                     <CardDescription>Menampilkan pengajuan cuti terbaru yang menunggu persetujuan.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <p>Konten aktivitas terkini akan ditampilkan di sini, seperti daftar pengajuan yang menunggu persetujuan.</p>
+                    {recentRequests.length > 0 ? (
+                        <div className="space-y-4">
+                            {recentRequests.map((request) => (
+                                <div key={request.id} className="flex items-center gap-4">
+                                    <Avatar className="h-10 w-10">
+                                        <AvatarImage src={request.profiles?.avatar_url || undefined} data-ai-hint="male portrait" />
+                                        <AvatarFallback>{getAvatarFallback(request.profiles?.name || null)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium">
+                                            <span className="font-semibold">{request.profiles?.name || 'Anggota'}</span> mengajukan <span className="font-semibold">"{request.title}"</span>
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {formatDistanceToNow(new Date(request.created_at), { addSuffix: true, locale: id })}
+                                        </p>
+                                    </div>
+                                    <Button asChild variant="outline" size="sm">
+                                        <Link href="/admin/manajemen-cuti">
+                                            Lihat
+                                            <ArrowRight className="ml-2 h-4 w-4" />
+                                        </Link>
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center text-muted-foreground py-6">
+                            <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
+                            <p className="mt-4">Semua pengajuan sudah diproses.</p>
+                            <p className="text-sm">Tidak ada aktivitas yang menunggu persetujuan saat ini.</p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>
