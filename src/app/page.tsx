@@ -48,24 +48,37 @@ export default function LoginPage() {
       return;
     }
     
-    // Check for user role from profiles table
-    // Use .limit(1).single() to handle potential duplicate profiles and prevent errors.
-    const { data: profile, error: profileError } = await supabase
+    // Fetch profile with more robust error handling
+    const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', authData.user.id)
-        .limit(1) 
-        .single();
     
-    if (profileError || !profile) {
+    if (profileError) {
        toast({
         title: "Login Gagal",
-        description: `Tidak dapat memuat data profil. Silakan hubungi admin. (Error: ${profileError?.message})`,
+        description: `Gagal memuat data profil. Silakan hubungi admin. (Error: ${profileError.message})`,
         variant: "destructive"
       });
       await supabase.auth.signOut();
       return;
     }
+
+    if (!profiles || profiles.length === 0) {
+      toast({
+        title: "Login Gagal",
+        description: "Profil pengguna tidak ditemukan. Silakan hubungi admin untuk mendaftarkan profil Anda.",
+        variant: "destructive"
+      });
+      await supabase.auth.signOut();
+      return;
+    }
+    
+    if (profiles.length > 1) {
+        console.warn(`Peringatan: Ditemukan duplikat profil untuk user ID ${authData.user.id}. Menggunakan profil pertama.`)
+    }
+
+    const profile = profiles[0];
 
     if (profile.role === 'admin') {
       toast({
