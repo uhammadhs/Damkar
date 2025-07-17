@@ -13,23 +13,27 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const supabase = createClient();
   const [error, setError] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    setIsLoading(true);
+    
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
     if (!email || !password) {
       setError("Email dan password harus diisi.");
+      setIsLoading(false);
       return;
     }
 
@@ -41,6 +45,7 @@ export default function LoginPage() {
     if (authError || !authData.user) {
       console.error('Login error details:', authError);
       setError("Email atau password salah. Periksa kembali.");
+      setIsLoading(false);
       return;
     }
     
@@ -58,6 +63,7 @@ export default function LoginPage() {
          setError(`Gagal memuat data profil. Silakan hubungi admin. (Error: ${profileError?.message})`);
       }
       await supabase.auth.signOut();
+      setIsLoading(false);
       return;
     }
 
@@ -75,6 +81,7 @@ export default function LoginPage() {
       router.push('/dashboard');
     }
     router.refresh();
+    // Don't setIsLoading(false) here on success because the page will navigate away
   };
 
   return (
@@ -104,14 +111,15 @@ export default function LoginPage() {
           <form className="space-y-4" onSubmit={handleLogin}>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" placeholder="contoh@email.com" required type="email" />
+              <Input id="email" name="email" placeholder="contoh@email.com" required type="email" disabled={isLoading} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" required type="password" placeholder="••••••••" />
+              <Input id="password" name="password" required type="password" placeholder="••••••••" disabled={isLoading} />
             </div>
-            <Button className="w-full" type="submit">
-              Login
+            <Button className="w-full" type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading ? "Memproses..." : "Login"}
             </Button>
             <div className="relative my-2">
                 <Separator />
