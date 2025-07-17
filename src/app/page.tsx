@@ -27,60 +27,73 @@ export default function LoginPage() {
     setError(null);
     setIsLoading(true);
 
-    const formData = new FormData(event.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-
-    // 1. Sign in with Supabase
-    const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (authError || !user) {
-      const errorMessage = "Email atau password salah. Periksa kembali.";
-      setError(errorMessage);
-      toast({
-        title: "Login Gagal",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    // 2. Fetch the user's profile to determine their role in a robust way
     try {
+      const formData = new FormData(event.currentTarget);
+      const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
+
+      // 1. Sign in with Supabase
+      const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError || !user) {
+        throw new Error("Email atau password salah. Periksa kembali.");
+      }
+
+      // 2. Fetch the user's profile to determine their role.
+      // This is a critical step.
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle to not error if profile doesn't exist yet
 
-      if (profileError || !profile) {
-        // This can happen if RLS is wrong or profile doesn't exist
-        await supabase.auth.signOut(); // Log out to prevent broken state
-        throw new Error("Profil pengguna tidak ditemukan. Silakan hubungi admin.");
+      if (profileError) {
+        throw new Error("Terjadi kesalahan saat mengambil data profil.");
+      }
+      
+      let userRole = profile?.role;
+
+      // 3. Self-healing: If profile doesn't exist, create one.
+      // This ensures every logged-in user has a profile.
+      if (!profile) {
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert({ 
+            id: user.id, 
+            email: user.email, 
+            name: user.user_metadata?.name || user.email?.split('@')[0],
+            role: 'anggota' // Default role for new/healed profiles
+          })
+          .select('role')
+          .single();
+        
+        if (insertError || !newProfile) {
+          throw new Error("Gagal membuat profil untuk pengguna baru. Hubungi admin.");
+        }
+        userRole = newProfile.role;
       }
 
-      // 3. Redirect based on role
-      if (profile.role === 'admin') {
+      // 4. Redirect based on role
+      if (userRole === 'admin') {
         toast({
           title: "Login Berhasil",
-          description: "Selamat datang, Admin!",
+          description: "Selamat datang, Admin! Mengarahkan ke dasbor...",
         });
         router.push('/admin/dashboard');
       } else {
         toast({
           title: "Login Berhasil",
-          description: `Selamat datang!`,
+          description: `Selamat datang! Mengarahkan ke dasbor...`,
         });
         router.push('/dashboard');
       }
-      // No need to set isLoading to false here, as the page will unmount on successful navigation.
+       // router.refresh() is implicitly handled by router.push in Next.js 13+ App Router
 
     } catch (err: any) {
-      const errorMessage = err.message || "Terjadi kesalahan saat memproses profil.";
+      const errorMessage = err.message || "Terjadi kesalahan yang tidak diketahui.";
       setError(errorMessage);
       toast({
         title: "Login Gagal",
