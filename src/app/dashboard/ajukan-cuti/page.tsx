@@ -3,7 +3,8 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { Calendar as CalendarIcon, Upload } from "lucide-react"
+import { useFormState, useFormStatus } from 'react-dom';
+import { Calendar as CalendarIcon, Upload, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import type { DateRange } from "react-day-picker"
 import { id } from 'date-fns/locale'
@@ -17,7 +18,17 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { submitLeaveRequest } from "./actions"
+import { submitLeaveRequest, type FormState } from "./actions"
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {pending ? "Mengirim..." : "Kirim Pengajuan"}
+        </Button>
+    )
+}
 
 export default function AjukanCutiPage() {
     const router = useRouter();
@@ -27,29 +38,25 @@ export default function AjukanCutiPage() {
     const [fileName, setFileName] = React.useState<string | null>(null);
     const formRef = React.useRef<HTMLFormElement>(null);
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        
-        const formData = new FormData(event.currentTarget);
-        if (date?.from) formData.set('start_date', format(date.from, 'yyyy-MM-dd'));
-        if (date?.to) formData.set('end_date', format(date.to, 'yyyy-MM-dd'));
+    const initialState: FormState = { success: false, message: "" };
+    const [state, formAction] = useFormState(submitLeaveRequest, initialState);
 
-        const result = await submitLeaveRequest(formData);
-
-        if (result.success) {
+    React.useEffect(() => {
+        if (state.success) {
             toast({
                 title: "Pengajuan Terkirim",
-                description: result.message,
+                description: state.message,
             });
             router.push("/dashboard/riwayat");
-        } else {
-             toast({
+        } else if (state.message && !state.errors) {
+            // Show general errors (like insufficient leave) in a toast
+            toast({
                 title: "Pengajuan Gagal",
-                description: result.message,
+                description: state.message,
                 variant: "destructive",
             });
         }
-    }
+    }, [state, router, toast]);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files.length > 0) {
@@ -59,9 +66,15 @@ export default function AjukanCutiPage() {
         }
     };
 
+    const dateError = state.errors?.start_date?.[0] || state.errors?.end_date?.[0];
+
     return (
         <Card>
-            <form ref={formRef} onSubmit={handleSubmit}>
+            <form ref={formRef} action={formAction}>
+                 {/* Hidden inputs to pass date range to server action */}
+                <input type="hidden" name="start_date" value={date?.from ? format(date.from, 'yyyy-MM-dd') : ''} />
+                <input type="hidden" name="end_date" value={date?.to ? format(date.to, 'yyyy-MM-dd') : ''} />
+
                 <CardHeader>
                     <CardTitle className="font-headline">Formulir Pengajuan Cuti</CardTitle>
                     <CardDescription>
@@ -70,7 +83,7 @@ export default function AjukanCutiPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
-                        <Label htmlFor="leave-dates">Tanggal Cuti</Label>
+                        <Label htmlFor="leave-dates" className={cn(dateError && "text-destructive")}>Tanggal Cuti</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
@@ -78,7 +91,8 @@ export default function AjukanCutiPage() {
                                     variant={"outline"}
                                     className={cn(
                                         "w-full justify-start text-left font-normal",
-                                        !date && "text-muted-foreground"
+                                        !date && "text-muted-foreground",
+                                        dateError && "border-destructive text-destructive"
                                     )}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -108,16 +122,19 @@ export default function AjukanCutiPage() {
                                 />
                             </PopoverContent>
                         </Popover>
+                         {dateError && <p className="text-sm font-medium text-destructive">{dateError}</p>}
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="title">Judul Pengajuan</Label>
-                        <Input name="title" id="title" placeholder="Contoh: Cuti Tahunan Keluarga" required />
+                        <Label htmlFor="title" className={cn(state.errors?.title && "text-destructive")}>Judul Pengajuan</Label>
+                        <Input name="title" id="title" placeholder="Contoh: Cuti Tahunan Keluarga" required className={cn(state.errors?.title && "border-destructive")} />
+                        {state.errors?.title && <p className="text-sm font-medium text-destructive">{state.errors.title[0]}</p>}
                     </div>
                    
                     <div className="space-y-2">
-                        <Label htmlFor="reason">Alasan Cuti</Label>
-                        <Textarea name="reason" id="reason" placeholder="Jelaskan alasan Anda mengajukan cuti..." required />
+                        <Label htmlFor="reason" className={cn(state.errors?.reason && "text-destructive")}>Alasan Cuti</Label>
+                        <Textarea name="reason" id="reason" placeholder="Jelaskan alasan Anda mengajukan cuti..." required className={cn(state.errors?.reason && "border-destructive")} />
+                        {state.errors?.reason && <p className="text-sm font-medium text-destructive">{state.errors.reason[0]}</p>}
                     </div>
 
                     <div className="space-y-2">
@@ -142,7 +159,7 @@ export default function AjukanCutiPage() {
                 </CardContent>
                 <CardFooter className="flex justify-end gap-2">
                     <Button type="button" variant="ghost" onClick={() => router.back()}>Batal</Button>
-                    <Button type="submit">Kirim Pengajuan</Button>
+                    <SubmitButton />
                 </CardFooter>
             </form>
         </Card>

@@ -7,13 +7,27 @@ import { z } from 'zod'
 import { differenceInDays } from 'date-fns'
 
 const LeaveRequestSchema = z.object({
-  start_date: z.string().min(1, 'Tanggal mulai harus diisi'),
-  end_date: z.string().min(1, 'Tanggal selesai harus diisi'),
-  title: z.string().min(3, 'Judul pengajuan harus diisi'),
-  reason: z.string().min(10, 'Alasan harus diisi minimal 10 karakter'),
+  start_date: z.string({ required_error: 'Tanggal mulai dan selesai harus diisi.' }).min(1, 'Tanggal mulai dan selesai harus diisi.'),
+  end_date: z.string({ required_error: 'Tanggal mulai dan selesai harus diisi.' }).min(1, 'Tanggal mulai dan selesai harus diisi.'),
+  title: z.string().min(3, 'Judul pengajuan minimal 3 karakter.'),
+  reason: z.string().min(10, 'Alasan harus diisi minimal 10 karakter.'),
 })
 
-export async function submitLeaveRequest(formData: FormData) {
+// Define a type for the structured error response
+export type FormErrors = {
+    start_date?: string[];
+    end_date?: string[];
+    title?: string[];
+    reason?: string[];
+};
+
+export type FormState = {
+    success: boolean;
+    message: string;
+    errors?: FormErrors;
+}
+
+export async function submitLeaveRequest(prevState: FormState | undefined, formData: FormData): Promise<FormState> {
   const supabase = createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -34,7 +48,7 @@ export async function submitLeaveRequest(formData: FormData) {
   if (!validation.success) {
     return {
       success: false,
-      message: 'Data tidak valid.',
+      message: 'Data tidak valid. Silakan periksa kembali isian Anda.',
       errors: validation.error.flatten().fieldErrors,
     }
   }
@@ -61,7 +75,7 @@ export async function submitLeaveRequest(formData: FormData) {
       .single();
   
   if (balanceError || !leaveBalance) {
-      return { success: false, message: 'Gagal mengambil data jatah cuti.' };
+      return { success: false, message: 'Gagal mengambil data jatah cuti. Pastikan data cuti Anda untuk tahun ini sudah diatur oleh admin.' };
   }
 
   const remainingDays = leaveBalance.total_days - leaveBalance.used_days;
@@ -85,5 +99,6 @@ export async function submitLeaveRequest(formData: FormData) {
 
   revalidatePath('/dashboard')
   revalidatePath('/dashboard/riwayat')
+  // We can't redirect from here, but the success status will be used by the client to redirect.
   return { success: true, message: 'Pengajuan cuti berhasil dikirim.' }
 }
