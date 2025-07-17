@@ -55,42 +55,17 @@ export default function LoginPage() {
         .eq('id', authData.user.id)
         .single();
     
-    // This is a recovery mechanism. If a user exists in auth but not in profiles,
-    // create a profile for them. This might happen if the signup trigger fails.
-    if (profileError && profileError.code === 'PGRST116') { // PGRST116 = "The result contains 0 rows"
-      const { data: newProfile, error: insertError } = await supabase
-        .from('profiles')
-        .insert({ id: authData.user.id, email: authData.user.email, role: 'anggota' })
-        .select('role')
-        .single();
-      
-      if (insertError) {
-         toast({
-            title: "Login Gagal",
-            description: "Gagal membuat data profil. Hubungi admin.",
-            variant: "destructive"
-        });
-        await supabase.auth.signOut();
-        return;
-      }
-      // Continue login with the newly created profile
-      if (newProfile.role === 'admin') {
-         router.push('/admin/dashboard');
-      } else {
-         router.push('/dashboard');
-      }
-      router.refresh();
-      return;
-    } else if (profileError) {
+    // If the profile doesn't exist or there's an error fetching it,
+    // it indicates a data inconsistency issue. The user is authenticated but has no profile.
+    if (profileError || !profile) {
        toast({
         title: "Login Gagal",
-        description: `Tidak dapat mengambil data profil: ${profileError.message}`,
+        description: `Tidak dapat memuat data profil. Silakan hubungi admin. (Error: ${profileError?.message})`,
         variant: "destructive"
       });
       await supabase.auth.signOut();
       return;
     }
-
 
     if (profile.role === 'admin') {
       toast({
