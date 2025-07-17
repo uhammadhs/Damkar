@@ -48,7 +48,7 @@ export default function LoginPage() {
       return;
     }
     
-    // Fetch profile with a more robust method, avoiding .single()
+    // Fetch profile with a more robust method
     const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('role')
@@ -89,9 +89,6 @@ export default function LoginPage() {
       router.push('/dashboard');
     }
     
-    // No need to call setIsLoading(false) on success, as navigation will occur.
-    // However, it's good practice to have it here in case navigation hangs for any reason.
-    // For this app, router.push is followed by a refresh, so we can omit it.
     router.refresh();
   };
 
