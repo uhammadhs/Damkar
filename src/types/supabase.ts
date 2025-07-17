@@ -49,7 +49,6 @@ export type Database = {
           duration: number
           end_date: string
           id: number
-          leave_type_id: number
           reason: string | null
           start_date: string
           status: string
@@ -63,7 +62,6 @@ export type Database = {
           duration: number
           end_date: string
           id?: number
-          leave_type_id: number
           reason?: string | null
           start_date: string
           status?: string
@@ -77,7 +75,6 @@ export type Database = {
           duration?: number
           end_date?: string
           id?: number
-          leave_type_id?: number
           reason?: string | null
           start_date?: string
           status?: string
@@ -87,13 +84,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "leave_requests_leave_type_id_fkey"
-            columns: ["leave_type_id"]
-            isOneToOne: false
-            referencedRelation: "leave_types"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "leave_requests_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -101,24 +91,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      leave_types: {
-        Row: {
-          description: string | null
-          id: number
-          name: string
-        }
-        Insert: {
-          description?: string | null
-          id?: number
-          name: string
-        }
-        Update: {
-          description?: string | null
-          id?: number
-          name?: string
-        }
-        Relationships: []
       }
       profiles: {
         Row: {

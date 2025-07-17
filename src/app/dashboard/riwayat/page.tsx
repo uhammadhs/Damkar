@@ -24,7 +24,6 @@ type LeaveHistoryItem = {
   reason: string | null;
   status: string;
   created_at: string;
-  leave_types: { name: string } | null;
 };
 
 const getStatusColor = (status: string): string => {
@@ -67,8 +66,7 @@ export default function RiwayatPage() {
           title,
           reason,
           status,
-          created_at,
-          leave_types (name)
+          created_at
         `)
         .eq('user_id', user.id)
         .order('start_date', { ascending: false });

@@ -7,7 +7,6 @@ import { z } from 'zod'
 import { differenceInDays } from 'date-fns'
 
 const LeaveRequestSchema = z.object({
-  leave_type_id: z.coerce.number().min(1, 'Jenis cuti harus dipilih'),
   start_date: z.string().min(1, 'Tanggal mulai harus diisi'),
   end_date: z.string().min(1, 'Tanggal selesai harus diisi'),
   title: z.string().min(3, 'Judul pengajuan harus diisi'),
@@ -24,7 +23,6 @@ export async function submitLeaveRequest(formData: FormData) {
   }
 
   const rawData = {
-    leave_type_id: formData.get('leave_type_id'),
     start_date: formData.get('start_date'),
     end_date: formData.get('end_date'),
     title: formData.get('title'),
@@ -53,25 +51,24 @@ export async function submitLeaveRequest(formData: FormData) {
   // Hitung durasi, +1 untuk inklusif
   const duration = differenceInDays(endDateObj, startDateObj) + 1;
 
-  // Cek sisa cuti jika jenis cutinya adalah Cuti Tahunan (ID=1)
-  if (rest.leave_type_id === 1) {
-    const currentYear = new Date().getFullYear();
-    const { data: leaveBalance, error: balanceError } = await supabase
-        .from('leave_balances')
-        .select('total_days, used_days')
-        .eq('user_id', user.id)
-        .eq('year', currentYear)
-        .single();
-    
-    if (balanceError || !leaveBalance) {
-        return { success: false, message: 'Gagal mengambil data jatah cuti.' };
-    }
-
-    const remainingDays = leaveBalance.total_days - leaveBalance.used_days;
-    if (duration > remainingDays) {
-        return { success: false, message: `Jatah cuti tidak mencukupi. Sisa cuti Anda: ${remainingDays} hari.` };
-    }
+  // Cek sisa cuti tahunan
+  const currentYear = new Date().getFullYear();
+  const { data: leaveBalance, error: balanceError } = await supabase
+      .from('leave_balances')
+      .select('total_days, used_days')
+      .eq('user_id', user.id)
+      .eq('year', currentYear)
+      .single();
+  
+  if (balanceError || !leaveBalance) {
+      return { success: false, message: 'Gagal mengambil data jatah cuti.' };
   }
+
+  const remainingDays = leaveBalance.total_days - leaveBalance.used_days;
+  if (duration > remainingDays) {
+      return { success: false, message: `Jatah cuti tidak mencukupi. Sisa cuti Anda: ${remainingDays} hari.` };
+  }
+
 
   const { error } = await supabase.from('leave_requests').insert({
     user_id: user.id,

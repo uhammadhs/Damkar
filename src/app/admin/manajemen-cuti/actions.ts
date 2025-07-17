@@ -17,7 +17,6 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
       start_date,
       end_date,
       title,
-      leave_type_id,
       profiles (
         email,
         name
@@ -31,8 +30,8 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
     return { success: false, message: 'Gagal menemukan pengajuan cuti.' }
   }
 
-  // Jika status baru adalah 'Disetujui' dan jenis cuti adalah 'Cuti Tahunan', perbarui saldo cuti
-  if (newStatus === 'Disetujui' && request.leave_type_id === 1) {
+  // Jika status baru adalah 'Disetujui', perbarui saldo cuti
+  if (newStatus === 'Disetujui') {
     const year = new Date(request.start_date).getFullYear()
     
     // Gunakan rpc untuk mengupdate saldo secara atomik

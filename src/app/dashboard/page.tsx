@@ -43,7 +43,7 @@ export default async function DashboardPage() {
   // Ambil 3 pengajuan cuti terakhir
   const { data: recentLeaveRequests, error: requestsError } = await supabase
     .from('leave_requests')
-    .select('*, leave_types(name)')
+    .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(3);
