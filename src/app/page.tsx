@@ -49,14 +49,14 @@ export default function LoginPage() {
     }
     
     // Check for user role from profiles table
+    // Use .limit(1).single() to handle potential duplicate profiles and prevent errors.
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', authData.user.id)
+        .limit(1) 
         .single();
     
-    // If the profile doesn't exist or there's an error fetching it,
-    // it indicates a data inconsistency issue. The user is authenticated but has no profile.
     if (profileError || !profile) {
        toast({
         title: "Login Gagal",
