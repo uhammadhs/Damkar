@@ -1,17 +1,9 @@
 
+'use server'
+
 import { Resend } from 'resend';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-
-if (!process.env.RESEND_API_KEY) {
-  throw new Error("Missing RESEND_API_KEY environment variable.");
-}
-if (!process.env.RESEND_FROM_EMAIL) {
-    throw new Error("Missing RESEND_FROM_EMAIL environment variable. This should be a verified domain in Resend.");
-}
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-const fromEmail = process.env.RESEND_FROM_EMAIL;
 
 interface LeaveStatusEmailProps {
     to: string;
@@ -23,7 +15,20 @@ interface LeaveStatusEmailProps {
 }
 
 export async function sendLeaveStatusEmail({ to, name, status, requestTitle, startDate, endDate }: LeaveStatusEmailProps) {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const fromEmail = process.env.RESEND_FROM_EMAIL;
 
+    if (!resendApiKey) {
+        console.error("Resend API Key is missing. Email will not be sent.");
+        throw new Error("Konfigurasi email server tidak lengkap (API Key tidak ditemukan).");
+    }
+    if (!fromEmail) {
+        console.error("Resend 'From' email is missing. Email will not be sent.");
+        throw new Error("Konfigurasi email server tidak lengkap (Alamat email pengirim tidak ditemukan).");
+    }
+
+    const resend = new Resend(resendApiKey);
+    
     const subject = `Pembaruan Status Pengajuan Cuti: ${requestTitle}`;
     const statusText = status === 'Disetujui' ? 'telah disetujui' : 'ditolak';
     const formattedStartDate = format(new Date(startDate), "EEEE, d MMMM yyyy", { locale: id });
@@ -53,7 +58,7 @@ export async function sendLeaveStatusEmail({ to, name, status, requestTitle, sta
 
     if (error) {
         console.error("Resend API Error:", error);
-        throw new Error(`Failed to send email: ${error.message}`);
+        throw new Error(`Gagal mengirim email: ${error.message}`);
     }
 
     return data;
