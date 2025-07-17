@@ -48,7 +48,6 @@ export default function LoginPage() {
       return;
     }
     
-    // Fetch profile with a more robust method
     const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('role')
@@ -56,14 +55,12 @@ export default function LoginPage() {
     
     if (profileError) {
        setError(`Gagal memuat data profil. Silakan hubungi admin. (Error: ${profileError.message})`);
-       await supabase.auth.signOut(); // Log out user if profile is inaccessible
        setIsLoading(false);
        return;
     }
 
     if (!profiles || profiles.length === 0) {
         setError("Profil pengguna tidak ditemukan. Silakan hubungi admin untuk mendaftarkan profil Anda.");
-        await supabase.auth.signOut(); // Log out user if profile doesn't exist
         setIsLoading(false);
         return;
     }
@@ -75,7 +72,8 @@ export default function LoginPage() {
 
     const profile = profiles[0];
 
-    if (profile.role === 'admin') {
+    // Handle case where profile exists but role might be null
+    if (profile && profile.role === 'admin') {
       toast({
         title: "Login Berhasil",
         description: "Selamat datang, Admin!",

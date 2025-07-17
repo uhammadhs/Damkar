@@ -7,17 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MemberTable } from "./member-table";
 import { AddMemberDialog } from "./add-member-dialog";
+import type { Database } from "@/types/supabase";
 
 // Define a type for the profile data we expect from Supabase
-export type Profile = {
-  id: string;
-  email: string | null;
-  name: string | null;
-  nip: string | null;
-  pangkat: string | null;
-  role: string | null;
-  avatar_url: string | null;
-};
+export type Profile = Database['public']['Tables']['profiles']['Row'];
 
 export default async function AnggotaPage({
   searchParams,
@@ -31,7 +24,7 @@ export default async function AnggotaPage({
 
   let queryBuilder = supabase
     .from("profiles")
-    .select(`id, email, name, nip, pangkat, role, avatar_url`)
+    .select(`*`) // Select all columns to match the Profile type
     .eq('role', 'anggota') // Hanya tampilkan pengguna dengan peran 'anggota'
     .order("name", { ascending: true });
 
