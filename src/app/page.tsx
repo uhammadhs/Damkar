@@ -43,29 +43,37 @@ export default function LoginPage() {
     });
 
     if (authError || !authData.user) {
-      console.error('Login error details:', authError);
-      setError("Email atau password salah. Periksa kembali.");
+      setError(authError?.message || "Email atau password salah. Periksa kembali.");
       setIsLoading(false);
       return;
     }
     
-    // Fetch profile with robust error handling
-    const { data: profile, error: profileError } = await supabase
+    // Fetch profile with a more robust method, avoiding .single()
+    const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', authData.user.id)
-        .single();
+        .eq('id', authData.user.id);
     
-    if (profileError || !profile) {
-      if (profileError?.code === 'PGRST116') { // "JSON object requested, multiple (or no) rows returned" and no rows were returned
-         setError("Profil pengguna tidak ditemukan. Silakan hubungi admin untuk mendaftarkan profil Anda.");
-      } else {
-         setError(`Gagal memuat data profil. Silakan hubungi admin. (Error: ${profileError?.message})`);
-      }
-      await supabase.auth.signOut();
-      setIsLoading(false);
-      return;
+    if (profileError) {
+       setError(`Gagal memuat data profil. Silakan hubungi admin. (Error: ${profileError.message})`);
+       await supabase.auth.signOut(); // Log out user if profile is inaccessible
+       setIsLoading(false);
+       return;
     }
+
+    if (!profiles || profiles.length === 0) {
+        setError("Profil pengguna tidak ditemukan. Silakan hubungi admin untuk mendaftarkan profil Anda.");
+        await supabase.auth.signOut(); // Log out user if profile doesn't exist
+        setIsLoading(false);
+        return;
+    }
+    
+    // If multiple profiles are found, take the first one and log a warning.
+    if (profiles.length > 1) {
+        console.warn(`Peringatan: Ditemukan ${profiles.length} profil untuk pengguna ID ${authData.user.id}. Menggunakan profil pertama.`);
+    }
+
+    const profile = profiles[0];
 
     if (profile.role === 'admin') {
       toast({
@@ -80,8 +88,11 @@ export default function LoginPage() {
       });
       router.push('/dashboard');
     }
+    
+    // No need to call setIsLoading(false) on success, as navigation will occur.
+    // However, it's good practice to have it here in case navigation hangs for any reason.
+    // For this app, router.push is followed by a refresh, so we can omit it.
     router.refresh();
-    // Don't setIsLoading(false) here on success because the page will navigate away
   };
 
   return (
