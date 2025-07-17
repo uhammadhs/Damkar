@@ -3,14 +3,26 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { sendLeaveStatusEmail } from '@/lib/email'
 
 export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Disetujui' | 'Ditolak') {
   const supabase = createClient()
 
-  // Ambil data pengajuan untuk mendapatkan user_id dan durasi
+  // Ambil data pengajuan untuk mendapatkan user_id, durasi, dan data profil untuk email
   const { data: request, error: fetchError } = await supabase
     .from('leave_requests')
-    .select('user_id, duration, start_date, leave_type_id')
+    .select(`
+      user_id,
+      duration,
+      start_date,
+      end_date,
+      title,
+      leave_type_id,
+      profiles (
+        email,
+        name
+      )
+    `)
     .eq('id', requestId)
     .single()
 
@@ -48,8 +60,33 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
     return { success: false, message: 'Gagal memperbarui status pengajuan.' }
   }
 
+  // Kirim notifikasi email setelah semuanya berhasil
+  try {
+    const userEmail = request.profiles?.email;
+    const userName = request.profiles?.name;
+    if (userEmail && userName) {
+        await sendLeaveStatusEmail({
+            to: userEmail,
+            name: userName,
+            status: newStatus,
+            requestTitle: request.title,
+            startDate: request.start_date,
+            endDate: request.end_date,
+        });
+    }
+  } catch (emailError) {
+      console.error("Failed to send status update email:", emailError);
+      // Jangan gagalkan seluruh proses jika email gagal, cukup log error
+      // Namun, kembalikan pesan bahwa email mungkin tidak terkirim
+      revalidatePath('/admin/manajemen-cuti')
+      revalidatePath('/admin/dashboard')
+      revalidatePath('/admin/laporan')
+      return { success: true, message: `Pengajuan berhasil ${newStatus.toLowerCase()}, tetapi notifikasi email gagal dikirim.` }
+  }
+
+
   revalidatePath('/admin/manajemen-cuti')
   revalidatePath('/admin/dashboard')
   revalidatePath('/admin/laporan')
-  return { success: true, message: `Pengajuan berhasil ${newStatus.toLowerCase()}.` }
+  return { success: true, message: `Pengajuan berhasil ${newStatus.toLowerCase()} dan notifikasi email telah dikirim.` }
 }
