@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,7 +15,7 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { updateLeaveRequestStatus } from "./actions";
 
-type LeaveRequest = {
+export type LeaveRequest = {
   id: number;
   created_at: string;
   duration: number;
