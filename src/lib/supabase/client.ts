@@ -1,6 +1,6 @@
 
 import { createBrowserClient } from '@supabase/ssr'
-import { supabaseUrl, supabaseAnonKey } from './config'
+import { supabaseUrl, supabaseAnonKey } from '@/lib/config'
 
 export function createClient() {
   return createBrowserClient(

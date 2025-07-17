@@ -4,6 +4,7 @@
 import { Resend } from 'resend';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { resendApiKey, resendFromEmail } from './config';
 
 interface LeaveStatusEmailProps {
     to: string;
@@ -15,14 +16,12 @@ interface LeaveStatusEmailProps {
 }
 
 export async function sendLeaveStatusEmail({ to, name, status, requestTitle, startDate, endDate }: LeaveStatusEmailProps) {
-    const resendApiKey = process.env.RESEND_API_KEY;
-    const fromEmail = process.env.RESEND_FROM_EMAIL;
 
     if (!resendApiKey) {
         console.error("Resend API Key is missing. Email will not be sent.");
         throw new Error("Konfigurasi email server tidak lengkap (API Key tidak ditemukan).");
     }
-    if (!fromEmail) {
+    if (!resendFromEmail) {
         console.error("Resend 'From' email is missing. Email will not be sent.");
         throw new Error("Konfigurasi email server tidak lengkap (Alamat email pengirim tidak ditemukan).");
     }
@@ -35,7 +34,7 @@ export async function sendLeaveStatusEmail({ to, name, status, requestTitle, sta
     const formattedEndDate = format(new Date(endDate), "EEEE, d MMMM yyyy", { locale: id });
 
     const { data, error } = await resend.emails.send({
-        from: `SIAP CUTI <${fromEmail}>`,
+        from: `SIAP CUTI <${resendFromEmail}>`,
         to: [to],
         subject: subject,
         html: `
