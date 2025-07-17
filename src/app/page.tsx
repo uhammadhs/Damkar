@@ -27,22 +27,30 @@ export default function LoginPage() {
     setError(null);
     setIsLoading(true);
 
-    try {
-      const formData = new FormData(event.currentTarget);
-      const email = formData.get("email") as string;
-      const password = formData.get("password") as string;
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
 
-      // 1. Sign in with Supabase
-      const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+    // 1. Sign in with Supabase
+    const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError || !user) {
+      const errorMessage = "Email atau password salah. Periksa kembali.";
+      setError(errorMessage);
+      toast({
+        title: "Login Gagal",
+        description: errorMessage,
+        variant: "destructive",
       });
+      setIsLoading(false);
+      return;
+    }
 
-      if (authError || !user) {
-        throw new Error("Email atau password salah. Periksa kembali.");
-      }
-
-      // 2. Fetch the user's profile to determine their role
+    // 2. Fetch the user's profile to determine their role in a robust way
+    try {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
@@ -69,12 +77,10 @@ export default function LoginPage() {
         });
         router.push('/dashboard');
       }
-      
-      // router.refresh() is implicitly handled by router.push() in App Router
-      // No need to manually call it or setIsLoading(false) on success, as the page will unmount.
+      // No need to set isLoading to false here, as the page will unmount on successful navigation.
 
     } catch (err: any) {
-      const errorMessage = err.message || "Terjadi kesalahan saat login.";
+      const errorMessage = err.message || "Terjadi kesalahan saat memproses profil.";
       setError(errorMessage);
       toast({
         title: "Login Gagal",
