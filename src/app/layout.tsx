@@ -1,10 +1,25 @@
 
 "use client"
 
+import { Roboto, Montserrat } from 'next/font/google';
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
+import { cn } from '@/lib/utils';
+
+const fontRoboto = Roboto({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-roboto',
+});
+
+const fontMontserrat = Montserrat({
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  variable: '--font-montserrat',
+});
+
 
 // This is a client component, so we can't use metadata export
 // export const metadata: Metadata = {
@@ -22,14 +37,8 @@ export default function RootLayout({
       <head>
         <title>SIAP CUTI</title>
         <meta name="description" content="Sistem Informasi Approval Cuti" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Roboto:wght@400;500&display=swap"
-          rel="stylesheet"
-        />
       </head>
-      <body className="font-body antialiased">
+      <body className={cn("font-body antialiased", fontRoboto.variable, fontMontserrat.variable)}>
          <ThemeProvider
             attribute="class"
             defaultTheme="dark"
@@ -43,5 +52,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-    
