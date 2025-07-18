@@ -17,16 +17,16 @@ import { Input } from "@/components/ui/input"
 import { useToast } from '@/hooks/use-toast'
 import { editMember } from './actions'
 import type { Profile } from './page'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 
 interface EditMemberDialogProps {
   member: Profile;
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
 }
 
-export function EditMemberDialog({ member, isOpen, onOpenChange }: EditMemberDialogProps) {
+export function EditMemberDialog({ member }: EditMemberDialogProps) {
   const { toast } = useToast()
   const formRef = React.useRef<HTMLFormElement>(null)
+  const [isOpen, setIsOpen] = React.useState(false);
 
   const handleEditSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -40,7 +40,7 @@ export function EditMemberDialog({ member, isOpen, onOpenChange }: EditMemberDia
         title: "Sukses",
         description: result.message,
       })
-      onOpenChange(false)
+      setIsOpen(false)
     } else {
       toast({
         title: "Gagal",
@@ -51,7 +51,7 @@ export function EditMemberDialog({ member, isOpen, onOpenChange }: EditMemberDia
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="font-headline">Edit Data Anggota</DialogTitle>
@@ -59,7 +59,7 @@ export function EditMemberDialog({ member, isOpen, onOpenChange }: EditMemberDia
             Perbarui detail anggota. Klik simpan jika sudah selesai.
           </DialogDescription>
         </DialogHeader>
-        <form id="edit-member-form" ref={formRef} onSubmit={handleEditSubmit} className="grid gap-4 py-4">
+        <form id={`edit-member-form-${member.id}`} ref={formRef} onSubmit={handleEditSubmit} className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="edit-name" className="text-right">Nama</Label>
             <Input id="edit-name" name="name" defaultValue={member.name || ''} className="col-span-3" required />
@@ -85,9 +85,10 @@ export function EditMemberDialog({ member, isOpen, onOpenChange }: EditMemberDia
           <DialogClose asChild>
             <Button type="button" variant="secondary">Batal</Button>
           </DialogClose>
-          <Button type="submit" form="edit-member-form">Simpan Perubahan</Button>
+          <Button type="submit" form={`edit-member-form-${member.id}`}>Simpan Perubahan</Button>
         </DialogFooter>
       </DialogContent>
+      <DropdownMenuItem onSelect={() => setIsOpen(true)}>Edit</DropdownMenuItem>
     </Dialog>
   )
 }

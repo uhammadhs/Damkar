@@ -2,14 +2,14 @@
 "use client"
 
 import * as React from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, X } from "lucide-react";
+import { Check, Loader2, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardHeader, CardFooter } from "@/components/ui/card";
 import { updateLeaveRequestStatus } from "./actions";
@@ -30,9 +30,12 @@ const getStatusColor = (status: string): string => {
 
 function LeaveRequestDialog({ request, children, onUpdateRequest }: { request: LeaveRequest, children: React.ReactNode, onUpdateRequest: (id: number, status: "Disetujui" | "Ditolak") => void }) {
     const [open, setOpen] = React.useState(false);
+    const [isLoading, setIsLoading] = React.useState(false);
 
-    const handleAction = (status: "Disetujui" | "Ditolak") => {
-        onUpdateRequest(request.id, status);
+    const handleAction = async (status: "Disetujui" | "Ditolak") => {
+        setIsLoading(true);
+        await onUpdateRequest(request.id, status);
+        setIsLoading(false);
         setOpen(false);
     }
     
@@ -74,12 +77,12 @@ function LeaveRequestDialog({ request, children, onUpdateRequest }: { request: L
                 </div>
                 {request.status === 'Menunggu' && (
                     <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
-                        <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10" onClick={() => handleAction("Ditolak")}>
-                            <X className="h-4 w-4" />
+                        <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10" onClick={() => handleAction("Ditolak")} disabled={isLoading}>
+                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
                             <span className="ml-2">Tolak Pengajuan</span>
                         </Button>
-                        <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleAction("Disetujui")}>
-                            <Check className="h-4 w-4" />
+                        <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleAction("Disetujui")} disabled={isLoading}>
+                            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                             <span className="ml-2">Setujui Pengajuan</span>
                         </Button>
                     </div>
@@ -89,46 +92,11 @@ function LeaveRequestDialog({ request, children, onUpdateRequest }: { request: L
     )
 }
 
-export function LeaveRequestTable({ initialRequests }: { initialRequests: LeaveRequest[] }) {
-    const [requests, setRequests] = React.useState(initialRequests);
+export function LeaveRequestTable({ requests }: { requests: LeaveRequest[] }) {
     const { toast } = useToast();
-    const supabase = createClient();
-    
-    React.useEffect(() => {
-        setRequests(initialRequests);
-    }, [initialRequests]);
-
-    React.useEffect(() => {
-        const channel = supabase
-          .channel('leave_requests_changes')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'leave_requests' },
-            (payload) => {
-              if (payload.eventType === 'INSERT') {
-                // For inserts, we can't get profile data easily, so we just revalidate the path
-                // to refetch everything from the server. This is simpler and more reliable.
-                // A full client-side solution would require another RPC call.
-                 window.location.reload(); 
-              } else if (payload.eventType === 'UPDATE') {
-                 setRequests(prev => prev.map(req => req.id === payload.new.id ? {...req, ...payload.new} : req));
-              } else if (payload.eventType === 'DELETE') {
-                  setRequests(prev => prev.filter(req => req.id !== payload.old.id));
-              }
-            }
-          )
-          .subscribe();
-    
-        return () => {
-          supabase.removeChannel(channel);
-        };
-    
-      }, [supabase]);
-
+    const router = useRouter();
 
     const handleUpdateRequest = async (id: number, status: "Disetujui" | "Ditolak") => {
-        const originalRequests = [...requests];
-        
-        setRequests(prev => prev.map(req => req.id === id ? { ...req, status } : req));
-
         const result = await updateLeaveRequestStatus(id, status);
         
         if (result.success) {
@@ -136,8 +104,9 @@ export function LeaveRequestTable({ initialRequests }: { initialRequests: LeaveR
               title: "Sukses",
               description: result.message,
           });
+          // Re-fetch data by refreshing the page
+          router.refresh();
         } else {
-          setRequests(originalRequests);
           toast({
             title: "Gagal",
             description: result.message,
@@ -147,7 +116,7 @@ export function LeaveRequestTable({ initialRequests }: { initialRequests: LeaveR
     };
 
     if (requests.length === 0) {
-        return <p className="py-10 text-center text-muted-foreground">Tidak ada pengajuan cuti.</p>
+        return <p className="py-10 text-center text-muted-foreground">Tidak ada pengajuan cuti yang cocok.</p>
     }
     
     const formatDateRange = (start: string, end: string) => {

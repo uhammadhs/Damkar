@@ -44,10 +44,10 @@ export default async function ManajemenCutiPage() {
             <TabsTrigger value="semua">Semua ({allRequests.length})</TabsTrigger>
           </TabsList>
           <TabsContent value="menunggu">
-            <LeaveRequestTable initialRequests={waitingRequests} />
+            <LeaveRequestTable requests={waitingRequests} />
           </TabsContent>
           <TabsContent value="semua">
-            <LeaveRequestTable initialRequests={allRequests} />
+            <LeaveRequestTable requests={allRequests} />
           </TabsContent>
         </Tabs>
       </CardContent>

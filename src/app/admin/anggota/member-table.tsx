@@ -1,5 +1,5 @@
 
-"use client"
+"use server"
 
 import * as React from "react";
 import { MoreHorizontal, Users } from "lucide-react";
@@ -19,51 +19,24 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import type { Profile } from "./page";
-import { EditMemberDialog } from "./edit-member-dialog";
-import { deleteMember } from "./actions";
+import { DeleteMemberAction, EditMemberAction } from "./member-actions";
 import { AddMemberDialog } from "./add-member-dialog";
 
 interface MemberTableProps {
   profiles: Profile[];
 }
 
-export function MemberTable({ profiles }: MemberTableProps) {
-  const [editingMember, setEditingMember] = React.useState<Profile | null>(null);
-  const { toast } = useToast();
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus anggota ini? Aksi ini tidak dapat dibatalkan.")) {
-      return;
-    }
-    const result = await deleteMember(id);
-    if (result.success) {
-      toast({
-        title: "Sukses",
-        description: result.message,
-      });
-    } else {
-      toast({
-        title: "Gagal",
-        description: result.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const openEditDialog = (member: Profile) => {
-    setEditingMember(member);
-  };
-  
-  const getAvatarFallback = (name: string | null) => {
+const getAvatarFallback = (name: string | null) => {
     if (!name) return "??";
     const parts = name.split(" ");
     if (parts.length > 1) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
-  };
+};
+
+export async function MemberTable({ profiles }: MemberTableProps) {
   
   if (profiles.length === 0) {
     return (
@@ -120,10 +93,8 @@ export function MemberTable({ profiles }: MemberTableProps) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openEditDialog(profile)}>Edit</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(profile.id)}>
-                        Hapus
-                      </DropdownMenuItem>
+                      <EditMemberAction member={profile} />
+                      <DeleteMemberAction id={profile.id} />
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -132,19 +103,6 @@ export function MemberTable({ profiles }: MemberTableProps) {
           </TableBody>
         </Table>
       </div>
-
-      {/* Edit Member Dialog */}
-      {editingMember && (
-        <EditMemberDialog
-          member={editingMember}
-          isOpen={!!editingMember}
-          onOpenChange={(open) => {
-            if (!open) {
-              setEditingMember(null);
-            }
-          }}
-        />
-      )}
     </>
   );
 }
