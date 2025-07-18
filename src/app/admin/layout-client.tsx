@@ -3,6 +3,9 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import * as React from "react"
+import { formatDistanceToNow } from "date-fns";
+import { id } from "date-fns/locale";
 import {
   Bell,
   Users,
@@ -12,6 +15,7 @@ import {
   Moon,
   Sun,
   LogOut,
+  CheckCircle2,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -39,18 +43,22 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
 import type { LeaveRequest } from "./manajemen-cuti/page"
+import { markAdminNotificationsAsSeen } from "./actions"
 
 interface AdminLayoutClientProps {
   children: React.ReactNode;
-  notifications: LeaveRequest[];
-  notificationCount: number;
+  initialNotifications: LeaveRequest[];
+  initialNotificationCount: number;
 }
 
-export function AdminLayoutClient({ children, notifications, notificationCount }: AdminLayoutClientProps) {
+export function AdminLayoutClient({ children, initialNotifications, initialNotificationCount }: AdminLayoutClientProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { setTheme, theme } = useTheme()
   const supabase = createClient()
+  
+  const [notifications, setNotifications] = React.useState(initialNotifications);
+  const [notificationCount, setNotificationCount] = React.useState(initialNotificationCount);
 
   const getPageTitle = () => {
     if (pathname.startsWith("/admin/dashboard")) return "Dashboard"
@@ -67,8 +75,26 @@ export function AdminLayoutClient({ children, notifications, notificationCount }
   };
   
   const handleNotificationClick = (notificationId: number) => {
-    // Navigate to the management page, a real app could highlight the specific request
     router.push('/admin/manajemen-cuti');
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+  };
+
+  const handleOpenNotifications = async (open: boolean) => {
+    if (open && notifications.length > 0) {
+      const notificationIds = notifications.map(n => n.id);
+      await markAdminNotificationsAsSeen(notificationIds);
+      // Optimistically clear the list
+      setNotifications([]);
+    }
+  }
+
+  const getAvatarFallback = (name: string | null) => {
+    if (!name) return "??";
+    const parts = name.split(" ");
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -154,7 +180,7 @@ export function AdminLayoutClient({ children, notifications, notificationCount }
                   <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                   <span className="sr-only">Toggle theme</span>
               </Button>
-              <DropdownMenu>
+              <DropdownMenu onOpenChange={handleOpenNotifications}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative rounded-full">
                     <Bell className="h-5 w-5" />
@@ -166,21 +192,33 @@ export function AdminLayoutClient({ children, notifications, notificationCount }
                     <span className="sr-only">Toggle notifications</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80">
-                  <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
+                <DropdownMenuContent align="end" className="w-80 md:w-96">
+                  <DropdownMenuLabel>Notifikasi Baru</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {notifications.length > 0 ? (
                     notifications.map((notif) => (
-                      <DropdownMenuItem key={notif.id} onSelect={() => handleNotificationClick(notif.id)} className="flex flex-col items-start whitespace-normal">
-                         <span className="font-semibold">{notif.title}</span>
-                         <span className="text-xs text-muted-foreground">
-                            Dari: {notif.profiles?.name || 'Anggota'}
-                         </span>
+                      <DropdownMenuItem key={notif.id} onSelect={() => handleNotificationClick(notif.id)} className="flex items-start gap-3 whitespace-normal p-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={notif.profiles?.avatar_url || ''} alt={notif.profiles?.name || 'Avatar'} data-ai-hint="male portrait" />
+                          <AvatarFallback>{getAvatarFallback(notif.profiles?.name || null)}</AvatarFallback>
+                        </Avatar>
+                        <div className="grid gap-1">
+                           <p className="text-sm font-medium leading-none">
+                              Pengajuan baru dari <span className="font-bold">{notif.profiles?.name || 'Anggota'}</span>
+                           </p>
+                           <p className="text-sm text-muted-foreground truncate">
+                              "{notif.title}"
+                           </p>
+                           <p className="text-xs text-muted-foreground">
+                             {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true, locale: id })}
+                           </p>
+                        </div>
                       </DropdownMenuItem>
                     ))
                   ) : (
-                    <div className="p-2 text-center text-sm text-muted-foreground">
-                      Tidak ada notifikasi baru.
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      <CheckCircle2 className="mx-auto h-8 w-8 text-green-500" />
+                      <p className="mt-2">Tidak ada notifikasi baru.</p>
                     </div>
                   )}
                 </DropdownMenuContent>

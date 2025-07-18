@@ -49,6 +49,7 @@ export type Database = {
           duration: number
           end_date: string
           id: number
+          is_read: boolean
           reason: string | null
           start_date: string
           status: string
@@ -62,6 +63,7 @@ export type Database = {
           duration: number
           end_date: string
           id?: number
+          is_read?: boolean
           reason?: string | null
           start_date: string
           status?: string
@@ -75,6 +77,7 @@ export type Database = {
           duration?: number
           end_date?: string
           id?: number
+          is_read?: boolean
           reason?: string | null
           start_date?: string
           status?: string
@@ -248,3 +251,4 @@ export type Enums<
   : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
     ? Database["public"]["Enums"][PublicEnumNameOrOptions]
     : never
+

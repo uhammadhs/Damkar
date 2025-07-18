@@ -4,6 +4,15 @@ import { redirect } from "next/navigation";
 import { AdminLayoutClient } from "./layout-client";
 import type { LeaveRequest } from "./manajemen-cuti/page";
 
+// Store seen notification IDs in-memory on the server.
+// In a real-world scenario, you might use a more persistent cache like Redis.
+const seenNotifications = new Set<number>();
+
+export async function markAdminNotificationsAsSeen(ids: number[]) {
+    'use server';
+    ids.forEach(id => seenNotifications.add(id));
+}
+
 export default async function AdminLayout({
   children,
 }: {
@@ -14,32 +23,31 @@ export default async function AdminLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    // If no user is found, redirect to the login page.
     redirect('/');
   }
 
-  // Double-check if the user is an admin. Redirect if not.
   const { data: role } = await supabase.rpc('get_user_role');
   if (role !== 'admin') {
-      redirect('/dashboard'); // Redirect non-admins to their dashboard
+      redirect('/dashboard');
   }
 
   let notifications: LeaveRequest[] = [];
   let notificationCount = 0;
 
   try {
-    // Fetch notifications for the admin
     const { data: notificationsData, error: notificationsError } = await supabase
       .from('leave_requests')
-      .select('id, title, profiles(name)')
+      .select('id, title, created_at, profiles(name, avatar_url)')
       .eq('status', 'Menunggu')
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(10);
 
     if (notificationsError) throw notificationsError;
-    notifications = notificationsData as unknown as LeaveRequest[] || [];
+    
+    // Filter out notifications that have already been seen in this session
+    notifications = (notificationsData as unknown as LeaveRequest[] || []).filter(n => !seenNotifications.has(n.id));
 
-    // Fetch count for the badge
+    // The badge count should reflect all pending requests, not just unseen ones
     const { count, error: countError } = await supabase
       .from('leave_requests')
       .select('*', { count: 'exact', head: true })
@@ -50,13 +58,12 @@ export default async function AdminLayout({
 
   } catch(error) {
     console.error("Error fetching admin notifications:", error);
-    // Gracefully handle error, UI will show 0 notifications
   }
     
   return (
     <AdminLayoutClient 
-      notifications={notifications} 
-      notificationCount={notificationCount}
+      initialNotifications={notifications} 
+      initialNotificationCount={notificationCount}
     >
       {children}
     </AdminLayoutClient>
