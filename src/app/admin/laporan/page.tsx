@@ -20,8 +20,9 @@ async function getLeaveBalances() {
             year,
             total_days,
             used_days,
-            profiles (id, name, nip, avatar_url)
+            profiles!inner (id, name, nip, avatar_url, role)
         `)
+        .eq('profiles.role', 'anggota') // Filter by role 'anggota'
         .order('year', { ascending: false });
 
     if (error) {
@@ -33,8 +34,9 @@ async function getLeaveBalances() {
         return [];
     }
     
+    // The filter is now done in the query, but we still need to format the data.
+    // The !inner join ensures item.profiles will not be null.
     const formattedData = data
-        .filter(item => item.profiles) // Hanya proses item yang memiliki profil terkait
         .map(item => ({
             id: item.profiles!.id,
             name: item.profiles!.name,
