@@ -3,7 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AdminLayoutClient } from "./layout-client";
 import type { LeaveRequest } from "./manajemen-cuti/page";
-import { seenNotifications } from "./actions";
+
+// Store seen notification IDs in-memory on the server.
+// In a real-world scenario, you might use a more persistent cache like Redis.
+const seenNotifications = new Set<number>();
 
 export default async function AdminLayout({
   children,
