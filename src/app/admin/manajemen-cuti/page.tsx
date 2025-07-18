@@ -7,7 +7,7 @@ import { LeaveRequestTable } from "./leave-request-table";
 import type { Database } from "@/types/supabase";
 
 export type LeaveRequest = Database['public']['Tables']['leave_requests']['Row'] & {
-  profiles: Pick<Database['public']['Tables']['profiles']['Row'], 'name' | 'nip'> | null;
+  profiles: Pick<Database['public']['Tables']['profiles']['Row'], 'name' | 'nip' | 'avatar_url'> | null;
 };
 
 export default async function ManajemenCutiPage() {
@@ -17,7 +17,7 @@ export default async function ManajemenCutiPage() {
     .from('leave_requests')
     .select(`
       *,
-      profiles (name, nip)
+      profiles (name, nip, avatar_url)
     `)
     .order('created_at', { ascending: false });
 
