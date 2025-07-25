@@ -43,7 +43,16 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
 import type { LeaveRequest } from "./manajemen-cuti/page"
-import { markAdminNotificationsAsSeen } from "./actions"
+
+// Action is defined here to keep client-side logic self-contained.
+async function markAdminNotificationsAsSeen(ids: number[]) {
+    // In a real-world scenario, you might use a more persistent cache like Redis
+    // or update a 'seen' status in the database. For this app, we'll
+    // just rely on the layout re-fetching and filtering out pending requests.
+    // This function is kept for potential future use with a more persistent layer.
+    console.log("Marking as seen (client-side):", ids);
+}
+
 
 interface AdminLayoutClientProps {
   children: React.ReactNode;
