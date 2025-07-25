@@ -1,3 +1,4 @@
+
 import { createClient } from "@/lib/supabase/server";
 import { LaporanClient } from "./laporan-client";
 import type { Database } from "@/types/supabase";
