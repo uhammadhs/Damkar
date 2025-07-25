@@ -15,12 +15,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import type { Profile } from "./page";
-import { DeleteMemberAction, EditMemberAction } from "./member-actions";
+import { MemberActions } from "./member-actions";
 import { AddMemberDialog } from "./add-member-dialog";
 
 interface MemberTableProps {
@@ -93,8 +92,7 @@ export async function MemberTable({ profiles }: MemberTableProps) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <EditMemberAction member={profile} />
-                      <DeleteMemberAction id={profile.id} />
+                       <MemberActions member={profile} />
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

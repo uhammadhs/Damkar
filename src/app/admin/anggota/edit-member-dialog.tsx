@@ -21,12 +21,13 @@ import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 
 interface EditMemberDialogProps {
   member: Profile;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function EditMemberDialog({ member }: EditMemberDialogProps) {
+export function EditMemberDialog({ member, isOpen, onOpenChange }: EditMemberDialogProps) {
   const { toast } = useToast()
   const formRef = React.useRef<HTMLFormElement>(null)
-  const [isOpen, setIsOpen] = React.useState(false);
 
   const handleEditSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -40,7 +41,7 @@ export function EditMemberDialog({ member }: EditMemberDialogProps) {
         title: "Sukses",
         description: result.message,
       })
-      setIsOpen(false)
+      onOpenChange(false)
     } else {
       toast({
         title: "Gagal",
@@ -51,7 +52,7 @@ export function EditMemberDialog({ member }: EditMemberDialogProps) {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="font-headline">Edit Data Anggota</DialogTitle>
@@ -60,6 +61,7 @@ export function EditMemberDialog({ member }: EditMemberDialogProps) {
           </DialogDescription>
         </DialogHeader>
         <form id={`edit-member-form-${member.id}`} ref={formRef} onSubmit={handleEditSubmit} className="grid gap-4 py-4">
+          <input type="hidden" name="id" value={member.id} />
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="edit-name" className="text-right">Nama</Label>
             <Input id="edit-name" name="name" defaultValue={member.name || ''} className="col-span-3" required />
@@ -88,7 +90,6 @@ export function EditMemberDialog({ member }: EditMemberDialogProps) {
           <Button type="submit" form={`edit-member-form-${member.id}`}>Simpan Perubahan</Button>
         </DialogFooter>
       </DialogContent>
-      <DropdownMenuItem onSelect={() => setIsOpen(true)}>Edit</DropdownMenuItem>
     </Dialog>
   )
 }

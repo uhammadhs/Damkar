@@ -9,18 +9,15 @@ import type { Profile } from "./page";
 import { EditMemberDialog } from "./edit-member-dialog";
 
 
-export function EditMemberAction({ member }: { member: Profile }) {
-    return <EditMemberDialog member={member} />;
-}
-
-export function DeleteMemberAction({ id }: { id: string }) {
+export function MemberActions({ member }: { member: Profile }) {
     const { toast } = useToast();
+    const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
 
     const handleDelete = async () => {
         if (!confirm("Apakah Anda yakin ingin menghapus anggota ini? Aksi ini tidak dapat dibatalkan.")) {
           return;
         }
-        const result = await deleteMember(id);
+        const result = await deleteMember(member.id);
         if (result.success) {
           toast({
             title: "Sukses",
@@ -36,8 +33,14 @@ export function DeleteMemberAction({ id }: { id: string }) {
     };
     
     return (
-        <DropdownMenuItem className="text-destructive" onSelect={handleDelete}>
-            Hapus
-        </DropdownMenuItem>
+        <>
+            <EditMemberDialog member={member} isOpen={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} />
+            <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}>
+                Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive" onSelect={handleDelete}>
+                Hapus
+            </DropdownMenuItem>
+        </>
     )
 }
