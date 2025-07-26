@@ -2,6 +2,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { deleteMember } from "./actions";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
@@ -11,6 +12,7 @@ import { EditMemberDialog } from "./edit-member-dialog";
 
 export function MemberActions({ member }: { member: Profile }) {
     const { toast } = useToast();
+    const router = useRouter();
     const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
 
     const handleDelete = async () => {
@@ -23,6 +25,7 @@ export function MemberActions({ member }: { member: Profile }) {
             title: "Sukses",
             description: result.message,
           });
+          router.refresh();
         } else {
           toast({
             title: "Gagal",
@@ -35,7 +38,10 @@ export function MemberActions({ member }: { member: Profile }) {
     return (
         <>
             <EditMemberDialog member={member} isOpen={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} />
-            <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}>
+            <DropdownMenuItem onSelect={(e) => {
+                e.preventDefault();
+                setIsEditDialogOpen(true)
+            }}>
                 Edit
             </DropdownMenuItem>
             <DropdownMenuItem className="text-destructive" onSelect={handleDelete}>

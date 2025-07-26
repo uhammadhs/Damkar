@@ -67,22 +67,36 @@ export async function addMember(formData: FormData) {
 export async function editMember(formData: FormData) {
     const supabase = createClient();
     const id = formData.get('id') as string;
+    const password = formData.get('password') as string;
 
-    const updatedData = {
+    const profileData = {
         name: formData.get('name') as string,
         nip: formData.get('nip') as string,
         pangkat: formData.get('pangkat') as string,
         email: formData.get('email') as string,
     };
-
-    const { error } = await supabase
+    
+    // 1. Update the user's profile in the 'profiles' table.
+    const { error: profileError } = await supabase
         .from('profiles')
-        .update(updatedData)
+        .update(profileData)
         .eq('id', id);
 
-    if (error) {
-        console.error('Error updating profile:', error);
-        return { success: false, message: error.message || 'Gagal memperbarui profil.' };
+    if (profileError) {
+        console.error('Error updating profile:', profileError);
+        return { success: false, message: profileError.message || 'Gagal memperbarui profil.' };
+    }
+
+    // 2. If a new password is provided, update the user's password in Auth.
+    if (password) {
+        const { error: authError } = await supabase.auth.admin.updateUserById(id, {
+            password: password
+        });
+
+        if (authError) {
+            console.error('Error updating user password:', authError);
+            return { success: false, message: authError.message || 'Gagal memperbarui password.' };
+        }
     }
 
     revalidatePath('/admin/anggota');

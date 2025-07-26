@@ -2,6 +2,7 @@
 "use client"
 
 import * as React from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ interface EditMemberDialogProps {
 
 export function EditMemberDialog({ member, isOpen, onOpenChange }: EditMemberDialogProps) {
   const { toast } = useToast()
+  const router = useRouter()
   const formRef = React.useRef<HTMLFormElement>(null)
 
   const handleEditSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -42,6 +44,7 @@ export function EditMemberDialog({ member, isOpen, onOpenChange }: EditMemberDia
         description: result.message,
       })
       onOpenChange(false)
+      router.refresh() // Refresh the data on the page
     } else {
       toast({
         title: "Gagal",
