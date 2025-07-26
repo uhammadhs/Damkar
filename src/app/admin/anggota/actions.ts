@@ -7,10 +7,6 @@ import { revalidatePath } from 'next/cache'
 export async function addMember(formData: FormData) {
   const supabase = createAdminClient()
 
-  // First, check if the current user is an admin.
-  // This part can remain using the regular server client to check the logged-in user's role
-  // But for the actual user creation, we must use the admin client.
-
   const name = formData.get('name') as string
   const nip = formData.get('nip') as string
   const pangkat = formData.get('pangkat') as string
@@ -18,11 +14,16 @@ export async function addMember(formData: FormData) {
   const password = formData.get('password') as string
 
   // 1. Create user in Supabase Auth using the admin client.
+  // Pass metadata that the `handle_new_user` trigger can use.
   const { data: { user: newUser }, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
     email_confirm: true, // Auto-confirm user
-    user_metadata: { name: name },
+    user_metadata: { 
+      name: name,
+      // The trigger will use this name, so we don't need to update it separately
+      // unless we have other fields to add immediately.
+    },
   })
 
   if (authError || !newUser) {
@@ -31,11 +32,12 @@ export async function addMember(formData: FormData) {
   }
 
   // 2. The trigger `handle_new_user` should have already created a basic profile.
-  // Now, we update it with the additional details.
+  // Now, we update it with the additional details (NIP, Pangkat).
+  // This is more robust than relying on the trigger to do everything.
   const { error: updateProfileError } = await supabase
     .from('profiles')
     .update({
-      name,
+      name, // Also update name here to be safe
       nip,
       pangkat,
     })
@@ -43,7 +45,7 @@ export async function addMember(formData: FormData) {
 
   if (updateProfileError) {
     console.error('Error updating profile:', updateProfileError)
-    // Optional: Clean up created user in Auth if profile creation fails
+    // Important: Clean up the created auth user if profile update fails to prevent orphans.
     await supabase.auth.admin.deleteUser(newUser.id);
     return { success: false, message: updateProfileError.message || 'Gagal menyimpan profil.' }
   }
@@ -68,7 +70,11 @@ export async function editMember(formData: FormData) {
     // 1. Update the user's profile in the 'profiles' table.
     const { error: profileError } = await supabase
         .from('profiles')
-        .update(profileData)
+        .update({
+          name: profileData.name,
+          nip: profileData.nip,
+          pangkat: profileData.pangkat
+        })
         .eq('id', id);
 
     if (profileError) {
@@ -76,16 +82,18 @@ export async function editMember(formData: FormData) {
         return { success: false, message: profileError.message || 'Gagal memperbarui profil.' };
     }
 
-    // 2. If a new password is provided, update the user's password in Auth.
+    // 2. Update Auth user attributes (email, password)
+    const authUpdatePayload: any = { email: profileData.email };
     if (password) {
-        const { error: authError } = await supabase.auth.admin.updateUserById(id, {
-            password: password
-        });
+        authUpdatePayload.password = password;
+    }
 
-        if (authError) {
-            console.error('Error updating user password:', authError);
-            return { success: false, message: authError.message || 'Gagal memperbarui password.' };
-        }
+    const { error: authError } = await supabase.auth.admin.updateUserById(id, authUpdatePayload);
+
+    if (authError) {
+        console.error('Error updating user in Auth:', authError);
+        // Note: We don't rollback the profile change here, but in a production app you might want to.
+        return { success: false, message: authError.message || 'Gagal memperbarui data login.' };
     }
 
     revalidatePath('/admin/anggota');
@@ -97,18 +105,17 @@ export async function deleteMember(id: string) {
     const supabase = createAdminClient();
 
     // The admin API is required to delete users from auth.
+    // This call will fail if the client doesn't have service_role permissions.
     const { error: deleteAuthUserError } = await supabase.auth.admin.deleteUser(id);
 
-    // If the ON DELETE CASCADE is set up correctly in the database for the profiles table,
-    // deleting the user from auth.users will automatically delete their profile.
-    // If not, we might need to delete from profiles manually, but it's better to rely on CASCADE.
+    // ON DELETE CASCADE in the database should handle deleting the profile.
+    // If the user was already deleted from auth but the profile remains (orphan),
+    // we might need to clean it up, but that's a separate maintenance task.
+    // The primary action is deleting the auth user.
 
     if (deleteAuthUserError) {
-        // Log the error but don't fail if the user is already gone from auth.
-        if (deleteAuthUserError.message !== 'User not found') {
-            console.error('Error deleting auth user:', deleteAuthUserError);
-            return { success: false, message: deleteAuthUserError.message || 'Gagal menghapus pengguna.' };
-        }
+        console.error('Error deleting auth user:', deleteAuthUserError);
+        return { success: false, message: deleteAuthUserError.message || 'Gagal menghapus pengguna.' };
     }
 
     revalidatePath('/admin/anggota');

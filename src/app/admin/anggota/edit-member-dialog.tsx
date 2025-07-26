@@ -34,7 +34,6 @@ export function EditMemberDialog({ member, isOpen, onOpenChange }: EditMemberDia
   const handleEditSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
-    formData.append('id', member.id) // Add member ID to form data
     
     const result = await editMember(formData)
 
@@ -44,7 +43,7 @@ export function EditMemberDialog({ member, isOpen, onOpenChange }: EditMemberDia
         description: result.message,
       })
       onOpenChange(false)
-      router.refresh() // Refresh the data on the page
+      // No need to call router.refresh() because revalidatePath is used in the action
     } else {
       toast({
         title: "Gagal",
@@ -54,9 +53,11 @@ export function EditMemberDialog({ member, isOpen, onOpenChange }: EditMemberDia
     }
   }
 
+  // We need to re-mount the form when the dialog opens to reset defaultValues
+  // if another member was selected. The key prop achieves this.
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent key={member.id} className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="font-headline">Edit Data Anggota</DialogTitle>
           <DialogDescription>

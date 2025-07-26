@@ -7,10 +7,10 @@ export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 export const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 // Server-only variables
-// In a production environment, it's best practice to use a separate, more privileged
-// service role key. However, to prevent crashes when that key isn't set,
-// we'll fall back to the public anon key. This requires proper RLS policies.
-export const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY! || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// This is the correct way to handle the service role key.
+// It prioritizes the specific service role key if it's set, which is best practice for production.
+// For development or environments where it's not set, it falls back to the anon key.
+// This prevents the app from crashing but relies on proper RLS for security in that fallback case.
+export const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export const resendApiKey = process.env.RESEND_API_KEY;
 export const resendFromEmail = process.env.RESEND_FROM_EMAIL;
-
