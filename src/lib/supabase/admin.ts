@@ -13,7 +13,7 @@ export const createAdminClient = () => {
 
   return createClient<Database>(
     supabaseUrl,
-    supabaseServiceRolegeRoleKey,
+    supabaseServiceRoleKey,
     {
       auth: {
         autoRefreshToken: false,
