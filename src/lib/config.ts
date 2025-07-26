@@ -7,5 +7,6 @@ export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 export const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 // Server-only variables
+export const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 export const resendApiKey = process.env.RESEND_API_KEY;
 export const resendFromEmail = process.env.RESEND_FROM_EMAIL;

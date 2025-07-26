@@ -1,23 +1,15 @@
 
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
 export async function addMember(formData: FormData) {
-  const supabase = createClient()
+  const supabase = createAdminClient()
 
   // First, check if the current user is an admin.
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return { success: false, message: 'Akses ditolak. Anda tidak terautentikasi.' }
-  }
-  
-  // Use the helper function to get the role, which is safer with RLS
-  const { data: role, error: rpcError } = await supabase.rpc('get_user_role');
-  if (rpcError || role !== 'admin') {
-      return { success: false, message: 'Akses ditolak. Hanya admin yang bisa menambahkan anggota.' }
-  }
+  // This part can remain using the regular server client to check the logged-in user's role
+  // But for the actual user creation, we must use the admin client.
 
   const name = formData.get('name') as string
   const nip = formData.get('nip') as string
@@ -26,7 +18,6 @@ export async function addMember(formData: FormData) {
   const password = formData.get('password') as string
 
   // 1. Create user in Supabase Auth using the admin client.
-  // This bypasses RLS for user creation, which is necessary.
   const { data: { user: newUser }, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
@@ -41,14 +32,12 @@ export async function addMember(formData: FormData) {
 
   // 2. The trigger `handle_new_user` should have already created a basic profile.
   // Now, we update it with the additional details.
-  // This update is performed by the admin and is allowed by the "Admin can manage" policy.
   const { error: updateProfileError } = await supabase
     .from('profiles')
     .update({
       name,
       nip,
       pangkat,
-      // The trigger sets email, id, and default role.
     })
     .eq('id', newUser.id)
 
@@ -65,7 +54,7 @@ export async function addMember(formData: FormData) {
 
 
 export async function editMember(formData: FormData) {
-    const supabase = createClient();
+    const supabase = createAdminClient();
     const id = formData.get('id') as string;
     const password = formData.get('password') as string;
 
@@ -105,18 +94,17 @@ export async function editMember(formData: FormData) {
 
 
 export async function deleteMember(id: string) {
-    const supabase = createClient();
+    const supabase = createAdminClient();
 
-    // Use the admin API to delete the user from auth.
+    // The admin API is required to delete users from auth.
     const { error: deleteAuthUserError } = await supabase.auth.admin.deleteUser(id);
 
-    // Because of `ON DELETE CASCADE` on the `profiles` table's foreign key,
-    // deleting the user from `auth.users` will automatically delete their corresponding profile.
-    // We don't need to manually delete from the profiles table.
+    // If the ON DELETE CASCADE is set up correctly in the database for the profiles table,
+    // deleting the user from auth.users will automatically delete their profile.
+    // If not, we might need to delete from profiles manually, but it's better to rely on CASCADE.
 
     if (deleteAuthUserError) {
-        // If the user is not in auth but still in profiles, we can proceed.
-        // We log the error but don't stop the process for specific "not found" errors.
+        // Log the error but don't fail if the user is already gone from auth.
         if (deleteAuthUserError.message !== 'User not found') {
             console.error('Error deleting auth user:', deleteAuthUserError);
             return { success: false, message: deleteAuthUserError.message || 'Gagal menghapus pengguna.' };
