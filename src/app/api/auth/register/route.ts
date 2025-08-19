@@ -2,6 +2,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const RegisterSchema = z.object({
     name: z.string().min(3, "Nama lengkap harus diisi"),
@@ -69,10 +70,8 @@ export async function POST(request: Request) {
         status: 301,
      });
   }
-
+  
   // Manually confirm the user's email since we are skipping the verification email.
-  // This requires the admin client.
-  const { createAdminClient } = require('@/lib/supabase/admin');
   const supabaseAdmin = createAdminClient();
   const { error: adminUpdateError } = await supabaseAdmin.auth.admin.updateUserById(
       user.id,
