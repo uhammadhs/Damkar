@@ -26,19 +26,24 @@ export async function POST(request: Request) {
   const { name, email, password, id_pjlp, phone } = validation.data;
 
   try {
-    // Check if ID PJLP already exists using the admin client
+    // Check if ID PJLP or Email already exists using the admin client
     const { data: existingProfile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('id')
-      .eq('id_pjlp', id_pjlp)
-      .single();
+      .select('id_pjlp, email')
+      .or(`id_pjlp.eq.${id_pjlp},email.eq.${email}`)
+      .maybeSingle();
 
-    if (profileError && profileError.code !== 'PGRST116') { // PGRST116 means no rows found, which is good here
+    if (profileError) {
         throw profileError;
     }
 
     if (existingProfile) {
-      return NextResponse.json({ error: 'ID PJLP sudah terdaftar. Silakan login atau gunakan ID lain.' }, { status: 409 });
+      if (existingProfile.id_pjlp === id_pjlp) {
+        return NextResponse.json({ error: 'ID PJLP sudah terdaftar. Silakan login atau gunakan ID lain.' }, { status: 409 });
+      }
+      if (existingProfile.email === email) {
+        return NextResponse.json({ error: 'Email sudah terdaftar. Silakan gunakan email lain.' }, { status: 409 });
+      }
     }
     
     // Use the admin client to create the user.
@@ -55,6 +60,7 @@ export async function POST(request: Request) {
     });
 
     if (signUpError) {
+        // This will catch unique constraint violations on the auth.users table as a fallback
         if (signUpError.message.includes('unique constraint') || signUpError.message.includes('already registered')) {
             return NextResponse.json({ error: 'Email sudah terdaftar. Silakan gunakan email lain.' }, { status: 409 });
         }
@@ -70,7 +76,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, message: "Pendaftaran berhasil." }, { status: 200 });
 
   } catch (error: any) {
-    console.error('Registration Error:', error);
+    console.error('Registration Server Error:', error);
     return NextResponse.json({ error: error.message || 'Terjadi kesalahan internal pada server.' }, { status: 500 });
   }
 }

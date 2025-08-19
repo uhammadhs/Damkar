@@ -44,6 +44,7 @@ export default function RegisterPage() {
       });
       
       if (response.ok) {
+        // Registration was successful, now redirect to the verified page.
         router.push('/auth/verified');
       } else {
         // If there's an error, the server should send a JSON error message.
@@ -51,13 +52,16 @@ export default function RegisterPage() {
             const errorData = await response.json();
             setError(errorData.error || 'Terjadi kesalahan saat pendaftaran.');
         } catch (e) {
+            // This catches errors where the response isn't valid JSON,
+            // like a 500 server error returning an HTML page.
             setError('Gagal memproses respons dari server. Silakan coba lagi.');
         }
       }
 
     } catch (e) {
-      console.error(e);
-      let errorMessage = 'Gagal terhubung ke server. Silakan coba lagi.';
+      console.error('Fetch Error:', e);
+      // This catches network errors (e.g., no internet connection).
+      let errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
       if (e instanceof SyntaxError) {
           errorMessage = "Menerima respons tidak valid dari server. Hubungi admin.";
       }
