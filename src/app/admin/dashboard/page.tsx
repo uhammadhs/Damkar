@@ -2,7 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, BookCopy, CheckCircle, ArrowRight } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, startOfMonth, subMonths } from "date-fns";
 import { id } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ export type MonthlyRequestStat = {
 
 async function getDashboardData() {
     const supabase = createClient();
+    const today = new Date();
     
     // 1. Get total members
     const { count: membersCount, error: membersError } = await supabase
@@ -42,8 +43,7 @@ async function getDashboardData() {
     if (membersError) console.error("Error fetching members count:", membersError.message);
 
     // 2. Get monthly requests
-    const today = new Date();
-    const firstDayOfMonth = format(new Date(today.getFullYear(), today.getMonth(), 1), 'yyyy-MM-dd');
+    const firstDayOfMonth = format(startOfMonth(today), 'yyyy-MM-dd');
     const { count: monthlyCount, error: requestsError } = await supabase
         .from('leave_requests')
         .select('*', { count: 'exact', head: true })
@@ -67,9 +67,38 @@ async function getDashboardData() {
         .limit(5);
     if (recentRequestsError) console.error("Error fetching recent requests:", recentRequestsError.message);
 
-    // 5. Get chart data
-    const { data: chartData, error: chartError } = await supabase.rpc('get_monthly_leave_stats');
-    if (chartError) console.error("Error fetching chart data:", chartError.message);
+    // 5. Get chart data by fetching raw data and processing it in code
+    const sixMonthsAgo = format(startOfMonth(subMonths(today, 5)), 'yyyy-MM-dd');
+    const { data: rawChartData, error: chartError } = await supabase
+        .from('leave_requests')
+        .select('created_at, status')
+        .gte('created_at', sixMonthsAgo);
+
+    if (chartError) {
+        console.error("Error fetching raw chart data:", chartError.message);
+    }
+    
+    // Process raw data into monthly stats
+    const monthlyStats: { [key: string]: MonthlyRequestStat } = {};
+    const monthLabels = Array.from({ length: 6 }, (_, i) => {
+        const d = subMonths(today, i);
+        return format(d, 'MMMM yyyy', { locale: id });
+    }).reverse();
+
+    monthLabels.forEach(label => {
+        monthlyStats[label] = { month: label.split(' ')[0], Disetujui: 0, Ditolak: 0, Menunggu: 0 };
+    });
+
+    if(rawChartData) {
+        rawChartData.forEach(req => {
+            const monthKey = format(new Date(req.created_at), 'MMMM yyyy', { locale: id });
+            if (monthlyStats[monthKey] && req.status) {
+                 if (req.status === 'Disetujui' || req.status === 'Ditolak' || req.status === 'Menunggu') {
+                    monthlyStats[monthKey][req.status]++;
+                 }
+            }
+        });
+    }
 
     // Return data, defaulting to 0 or empty array on error
     return {
@@ -77,7 +106,7 @@ async function getDashboardData() {
         monthlyRequests: monthlyCount || 0,
         approvedRequests: approvedCount || 0,
         recentRequests: (recentRequestsData as RecentRequest[]) || [],
-        chartData: (chartData as MonthlyRequestStat[]) || []
+        chartData: Object.values(monthlyStats)
     }
 }
 
