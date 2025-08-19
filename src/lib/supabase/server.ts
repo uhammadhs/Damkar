@@ -1,9 +1,10 @@
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies, type ReadonlyRequestCookies } from 'next/headers'
+import { cookies } from 'next/headers'
 import { supabaseUrl, supabaseAnonKey } from '@/lib/supabase/config'
 
-export function createClient(cookieStore: ReadonlyRequestCookies) {
+export function createClient() {
+  const cookieStore = cookies()
 
   return createServerClient(
     supabaseUrl,
