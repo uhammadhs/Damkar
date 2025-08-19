@@ -70,16 +70,16 @@ export function AddMemberDialog() {
             <Input id="name" name="name" className="col-span-3" placeholder="Contoh: Budi" required />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="nip" className="text-right">NIP</Label>
-            <Input id="nip" name="nip" className="col-span-3" placeholder="Contoh: 199505052020121005" required />
+            <Label htmlFor="id_pjlp" className="text-right">ID PJLP</Label>
+            <Input id="id_pjlp" name="id_pjlp" className="col-span-3" placeholder="Contoh: 123456789" required />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="pangkat" className="text-right">Pangkat</Label>
-            <Input id="pangkat" name="pangkat" className="col-span-3" placeholder="Contoh: Analis Kebakaran" required />
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="phone" className="text-right">Nomor HP</Label>
+            <Input id="phone" name="phone" className="col-span-3" placeholder="0812xxxxxxxx" required />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="email" className="text-right">Email</Label>
-            <Input id="email" name="email" type="email" className="col-span-3" placeholder="Untuk login" required />
+            <Input id="email" name="email" type="email" className="col-span-3" placeholder="Untuk login & notifikasi" required />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="password" className="text-right">Password</Label>

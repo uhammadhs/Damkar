@@ -76,8 +76,8 @@ export function LeaveRequestActions({ request }: { request: LeaveRequest }) {
                             <span className="col-span-2 font-semibold">{request.profiles?.name || 'N/A'}</span>
                         </div>
                         <div className="grid grid-cols-3 items-center gap-4">
-                            <span className="text-sm font-medium text-muted-foreground">NIP</span>
-                            <span className="col-span-2 font-semibold">{request.profiles?.nip || 'N/A'}</span>
+                            <span className="text-sm font-medium text-muted-foreground">ID PJLP</span>
+                            <span className="col-span-2 font-semibold">{request.profiles?.id_pjlp || 'N/A'}</span>
                         </div>
                         <div className="grid grid-cols-3 items-center gap-4">
                             <span className="text-sm font-medium text-muted-foreground">Tanggal</span>

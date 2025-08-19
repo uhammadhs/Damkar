@@ -45,8 +45,8 @@ export async function MemberTable({ profiles, query }: { profiles: Profile[], qu
                 <TableHeader>
                     <TableRow>
                         <TableHead>Nama</TableHead>
-                        <TableHead className="hidden sm:table-cell">NIP</TableHead>
-                        <TableHead className="hidden md:table-cell">Pangkat</TableHead>
+                        <TableHead className="hidden sm:table-cell">ID PJLP</TableHead>
+                        <TableHead className="hidden md:table-cell">Nomor HP</TableHead>
                         <TableHead className="text-right">Aksi</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -61,12 +61,12 @@ export async function MemberTable({ profiles, query }: { profiles: Profile[], qu
                                     </Avatar>
                                     <div className="flex flex-col">
                                         <div className="font-medium">{profile.name || 'No Name'}</div>
-                                        <div className="text-sm text-muted-foreground md:hidden">{profile.pangkat}</div>
+                                        <div className="text-sm text-muted-foreground md:hidden">{profile.id_pjlp}</div>
                                     </div>
                                 </div>
                             </TableCell>
-                            <TableCell className="hidden sm:table-cell">{profile.nip}</TableCell>
-                            <TableCell className="hidden md:table-cell">{profile.pangkat}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{profile.id_pjlp}</TableCell>
+                            <TableCell className="hidden md:table-cell">{profile.phone}</TableCell>
                             <TableCell className="text-right">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>

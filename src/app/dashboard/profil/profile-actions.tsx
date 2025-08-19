@@ -91,12 +91,12 @@ export function ProfileActions({ profile }: ProfileActionsProps) {
               <Input id="name" name="name" defaultValue={profile.name || ''} className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="nip" className="text-right">NIP</Label>
-              <Input id="nip" name="nip" defaultValue={profile.nip || ''} className="col-span-3" />
+              <Label htmlFor="id_pjlp" className="text-right">ID PJLP</Label>
+              <Input id="id_pjlp" name="id_pjlp" defaultValue={profile.id_pjlp || ''} className="col-span-3" />
             </div>
              <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="pangkat" className="text-right">Pangkat</Label>
-              <Input id="pangkat" name="pangkat" defaultValue={profile.pangkat || ''} className="col-span-3" />
+              <Label htmlFor="phone" className="text-right">Nomor HP</Label>
+              <Input id="phone" name="phone" defaultValue={profile.phone || ''} className="col-span-3" />
             </div>
              <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="golongan" className="text-right">Golongan</Label>

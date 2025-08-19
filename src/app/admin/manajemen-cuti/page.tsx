@@ -13,7 +13,7 @@ import Loading from "./loading";
 export const revalidate = 60; // Cache for 60 seconds
 
 export type LeaveRequest = Database['public']['Tables']['leave_requests']['Row'] & {
-  profiles: Pick<Database['public']['Tables']['profiles']['Row'], 'name' | 'nip' | 'avatar_url'> | null;
+  profiles: Pick<Database['public']['Tables']['profiles']['Row'], 'name' | 'id_pjlp' | 'avatar_url'> | null;
 };
 
 const ITEMS_PER_PAGE = 10;
@@ -24,7 +24,7 @@ async function getLeaveRequests(status: 'Menunggu' | 'Semua', page: number) {
 
     let query = supabase
         .from('leave_requests')
-        .select('*, profiles(name, nip, avatar_url)', { count: 'exact' })
+        .select('*, profiles(name, id_pjlp, avatar_url)', { count: 'exact' })
         .order('created_at', { ascending: false });
 
     if (status !== 'Semua') {

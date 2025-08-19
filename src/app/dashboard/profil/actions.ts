@@ -7,8 +7,8 @@ import { z } from "zod";
 
 const ProfileUpdateSchema = z.object({
   name: z.string().min(1, "Nama tidak boleh kosong"),
-  nip: z.string().optional(),
-  pangkat: z.string().optional(),
+  id_pjlp: z.string().min(1, "ID PJLP tidak boleh kosong"),
+  phone: z.string().min(10, "Nomor HP tidak valid").optional(),
   golongan: z.string().optional(),
   jabatan: z.string().optional(),
   satuanKerja: z.string().optional(),
@@ -28,8 +28,8 @@ export async function updateProfile(formData: FormData) {
 
   const rawData = {
     name: formData.get("name"),
-    nip: formData.get("nip"),
-    pangkat: formData.get("pangkat"),
+    id_pjlp: formData.get("id_pjlp"),
+    phone: formData.get("phone"),
     golongan: formData.get("golongan"),
     jabatan: formData.get("jabatan"),
     satuanKerja: formData.get("satuanKerja"),
@@ -48,6 +48,9 @@ export async function updateProfile(formData: FormData) {
 
   if (error) {
     console.error("Error updating profile:", error);
+    if (error.message.includes('unique constraint')) {
+        return { success: false, message: 'ID PJLP sudah digunakan oleh anggota lain.' };
+    }
     return { success: false, message: error.message || "Gagal memperbarui profil." };
   }
 

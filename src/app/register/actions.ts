@@ -6,6 +6,8 @@ import { z } from 'zod';
 
 const RegisterSchema = z.object({
     name: z.string().min(3, "Nama lengkap harus diisi"),
+    id_pjlp: z.string().min(5, "ID PJLP tidak valid"),
+    phone: z.string().min(10, "Nomor HP tidak valid"),
     email: z.string().email("Format email tidak valid"),
     password: z.string().min(6, "Password minimal 6 karakter"),
 });
@@ -16,6 +18,8 @@ export async function registerUser(formData: FormData) {
 
   const rawData = {
     name: formData.get('name') as string,
+    id_pjlp: formData.get('id_pjlp') as string,
+    phone: formData.get('phone') as string,
     email: formData.get('email') as string,
     password: formData.get('password') as string,
   };
@@ -27,35 +31,43 @@ export async function registerUser(formData: FormData) {
       return { success: false, message: errorMessages };
   }
 
-  const { name, email, password } = validation.data;
+  const { name, email, password, id_pjlp, phone } = validation.data;
 
-  // Sign up the user. The `handle_new_user` trigger in the database
-  // will automatically create a corresponding profile entry.
-  // We also pass the name in user_metadata so it can be used by the trigger or self-healing mechanisms.
+  // Check if ID PJLP already exists
+  const { data: existingProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id_pjlp', id_pjlp)
+    .single();
+
+  if (existingProfile) {
+    return { success: false, message: 'ID PJLP sudah terdaftar. Silakan login atau gunakan ID lain.' };
+  }
+
   const { data, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      // This data is useful for the profile creation trigger
       data: {
         name: name,
+        id_pjlp: id_pjlp,
+        phone: phone,
       },
-      // The user will be redirected to this page after clicking the verification link
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/verified`,
     },
   });
 
   if (signUpError) {
     console.error('Sign up error:', signUpError);
+    if (signUpError.message.includes('unique constraint')) {
+        return { success: false, message: 'Email sudah terdaftar. Silakan gunakan email lain atau login.' };
+    }
     return { success: false, message: signUpError.message };
   }
 
   if (!data.user) {
     return { success: false, message: 'Gagal membuat pengguna, silakan coba lagi.' };
   }
-  
-  // No need to manually update profile here, as the trigger should handle it.
-  // This simplifies the action and makes it more reliable.
 
   return { success: true, message: 'Pendaftaran berhasil. Silakan cek email Anda untuk verifikasi.' };
 }

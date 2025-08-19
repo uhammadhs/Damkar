@@ -15,7 +15,7 @@ export type LeaveBalance = {
     profiles: {
         id: string;
         name: string | null;
-        nip: string | null;
+        id_pjlp: string | null;
     } | null;
 }
 
@@ -30,7 +30,7 @@ const getLeaveBalances = async (year: number): Promise<LeaveBalance[]> => {
             profiles!inner(
                 id,
                 name,
-                nip
+                id_pjlp
             )
         `)
         .eq('year', year)
@@ -92,7 +92,7 @@ export default async function LaporanPage({
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Nama Anggota</TableHead>
-                                <TableHead className="hidden sm:table-cell">NIP</TableHead>
+                                <TableHead className="hidden sm:table-cell">ID PJLP</TableHead>
                                 <TableHead className="text-center">Total Hak Cuti</TableHead>
                                 <TableHead className="text-center">Cuti Terpakai</TableHead>
                                 <TableHead className="text-center font-semibold">Sisa Cuti</TableHead>
@@ -103,7 +103,7 @@ export default async function LaporanPage({
                                 balances.map(balance => (
                                     <TableRow key={balance.profiles?.id}>
                                         <TableCell className="font-medium">{balance.profiles?.name || 'N/A'}</TableCell>
-                                        <TableCell className="hidden sm:table-cell">{balance.profiles?.nip || 'N/A'}</TableCell>
+                                        <TableCell className="hidden sm:table-cell">{balance.profiles?.id_pjlp || 'N/A'}</TableCell>
                                         <TableCell className="text-center">{balance.total_days} hari</TableCell>
                                         <TableCell className="text-center">{balance.used_days} hari</TableCell>
                                         <TableCell className="text-center font-semibold text-primary">

@@ -101,10 +101,10 @@ export type Database = {
           email: string | null
           golongan: string | null
           id: string
+          id_pjlp: string | null
           jabatan: string | null
           name: string | null
-          nip: string | null
-          pangkat: string | null
+          phone: string | null
           role: string | null
           satuanKerja: string | null
           updated_at: string | null
@@ -114,10 +114,10 @@ export type Database = {
           email?: string | null
           golongan?: string | null
           id: string
+          id_pjlp?: string | null
           jabatan?: string | null
           name?: string | null
-          nip?: string | null
-          pangkat?: string | null
+          phone?: string | null
           role?: string | null
           satuanKerja?: string | null
           updated_at?: string | null
@@ -127,10 +127,10 @@ export type Database = {
           email?: string | null
           golongan?: string | null
           id?: string
+          id_pjlp?: string | null
           jabatan?: string | null
           name?: string | null
-          nip?: string | null
-          pangkat?: string | null
+          phone?: string | null
           role?: string | null
           satuanKerja?: string | null
           updated_at?: string | null
@@ -150,15 +150,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_monthly_leave_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          month: string
-          Menunggu: number
-          Disetujui: number
-          Ditolak: number
-        }[]
-      }
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string

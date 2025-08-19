@@ -6,23 +6,16 @@ import { Input } from "@/components/ui/input";
 import { AddMemberDialog } from "./add-member-dialog";
 import type { Database } from "@/types/supabase";
 import { MemberTable } from "./member-table";
+import { Suspense } from "react";
+import Loading from "./loading";
 
 export const revalidate = 60; // Cache for 60 seconds
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 
 const ITEMS_PER_PAGE = 10;
 
-export default async function AnggotaPage({
-  searchParams,
-}: {
-  searchParams?: {
-    query?: string;
-    page?: string;
-  };
-}) {
+async function MemberList({ query, currentPage }: { query: string, currentPage: number }) {
   const supabase = createClient();
-  const query = searchParams?.query || "";
-  const currentPage = Number(searchParams?.page) || 1;
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   let queryBuilder = supabase
@@ -32,7 +25,7 @@ export default async function AnggotaPage({
     .order("name", { ascending: true });
 
   if (query) {
-    queryBuilder = queryBuilder.or(`name.ilike.%${query}%,nip.ilike.%${query}%,pangkat.ilike.%${query}%`);
+    queryBuilder = queryBuilder.or(`name.ilike.%${query}%,id_pjlp.ilike.%${query}%,phone.ilike.%${query}%`);
   }
 
   queryBuilder = queryBuilder.range(offset, offset + ITEMS_PER_PAGE - 1);
@@ -44,8 +37,22 @@ export default async function AnggotaPage({
     // Fallback UI or error message
     return <div>Gagal memuat data anggota. Silakan coba lagi nanti.</div>;
   }
+  
+  // const totalPages = Math.ceil((count || 0) / ITEMS_PER_PAGE);
 
-  const totalPages = Math.ceil((count || 0) / ITEMS_PER_PAGE);
+  return <MemberTable profiles={profiles || []} query={query} />
+}
+
+export default async function AnggotaPage({
+  searchParams,
+}: {
+  searchParams?: {
+    query?: string;
+    page?: string;
+  };
+}) {
+  const query = searchParams?.query || "";
+  const currentPage = Number(searchParams?.page) || 1;
 
   return (
     <Card>
@@ -57,7 +64,7 @@ export default async function AnggotaPage({
               <Input
                 type="search"
                 name="query"
-                placeholder="Cari anggota..."
+                placeholder="Cari anggota (nama, id pjlp)..."
                 className="pl-8 sm:w-[300px]"
                 defaultValue={query}
               />
@@ -67,7 +74,9 @@ export default async function AnggotaPage({
         </div>
       </CardHeader>
       <CardContent>
-        <MemberTable profiles={profiles || []} query={query} />
+        <Suspense key={query + currentPage} fallback={<Loading />}>
+          <MemberList query={query} currentPage={currentPage} />
+        </Suspense>
       </CardContent>
     </Card>
   );

@@ -75,12 +75,16 @@ async function ProfileData() {
                 <p className="font-semibold">{profile.name || "-"}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">NIP</p>
-                <p className="font-semibold">{profile.nip || "-"}</p>
+                <p className="text-sm font-medium text-muted-foreground">ID PJLP</p>
+                <p className="font-semibold">{profile.id_pjlp || "-"}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Pangkat</p>
-                <p className="font-semibold">{profile.pangkat || "-"}</p>
+                <p className="text-sm font-medium text-muted-foreground">Nomor HP</p>
+                <p className="font-semibold">{profile.phone || "-"}</p>
+              </div>
+               <div>
+                <p className="text-sm font-medium text-muted-foreground">Email</p>
+                <p className="font-semibold">{profile.email || "-"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Golongan</p>

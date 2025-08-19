@@ -29,54 +29,42 @@ export default function LoginPage() {
 
     try {
       const formData = new FormData(event.currentTarget);
-      const email = formData.get("email") as string;
+      const idPjlp = formData.get("id_pjlp") as string;
       const password = formData.get("password") as string;
 
-      // 1. Sign in with Supabase
+      if (!idPjlp || !password) {
+        throw new Error("ID PJLP dan Password harus diisi.");
+      }
+
+      // 1. Find user's email by their ID PJLP first
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('email, role')
+        .eq('id_pjlp', idPjlp)
+        .single();
+      
+      if (profileError || !profileData) {
+        throw new Error("ID PJLP tidak ditemukan. Periksa kembali.");
+      }
+      
+      const email = profileData.email;
+      if (!email) {
+        throw new Error("Data email untuk pengguna ini tidak lengkap. Hubungi admin.");
+      }
+
+      // 2. Sign in with the fetched email and provided password
       const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (authError || !user) {
-        throw new Error("Email atau password salah. Periksa kembali.");
-      }
-
-      // 2. Fetch the user's profile to determine their role.
-      // This is a critical step.
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle(); // Use maybeSingle to not error if profile doesn't exist yet
-
-      if (profileError) {
-        throw new Error("Terjadi kesalahan saat mengambil data profil.");
+        throw new Error("Password salah. Periksa kembali.");
       }
       
-      let userRole = profile?.role;
-
-      // 3. Self-healing: If profile doesn't exist, create one.
-      // This ensures every logged-in user has a profile.
-      if (!profile) {
-        const { data: newProfile, error: insertError } = await supabase
-          .from('profiles')
-          .insert({ 
-            id: user.id, 
-            email: user.email, 
-            name: user.user_metadata?.name || user.email?.split('@')[0],
-            role: 'anggota' // Default role for new/healed profiles
-          })
-          .select('role')
-          .single();
-        
-        if (insertError || !newProfile) {
-          throw new Error("Gagal membuat profil untuk pengguna baru. Hubungi admin.");
-        }
-        userRole = newProfile.role;
-      }
-
-      // 4. Redirect based on role
+      const userRole = profileData.role;
+      
+      // 3. Redirect based on role
       if (userRole === 'admin') {
         toast({
           title: "Login Berhasil",
@@ -90,7 +78,6 @@ export default function LoginPage() {
         });
         router.push('/dashboard');
       }
-       // router.refresh() is implicitly handled by router.push in Next.js 13+ App Router
 
     } catch (err: any) {
       const errorMessage = err.message || "Terjadi kesalahan yang tidak diketahui.";
@@ -100,7 +87,8 @@ export default function LoginPage() {
         description: errorMessage,
         variant: "destructive",
       });
-      setIsLoading(false); // Ensure loading is stopped on error
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -130,8 +118,8 @@ export default function LoginPage() {
           )}
           <form className="space-y-4" onSubmit={handleLogin}>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" placeholder="contoh@email.com" required type="email" disabled={isLoading} />
+              <Label htmlFor="id_pjlp">ID PJLP</Label>
+              <Input id="id_pjlp" name="id_pjlp" placeholder="Contoh: 123456789" required disabled={isLoading} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
