@@ -71,3 +71,5 @@ export async function registerUser(formData: FormData) {
 
   return { success: true, message: 'Pendaftaran berhasil. Silakan cek email Anda untuk verifikasi.' };
 }
+
+    

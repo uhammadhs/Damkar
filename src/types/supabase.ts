@@ -20,7 +20,7 @@ export type Database = {
         }
         Insert: {
           id?: number
-          total_days: number
+          total_days?: number
           used_days?: number
           user_id: string
           year: number
@@ -99,40 +99,31 @@ export type Database = {
         Row: {
           avatar_url: string | null
           email: string | null
-          golongan: string | null
           id: string
           id_pjlp: string | null
-          jabatan: string | null
           name: string | null
           phone: string | null
           role: string | null
-          satuanKerja: string | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           email?: string | null
-          golongan?: string | null
           id: string
           id_pjlp?: string | null
-          jabatan?: string | null
           name?: string | null
           phone?: string | null
           role?: string | null
-          satuanKerja?: string | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           email?: string | null
-          golongan?: string | null
           id?: string
           id_pjlp?: string | null
-          jabatan?: string | null
           name?: string | null
           phone?: string | null
           role?: string | null
-          satuanKerja?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -178,7 +169,7 @@ export type Tables<
     | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+        Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName]
     : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
@@ -251,3 +242,5 @@ export type Enums<
   : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
     ? Database["public"]["Enums"][PublicEnumNameOrOptions]
     : never
+
+    

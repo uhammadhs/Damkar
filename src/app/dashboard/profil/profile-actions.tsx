@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { changePassword, updateProfile } from "./actions";
+import { Loader2 } from "lucide-react";
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -28,10 +29,14 @@ interface ProfileActionsProps {
 export function ProfileActions({ profile }: ProfileActionsProps) {
   const [isEditProfileOpen, setIsEditProfileOpen] = React.useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [isChangingPassword, setIsChangingPassword] = React.useState(false);
+
   const { toast } = useToast();
 
   const handleProfileUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsSaving(true);
     const formData = new FormData(event.currentTarget);
     const result = await updateProfile(formData);
 
@@ -41,7 +46,6 @@ export function ProfileActions({ profile }: ProfileActionsProps) {
         title: "Sukses",
         description: result.message,
       });
-      // No need to optimistically update, revalidatePath will handle it.
     } else {
         toast({
             title: "Gagal",
@@ -49,10 +53,12 @@ export function ProfileActions({ profile }: ProfileActionsProps) {
             variant: "destructive",
         });
     }
+    setIsSaving(false);
   };
   
   const handleChangePasswordSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsChangingPassword(true);
     const formData = new FormData(event.currentTarget);
     const result = await changePassword(formData);
     
@@ -70,6 +76,7 @@ export function ProfileActions({ profile }: ProfileActionsProps) {
             variant: "destructive",
         });
     }
+    setIsChangingPassword(false);
   }
 
   return (
@@ -88,34 +95,25 @@ export function ProfileActions({ profile }: ProfileActionsProps) {
           <form id="edit-profile-form" onSubmit={handleProfileUpdate} className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">Nama</Label>
-              <Input id="name" name="name" defaultValue={profile.name || ''} className="col-span-3" />
+              <Input id="name" name="name" defaultValue={profile.name || ''} className="col-span-3" required />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="id_pjlp" className="text-right">ID PJLP</Label>
-              <Input id="id_pjlp" name="id_pjlp" defaultValue={profile.id_pjlp || ''} className="col-span-3" />
+              <Input id="id_pjlp" name="id_pjlp" defaultValue={profile.id_pjlp || ''} className="col-span-3" required />
             </div>
              <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="phone" className="text-right">Nomor HP</Label>
-              <Input id="phone" name="phone" defaultValue={profile.phone || ''} className="col-span-3" />
-            </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="golongan" className="text-right">Golongan</Label>
-              <Input id="golongan" name="golongan" defaultValue={profile.golongan || ''} className="col-span-3" />
-            </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="jabatan" className="text-right">Jabatan</Label>
-              <Input id="jabatan" name="jabatan" defaultValue={profile.jabatan || ''} className="col-span-3" />
-            </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="satuanKerja" className="text-right">Satuan Kerja</Label>
-              <Input id="satuanKerja" name="satuanKerja" defaultValue={profile.satuanKerja || ''} className="col-span-3" />
+              <Input id="phone" name="phone" defaultValue={profile.phone || ''} className="col-span-3" required />
             </div>
           </form>
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="secondary">Batal</Button>
+              <Button type="button" variant="secondary" disabled={isSaving}>Batal</Button>
             </DialogClose>
-            <Button type="submit" form="edit-profile-form">Simpan Perubahan</Button>
+            <Button type="submit" form="edit-profile-form" disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -143,12 +141,17 @@ export function ProfileActions({ profile }: ProfileActionsProps) {
           </form>
            <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="secondary">Batal</Button>
+              <Button type="button" variant="secondary" disabled={isChangingPassword}>Batal</Button>
             </DialogClose>
-            <Button type="submit" form="change-password-form">Simpan Password</Button>
+            <Button type="submit" form="change-password-form" disabled={isChangingPassword}>
+              {isChangingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isChangingPassword ? "Menyimpan..." : "Simpan Password"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
 }
+
+    

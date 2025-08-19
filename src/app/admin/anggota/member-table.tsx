@@ -87,3 +87,5 @@ export async function MemberTable({ profiles, query }: { profiles: Profile[], qu
         </div>
     )
 }
+
+    

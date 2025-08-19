@@ -9,9 +9,6 @@ const ProfileUpdateSchema = z.object({
   name: z.string().min(1, "Nama tidak boleh kosong"),
   id_pjlp: z.string().min(1, "ID PJLP tidak boleh kosong"),
   phone: z.string().min(10, "Nomor HP tidak valid").optional(),
-  golongan: z.string().optional(),
-  jabatan: z.string().optional(),
-  satuanKerja: z.string().optional(),
 });
 
 
@@ -30,9 +27,6 @@ export async function updateProfile(formData: FormData) {
     name: formData.get("name"),
     id_pjlp: formData.get("id_pjlp"),
     phone: formData.get("phone"),
-    golongan: formData.get("golongan"),
-    jabatan: formData.get("jabatan"),
-    satuanKerja: formData.get("satuanKerja"),
   };
   
   const validation = ProfileUpdateSchema.safeParse(rawData);
@@ -81,3 +75,5 @@ export async function changePassword(formData: FormData) {
 
     return { success: true, message: "Password berhasil diubah." };
 }
+
+    

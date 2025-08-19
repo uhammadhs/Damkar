@@ -14,7 +14,7 @@ function ProfileSkeleton() {
             <Skeleton className="h-32 w-32 rounded-full" />
             <div className="flex-1 space-y-4 text-center md:text-left">
                 <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
-                    {Array.from({ length: 6 }).map((_, i) => (
+                    {Array.from({ length: 4 }).map((_, i) => (
                         <div key={i}>
                             <Skeleton className="h-4 w-24 mb-2" />
                             <Skeleton className="h-6 w-40" />
@@ -86,18 +86,6 @@ async function ProfileData() {
                 <p className="text-sm font-medium text-muted-foreground">Email</p>
                 <p className="font-semibold">{profile.email || "-"}</p>
               </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Golongan</p>
-                <p className="font-semibold">{profile.golongan || "-"}</p>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-sm font-medium text-muted-foreground">Jabatan</p>
-                <p className="font-semibold">{profile.jabatan || "-"}</p>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-sm font-medium text-muted-foreground">Satuan Kerja</p>
-                <p className="font-semibold">{profile.satuanKerja || "-"}</p>
-              </div>
             </div>
             <Separator className="my-6" />
             <ProfileActions profile={profile} />
@@ -123,3 +111,5 @@ export default async function ProfilPage() {
     </Card>
   );
 }
+
+    
