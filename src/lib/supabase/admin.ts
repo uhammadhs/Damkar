@@ -1,21 +1,22 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { supabaseUrl, supabaseServiceRoleKey } from '@/lib/config';
 import type { Database } from '@/types/supabase';
 
 // This is a privileged client that should only be used on the server
 // in server actions and route handlers. It uses the service_role key
 // which bypasses RLS.
+// It's essential that the SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set correctly in your environment.
 export const createAdminClient = () => {
-  // The service role key is now handled with a fallback in the config file,
-  // so this check is simpler. We still need to ensure the basics are there.
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
   if (!supabaseUrl || !supabaseServiceRoleKey) {
-    throw new Error('Supabase URL or key is not set. Admin client cannot be created.');
+    throw new Error('Supabase URL or service role key is not set. Admin client cannot be created.');
   }
 
   return createClient<Database>(
     supabaseUrl,
-    supabaseServiceRoleKey, // This will be either the service_role or anon key.
+    supabaseServiceRoleKey,
     {
       auth: {
         autoRefreshToken: false,
