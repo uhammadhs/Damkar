@@ -17,13 +17,7 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const supabase = createClient();
 
-  const rawData = {
-    name: formData.get('name') as string,
-    id_pjlp: formData.get('id_pjlp') as string,
-    phone: formData.get('phone') as string,
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
-  };
+  const rawData = Object.fromEntries(formData.entries());
 
   const validation = RegisterSchema.safeParse(rawData);
 
@@ -49,7 +43,8 @@ export async function POST(request: Request) {
      });
   }
   
-  const { error: signUpError } = await supabase.auth.signUp({
+  // Create user but don't sign them in
+  const { data: { user }, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -58,6 +53,7 @@ export async function POST(request: Request) {
         id_pjlp: id_pjlp,
         phone: phone,
       },
+      // emailRedirectTo is not needed if email verification is off
     },
   });
 
@@ -66,6 +62,29 @@ export async function POST(request: Request) {
         status: 301,
      });
   }
+
+  // The trigger should create the profile. We just need to confirm user creation was successful.
+  if (!user) {
+     return NextResponse.redirect(`${requestUrl.origin}/register?error=${encodeURIComponent('Gagal membuat pengguna, silakan coba lagi.')}`, {
+        status: 301,
+     });
+  }
+
+  // Manually confirm the user's email since we are skipping the verification email.
+  // This requires the admin client.
+  const { createAdminClient } = require('@/lib/supabase/admin');
+  const supabaseAdmin = createAdminClient();
+  const { error: adminUpdateError } = await supabaseAdmin.auth.admin.updateUserById(
+      user.id,
+      { email_confirm: true }
+  );
+
+  if (adminUpdateError) {
+       return NextResponse.redirect(`${requestUrl.origin}/register?error=${encodeURIComponent('Gagal mengaktifkan akun, hubungi admin.')}`, {
+          status: 301,
+       });
+  }
+
 
   return NextResponse.redirect(`${requestUrl.origin}/auth/verified`, {
     status: 301,
