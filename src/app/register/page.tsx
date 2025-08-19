@@ -3,7 +3,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,11 +15,9 @@ import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const initialError = searchParams.get('error');
-
+  
   const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(initialError);
+  const [error, setError] = React.useState<string | null>(null);
 
   const [name, setName] = React.useState('');
   const [idPjlp, setIdPjlp] = React.useState('');
@@ -45,21 +43,23 @@ export default function RegisterPage() {
         body: formData,
       });
 
+      // The server will now consistently return JSON.
+      const data = await response.json();
+
       if (response.ok) {
-        if (response.redirected) {
-          router.push(response.url);
-        } else {
-          const data = await response.json();
-           // Handle non-redirect success if necessary, e.g. showing a message
-           router.push('/auth/verified');
-        }
+        // Redirect on success
+        router.push('/auth/verified');
       } else {
-        const errorData = await response.json();
-        setError(errorData.error || 'Terjadi kesalahan saat pendaftaran.');
+        // Set error from the JSON response
+        setError(data.error || 'Terjadi kesalahan saat pendaftaran.');
       }
     } catch (e) {
       console.error(e);
-      setError('Gagal terhubung ke server. Silakan coba lagi.');
+      let errorMessage = 'Gagal terhubung ke server. Silakan coba lagi.';
+      if (e instanceof SyntaxError) {
+          errorMessage = "Menerima respons tidak valid dari server.";
+      }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

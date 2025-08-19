@@ -13,7 +13,6 @@ const RegisterSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const requestUrl = new URL(request.url)
   const formData = await request.formData();
   const supabase = createClient();
   const supabaseAdmin = createAdminClient();
@@ -76,5 +75,7 @@ export async function POST(request: Request) {
        return NextResponse.json({ error: 'Gagal mengaktifkan akun, hubungi admin.' }, { status: 500 });
   }
 
-  return NextResponse.redirect(`${requestUrl.origin}/auth/verified`, { status: 303 });
+  // Instead of redirecting, return a success response.
+  // The client will handle the redirect.
+  return NextResponse.json({ success: true, message: "Pendaftaran berhasil. Anda akan diarahkan..." });
 }
