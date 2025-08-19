@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/compon
 import { Button } from "@/components/ui/button";
 import { MemberActions } from "./member-actions";
 
+export const revalidate = 60; // Cache for 60 seconds
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 
 const getAvatarFallback = (name: string | null) => {

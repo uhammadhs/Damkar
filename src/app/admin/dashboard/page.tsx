@@ -1,7 +1,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, BookCopy, BarChart, CheckCircle, ArrowRight, Loader2 } from "lucide-react";
+import { Users, BookCopy, CheckCircle, ArrowRight, Loader2 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,6 +10,8 @@ import Link from "next/link";
 import type { Database } from "@/types/supabase";
 import * as React from 'react';
 import dynamic from 'next/dynamic';
+
+export const revalidate = 60; // Cache for 60 seconds
 
 const LeaveStatsChart = dynamic(() => import('../laporan/leave-stats-chart').then(mod => mod.LeaveStatsChart), {
   ssr: false,

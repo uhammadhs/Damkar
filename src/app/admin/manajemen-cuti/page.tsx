@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LeaveRequestTable } from "./leave-request-table";
 import type { Database } from "@/types/supabase";
 
+export const revalidate = 60; // Cache for 60 seconds
+
 export type LeaveRequest = Database['public']['Tables']['leave_requests']['Row'] & {
   profiles: Pick<Database['public']['Tables']['profiles']['Row'], 'name' | 'nip' | 'avatar_url'> | null;
 };
