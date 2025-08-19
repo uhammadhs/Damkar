@@ -58,8 +58,15 @@ export default function LoginPage() {
         password,
       });
 
-      if (authError || !user) {
+      if (authError) {
+         if (authError.message.includes('Email not confirmed')) {
+            throw new Error("Email belum diverifikasi. Silakan cek kotak masuk email Anda.");
+        }
         throw new Error("Password salah. Periksa kembali.");
+      }
+
+      if (!user) {
+        throw new Error("Gagal login, pengguna tidak ditemukan setelah otentikasi.");
       }
       
       const userRole = profileData.role;
@@ -149,5 +156,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    

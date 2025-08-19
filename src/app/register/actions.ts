@@ -3,6 +3,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod';
+import { cookies } from 'next/headers';
 
 const RegisterSchema = z.object({
     name: z.string().min(3, "Nama lengkap harus diisi"),
@@ -14,7 +15,8 @@ const RegisterSchema = z.object({
 
 
 export async function registerUser(formData: FormData) {
-  const supabase = createClient()
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
 
   const rawData = {
     name: formData.get('name') as string,
@@ -43,6 +45,8 @@ export async function registerUser(formData: FormData) {
   if (existingProfile) {
     return { success: false, message: 'ID PJLP sudah terdaftar. Silakan login atau gunakan ID lain.' };
   }
+  
+  const redirectUrl = new URL('/auth/verified', process.env.NEXT_PUBLIC_SITE_URL).toString();
 
   const { data, error: signUpError } = await supabase.auth.signUp({
     email,
@@ -53,7 +57,7 @@ export async function registerUser(formData: FormData) {
         id_pjlp: id_pjlp,
         phone: phone,
       },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/verified`,
+      emailRedirectTo: redirectUrl,
     },
   });
 
@@ -71,5 +75,3 @@ export async function registerUser(formData: FormData) {
 
   return { success: true, message: 'Pendaftaran berhasil. Silakan cek email Anda untuk verifikasi.' };
 }
-
-    
