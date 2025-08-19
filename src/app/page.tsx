@@ -42,19 +42,14 @@ export default function LoginPage() {
         body: formData,
       });
       
-      if (response.ok && response.redirected) {
-          router.push(response.url);
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+          router.push(result.redirectUrl);
           return;
       }
 
-      if (!response.ok) {
-        try {
-          const errorData = await response.json();
-          setError(errorData.error || 'Terjadi kesalahan yang tidak diketahui.');
-        } catch (e) {
-          setError('Gagal memproses respons dari server. Silakan coba lagi.');
-        }
-      }
+      setError(result.error || 'Terjadi kesalahan yang tidak diketahui.');
 
     } catch (e) {
       console.error(e);

@@ -1,13 +1,16 @@
 
-import { createClient } from '@/lib/supabase/server';
+import { createRouteHandlerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import type { Database } from '@/types/supabase';
 
 export async function POST(request: Request) {
   const requestUrl = new URL(request.url);
   const formData = await request.formData();
   const id_pjlp = formData.get('id_pjlp') as string;
   const password = formData.get('password') as string;
-  const supabase = createClient();
+  const cookieStore = cookies();
+  const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
 
   if (!id_pjlp || !password) {
      return NextResponse.json({ error: 'ID PJLP dan Password harus diisi.' }, { status: 400 });
@@ -37,18 +40,18 @@ export async function POST(request: Request) {
 
   if (authError) {
     if (authError.message.includes('Email not confirmed')) {
-       return NextResponse.json({ error: 'Akun Anda belum aktif. Silakan hubungi admin jika masalah berlanjut.' }, { status: 401 });
+       return NextResponse.json({ error: 'Akun Anda belum aktif. Silakan periksa email verifikasi Anda.' }, { status: 401 });
     }
      return NextResponse.json({ error: 'Password salah. Periksa kembali.' }, { status: 401 });
   }
 
   const userRole = profileData.role;
   
-  // 3. Redirect based on role
+  // 3. Prepare redirect URL based on role
   const redirectUrl = userRole === 'admin' 
     ? `${requestUrl.origin}/admin/dashboard` 
     : `${requestUrl.origin}/dashboard`;
   
-  // This redirect will be caught by the client-side fetch and handled there.
-  return NextResponse.redirect(redirectUrl, { status: 303 });
+  // Return a success response with the redirect URL for the client to handle
+  return NextResponse.json({ success: true, redirectUrl });
 }
