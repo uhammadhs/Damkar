@@ -34,43 +34,44 @@ export type MonthlyRequestStat = {
 async function getDashboardData() {
     const supabase = createClient();
     
+    // 1. Get total members
     const { count: membersCount, error: membersError } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('role', 'anggota');
+    if (membersError) console.error("Error fetching members count:", membersError.message);
 
+    // 2. Get monthly requests
     const today = new Date();
     const firstDayOfMonth = format(new Date(today.getFullYear(), today.getMonth(), 1), 'yyyy-MM-dd');
-    
     const { count: monthlyCount, error: requestsError } = await supabase
         .from('leave_requests')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', firstDayOfMonth);
-    
+    if (requestsError) console.error("Error fetching monthly requests count:", requestsError.message);
+
+    // 3. Get approved requests this month
     const { count: approvedCount, error: approvedError } = await supabase
         .from('leave_requests')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', firstDayOfMonth)
         .eq('status', 'Disetujui');
+    if (approvedError) console.error("Error fetching approved requests count:", approvedError.message);
 
+    // 4. Get recent pending requests
     const { data: recentRequestsData, error: recentRequestsError } = await supabase
         .from('leave_requests')
-        .select(`
-            id,
-            title,
-            created_at,
-            profiles (name, avatar_url)
-        `)
+        .select('id, title, created_at, profiles (name, avatar_url)')
         .eq('status', 'Menunggu')
         .order('created_at', { ascending: false })
         .limit(5);
+    if (recentRequestsError) console.error("Error fetching recent requests:", recentRequestsError.message);
 
+    // 5. Get chart data
     const { data: chartData, error: chartError } = await supabase.rpc('get_monthly_leave_stats');
+    if (chartError) console.error("Error fetching chart data:", chartError.message);
 
-    if (membersError || requestsError || approvedError || recentRequestsError || chartError) {
-        console.error({ membersError, requestsError, approvedError, recentRequestsError, chartError });
-    }
-
+    // Return data, defaulting to 0 or empty array on error
     return {
         totalMembers: membersCount || 0,
         monthlyRequests: monthlyCount || 0,
