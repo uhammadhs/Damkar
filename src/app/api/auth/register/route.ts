@@ -44,7 +44,8 @@ export async function POST(request: Request) {
      });
   }
   
-  // Create user but don't sign them in
+  // Create user but don't sign them in initially.
+  // Let's make the user active right away without email verification.
   const { data: { user }, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
@@ -54,24 +55,27 @@ export async function POST(request: Request) {
         id_pjlp: id_pjlp,
         phone: phone,
       },
-      // emailRedirectTo is not needed if email verification is off
     },
   });
 
   if (signUpError) {
+      if (signUpError.message.includes('unique constraint')) {
+           return NextResponse.redirect(`${requestUrl.origin}/register?error=${encodeURIComponent('Email sudah terdaftar. Silakan gunakan email lain.')}`, {
+                status: 301,
+           });
+      }
      return NextResponse.redirect(`${requestUrl.origin}/register?error=${encodeURIComponent(signUpError.message)}`, {
         status: 301,
      });
   }
 
-  // The trigger should create the profile. We just need to confirm user creation was successful.
   if (!user) {
      return NextResponse.redirect(`${requestUrl.origin}/register?error=${encodeURIComponent('Gagal membuat pengguna, silakan coba lagi.')}`, {
         status: 301,
      });
   }
   
-  // Manually confirm the user's email since we are skipping the verification email.
+  // Since we are skipping email verification, we need to manually confirm the user's email.
   const supabaseAdmin = createAdminClient();
   const { error: adminUpdateError } = await supabaseAdmin.auth.admin.updateUserById(
       user.id,
@@ -79,6 +83,7 @@ export async function POST(request: Request) {
   );
 
   if (adminUpdateError) {
+       // This is a server error, but we'll still redirect the user with a message
        return NextResponse.redirect(`${requestUrl.origin}/register?error=${encodeURIComponent('Gagal mengaktifkan akun, hubungi admin.')}`, {
           status: 301,
        });
