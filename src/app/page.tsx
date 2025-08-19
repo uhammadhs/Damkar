@@ -38,19 +38,19 @@ export default function LoginPage() {
         body: formData,
       });
       
-      // If the response is a redirect, the browser will handle it automatically.
-      // We check for `response.ok` and `response.redirected` to be certain.
-      // After a successful login, the server sends a redirect response.
       if (response.ok && response.redirected) {
-          // The redirect is handled by the browser, we just need to navigate to the final URL.
           router.push(response.url);
           return;
       }
 
-      // If we reach here, it's an error response that didn't redirect.
-      // We can safely parse the JSON.
-      const errorData = await response.json();
-      setError(errorData.error || 'Terjadi kesalahan yang tidak diketahui.');
+      if (!response.ok) {
+        try {
+          const errorData = await response.json();
+          setError(errorData.error || 'Terjadi kesalahan yang tidak diketahui.');
+        } catch (e) {
+          setError('Gagal memproses respons dari server. Silakan coba lagi.');
+        }
+      }
 
     } catch (e) {
       console.error(e);

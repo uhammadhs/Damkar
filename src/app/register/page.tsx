@@ -44,18 +44,20 @@ export default function RegisterPage() {
       });
       
       if (response.ok) {
-        // Redirect on success, no need to parse JSON body
         router.push('/auth/verified');
       } else {
         // If there's an error, the server should send a JSON error message.
-        const errorData = await response.json();
-        setError(errorData.error || 'Terjadi kesalahan saat pendaftaran.');
+        try {
+            const errorData = await response.json();
+            setError(errorData.error || 'Terjadi kesalahan saat pendaftaran.');
+        } catch (e) {
+            setError('Gagal memproses respons dari server. Silakan coba lagi.');
+        }
       }
 
     } catch (e) {
       console.error(e);
       let errorMessage = 'Gagal terhubung ke server. Silakan coba lagi.';
-      // Check if the error is a syntax error, which indicates a non-JSON response from the server
       if (e instanceof SyntaxError) {
           errorMessage = "Menerima respons tidak valid dari server. Hubungi admin.";
       }
