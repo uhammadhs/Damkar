@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,91 +11,17 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
-
+import { useSearchParams } from 'next/navigation';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
 
-  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     setIsLoading(true);
-    const supabase = createClient();
-
-    try {
-      const formData = new FormData(event.currentTarget);
-      const idPjlp = formData.get("id_pjlp") as string;
-      const password = formData.get("password") as string;
-
-      if (!idPjlp || !password) {
-        throw new Error("ID PJLP dan Password harus diisi.");
-      }
-
-      // 1. Find user's email by their ID PJLP first
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('email, role')
-        .eq('id_pjlp', idPjlp)
-        .single();
-      
-      if (profileError || !profileData) {
-        throw new Error("ID PJLP tidak ditemukan. Periksa kembali.");
-      }
-      
-      const email = profileData.email;
-      if (!email) {
-        throw new Error("Data email untuk pengguna ini tidak lengkap. Hubungi admin.");
-      }
-
-      // 2. Sign in with the fetched email and provided password
-      const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (authError) {
-         if (authError.message.includes('Email not confirmed')) {
-            throw new Error("Akun Anda belum aktif. Silakan hubungi admin jika masalah berlanjut.");
-        }
-        throw new Error("Password salah. Periksa kembali.");
-      }
-
-      if (!user) {
-        throw new Error("Gagal login, pengguna tidak ditemukan setelah otentikasi.");
-      }
-      
-      const userRole = profileData.role;
-      
-      // 3. Redirect based on role
-      if (userRole === 'admin') {
-        toast({
-          title: "Login Berhasil",
-          description: "Selamat datang, Admin! Mengarahkan ke dasbor...",
-        });
-        router.push('/admin/dashboard');
-      } else {
-        toast({
-          title: "Login Berhasil",
-          description: `Selamat datang! Mengarahkan ke dasbor...`,
-        });
-        router.push('/dashboard');
-      }
-
-    } catch (err: any) {
-      const errorMessage = err.message || "Terjadi kesalahan yang tidak diketahui.";
-      setError(errorMessage);
-      toast({
-        title: "Login Gagal",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-        setIsLoading(false);
-    }
+    // The form will be submitted via its action attribute, so we just need to manage the loading state.
+    // The browser will handle the navigation.
   };
 
   return (
@@ -123,7 +48,7 @@ export default function LoginPage() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <form className="space-y-4" onSubmit={handleLogin}>
+          <form className="space-y-4" action="/api/auth/login" method="POST" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="id_pjlp">ID PJLP</Label>
               <Input id="id_pjlp" name="id_pjlp" placeholder="Contoh: 123456789" required disabled={isLoading} />

@@ -2,43 +2,24 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { registerUser } from './actions';
-import { Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
 
-  const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     setIsLoading(true);
-    const formData = new FormData(event.currentTarget);
-    const result = await registerUser(formData);
-
-    if (result.success) {
-      toast({
-        title: "Pendaftaran Berhasil",
-        description: "Akun Anda telah berhasil dibuat. Silakan login.",
-        duration: 5000,
-      });
-      router.push('/');
-    } else {
-      toast({
-        title: "Pendaftaran Gagal",
-        description: result.message,
-        variant: "destructive",
-      });
-    }
-    setIsLoading(false);
+    // The form action will handle submission. We just control the loading state.
   };
 
   return (
@@ -58,7 +39,14 @@ export default function RegisterPage() {
           <CardDescription>Daftarkan diri Anda sebagai anggota SIAP CUTI.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={handleRegister}>
+           {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Pendaftaran Gagal</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <form className="space-y-4" action="/api/auth/register" method="POST" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="name">Nama Lengkap</Label>
               <Input id="name" name="name" placeholder="Sesuai KTP" required disabled={isLoading} />
