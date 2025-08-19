@@ -2,7 +2,7 @@
 import * as React from "react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LeaveRequestTable } from "./leave-request-table";
 import type { Database } from "@/types/supabase";
 import Link from "next/link";
