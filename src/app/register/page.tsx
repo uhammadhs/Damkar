@@ -3,7 +3,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,13 +14,55 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function RegisterPage() {
-  const [isLoading, setIsLoading] = React.useState(false);
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const error = searchParams.get('error');
+  const initialError = searchParams.get('error');
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(initialError);
+
+  const [name, setName] = React.useState('');
+  const [idPjlp, setIdPjlp] = React.useState('');
+  const [phone, setPhone] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setIsLoading(true);
-    // The form action will handle submission. We just control the loading state.
+    setError(null);
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('id_pjlp', idPjlp);
+    formData.append('phone', phone);
+    formData.append('email', email);
+    formData.append('password', password);
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        if (response.redirected) {
+          router.push(response.url);
+        } else {
+          const data = await response.json();
+           // Handle non-redirect success if necessary, e.g. showing a message
+           router.push('/auth/verified');
+        }
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Terjadi kesalahan saat pendaftaran.');
+      }
+    } catch (e) {
+      console.error(e);
+      setError('Gagal terhubung ke server. Silakan coba lagi.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -47,26 +89,26 @@ export default function RegisterPage() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <form className="space-y-4" action="/api/auth/register" method="POST" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="name">Nama Lengkap</Label>
-              <Input id="name" name="name" placeholder="Sesuai KTP" required disabled={isLoading} />
+              <Input id="name" name="name" placeholder="Sesuai KTP" required disabled={isLoading} value={name} onChange={(e) => setName(e.target.value)} />
             </div>
              <div className="space-y-2">
               <Label htmlFor="id_pjlp">ID PJLP</Label>
-              <Input id="id_pjlp" name="id_pjlp" placeholder="Contoh: 123456789" required disabled={isLoading} />
+              <Input id="id_pjlp" name="id_pjlp" placeholder="Contoh: 123456789" required disabled={isLoading} value={idPjlp} onChange={(e) => setIdPjlp(e.target.value)} />
             </div>
              <div className="space-y-2">
               <Label htmlFor="phone">Nomor HP</Label>
-              <Input id="phone" name="phone" placeholder="0812xxxxxxxx" required type="tel" disabled={isLoading} />
+              <Input id="phone" name="phone" placeholder="0812xxxxxxxx" required type="tel" disabled={isLoading} value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" placeholder="Untuk verifikasi & notifikasi" required type="email" disabled={isLoading} />
+              <Input id="email" name="email" placeholder="Untuk verifikasi & notifikasi" required type="email" disabled={isLoading} value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" required type="password" placeholder="Minimal 6 karakter" disabled={isLoading} />
+              <Input id="password" name="password" required type="password" placeholder="Minimal 6 karakter" disabled={isLoading} value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
             <Button className="w-full" type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

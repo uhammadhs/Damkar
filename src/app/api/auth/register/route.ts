@@ -12,11 +12,11 @@ const RegisterSchema = z.object({
     password: z.string().min(6, "Password minimal 6 karakter"),
 });
 
-
 export async function POST(request: Request) {
   const requestUrl = new URL(request.url)
   const formData = await request.formData();
   const supabase = createClient();
+  const supabaseAdmin = createAdminClient();
 
   const rawData = Object.fromEntries(formData.entries());
 
@@ -24,9 +24,7 @@ export async function POST(request: Request) {
 
   if (!validation.success) {
       const errorMessages = validation.error.errors.map(e => e.message).join(', ');
-       return NextResponse.redirect(`${requestUrl.origin}/register?error=${encodeURIComponent(errorMessages)}`, {
-          status: 301,
-       });
+       return NextResponse.json({ error: errorMessages }, { status: 400 });
   }
 
   const { name, email, password, id_pjlp, phone } = validation.data;
@@ -39,9 +37,7 @@ export async function POST(request: Request) {
     .single();
 
   if (existingProfile) {
-     return NextResponse.redirect(`${requestUrl.origin}/register?error=${encodeURIComponent('ID PJLP sudah terdaftar. Silakan login atau gunakan ID lain.')}`, {
-        status: 301,
-     });
+     return NextResponse.json({ error: 'ID PJLP sudah terdaftar. Silakan login atau gunakan ID lain.' }, { status: 409 });
   }
   
   // Create user but don't sign them in initially.
@@ -59,24 +55,17 @@ export async function POST(request: Request) {
   });
 
   if (signUpError) {
-      if (signUpError.message.includes('unique constraint')) {
-           return NextResponse.redirect(`${requestUrl.origin}/register?error=${encodeURIComponent('Email sudah terdaftar. Silakan gunakan email lain.')}`, {
-                status: 301,
-           });
+      if (signUpError.message.includes('unique constraint') || signUpError.message.includes('already registered')) {
+           return NextResponse.json({ error: 'Email sudah terdaftar. Silakan gunakan email lain.' }, { status: 409 });
       }
-     return NextResponse.redirect(`${requestUrl.origin}/register?error=${encodeURIComponent(signUpError.message)}`, {
-        status: 301,
-     });
+     return NextResponse.json({ error: signUpError.message }, { status: 500 });
   }
 
   if (!user) {
-     return NextResponse.redirect(`${requestUrl.origin}/register?error=${encodeURIComponent('Gagal membuat pengguna, silakan coba lagi.')}`, {
-        status: 301,
-     });
+     return NextResponse.json({ error: 'Gagal membuat pengguna, silakan coba lagi.' }, { status: 500 });
   }
   
   // Since we are skipping email verification, we need to manually confirm the user's email.
-  const supabaseAdmin = createAdminClient();
   const { error: adminUpdateError } = await supabaseAdmin.auth.admin.updateUserById(
       user.id,
       { email_confirm: true }
@@ -84,13 +73,8 @@ export async function POST(request: Request) {
 
   if (adminUpdateError) {
        // This is a server error, but we'll still redirect the user with a message
-       return NextResponse.redirect(`${requestUrl.origin}/register?error=${encodeURIComponent('Gagal mengaktifkan akun, hubungi admin.')}`, {
-          status: 301,
-       });
+       return NextResponse.json({ error: 'Gagal mengaktifkan akun, hubungi admin.' }, { status: 500 });
   }
 
-
-  return NextResponse.redirect(`${requestUrl.origin}/auth/verified`, {
-    status: 301,
-  });
+  return NextResponse.redirect(`${requestUrl.origin}/auth/verified`, { status: 303 });
 }

@@ -1,27 +1,63 @@
+
 "use client"
 
 import Image from 'next/image';
 import Link from 'next/link';
 import * as React from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = React.useState(false);
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const error = searchParams.get('error');
+  const initialError = searchParams.get('error');
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [id_pjlp, setIdPjlp] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [error, setError] = React.useState<string | null>(initialError);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setIsLoading(true);
-    // The form will be submitted via its action attribute, so we just need to manage the loading state.
-    // The browser will handle the navigation.
+    setError(null);
+
+    const formData = new FormData();
+    formData.append('id_pjlp', id_pjlp);
+    formData.append('password', password);
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      // If the response is a redirect, the browser will handle it automatically.
+      // If it's not a redirect, it means there was an error message from the server-side logic
+      // that we need to display.
+      if (response.ok && response.redirected) {
+          // The redirect is handled by the browser, but we might want to refresh the page state
+          // in case the user navigates back.
+          router.push(response.url);
+          return;
+      }
+
+      // If we reach here, it's likely an error response that didn't redirect.
+      const errorData = await response.json();
+      setError(errorData.error || 'Terjadi kesalahan yang tidak diketahui.');
+
+    } catch (e) {
+      console.error(e);
+      setError('Gagal terhubung ke server. Silakan coba lagi.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -48,14 +84,31 @@ export default function LoginPage() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <form className="space-y-4" action="/api/auth/login" method="POST" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="id_pjlp">ID PJLP</Label>
-              <Input id="id_pjlp" name="id_pjlp" placeholder="Contoh: 123456789" required disabled={isLoading} />
+              <Input 
+                id="id_pjlp" 
+                name="id_pjlp" 
+                placeholder="Contoh: 123456789" 
+                required 
+                disabled={isLoading}
+                value={id_pjlp}
+                onChange={(e) => setIdPjlp(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" required type="password" placeholder="••••••••" disabled={isLoading} />
+              <Input 
+                id="password" 
+                name="password" 
+                required 
+                type="password" 
+                placeholder="••••••••" 
+                disabled={isLoading}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
             <Button className="w-full" type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
