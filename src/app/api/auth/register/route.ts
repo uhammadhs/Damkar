@@ -1,5 +1,4 @@
 
-import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -14,68 +13,64 @@ const RegisterSchema = z.object({
 
 export async function POST(request: Request) {
   const formData = await request.formData();
-  const supabase = createClient();
   const supabaseAdmin = createAdminClient();
 
   const rawData = Object.fromEntries(formData.entries());
-
   const validation = RegisterSchema.safeParse(rawData);
 
   if (!validation.success) {
       const errorMessages = validation.error.errors.map(e => e.message).join(', ');
-       return NextResponse.json({ error: errorMessages }, { status: 400 });
+      return NextResponse.json({ error: errorMessages }, { status: 400 });
   }
 
   const { name, email, password, id_pjlp, phone } = validation.data;
 
-  // Check if ID PJLP already exists
-  const { data: existingProfile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id_pjlp', id_pjlp)
-    .single();
+  try {
+    // Check if ID PJLP already exists using the admin client
+    const { data: existingProfile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('id_pjlp', id_pjlp)
+      .single();
 
-  if (existingProfile) {
-     return NextResponse.json({ error: 'ID PJLP sudah terdaftar. Silakan login atau gunakan ID lain.' }, { status: 409 });
+    if (profileError && profileError.code !== 'PGRST116') { // PGRST116 means no rows found, which is good here
+        throw profileError;
+    }
+
+    if (existingProfile) {
+      return NextResponse.json({ error: 'ID PJLP sudah terdaftar. Silakan login atau gunakan ID lain.' }, { status: 409 });
+    }
+    
+    // Use the admin client to create the user.
+    // This bypasses the need for email confirmation if we set email_confirm to true.
+    const { data: { user }, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true, // Auto-confirm user's email
+        user_metadata: {
+            name: name,
+            id_pjlp: id_pjlp,
+            phone: phone,
+        },
+    });
+
+    if (signUpError) {
+        if (signUpError.message.includes('unique constraint') || signUpError.message.includes('already registered')) {
+            return NextResponse.json({ error: 'Email sudah terdaftar. Silakan gunakan email lain.' }, { status: 409 });
+        }
+        throw signUpError;
+    }
+
+    if (!user) {
+        throw new Error('Gagal membuat pengguna, silakan coba lagi.');
+    }
+
+    // Since user_metadata is used, the trigger will automatically create the profile.
+    // Return a success response. The client will handle the redirect.
+    return NextResponse.json({ success: true, message: "Pendaftaran berhasil." }, { status: 200 });
+
+  } catch (error: any) {
+    console.error('Registration Error:', error);
+    return NextResponse.json({ error: error.message || 'Terjadi kesalahan internal pada server.' }, { status: 500 });
   }
-  
-  // Create user but don't sign them in initially.
-  // Let's make the user active right away without email verification.
-  const { data: { user }, error: signUpError } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        name: name,
-        id_pjlp: id_pjlp,
-        phone: phone,
-      },
-    },
-  });
-
-  if (signUpError) {
-      if (signUpError.message.includes('unique constraint') || signUpError.message.includes('already registered')) {
-           return NextResponse.json({ error: 'Email sudah terdaftar. Silakan gunakan email lain.' }, { status: 409 });
-      }
-     return NextResponse.json({ error: signUpError.message }, { status: 500 });
-  }
-
-  if (!user) {
-     return NextResponse.json({ error: 'Gagal membuat pengguna, silakan coba lagi.' }, { status: 500 });
-  }
-  
-  // Since we are skipping email verification, we need to manually confirm the user's email.
-  const { error: adminUpdateError } = await supabaseAdmin.auth.admin.updateUserById(
-      user.id,
-      { email_confirm: true }
-  );
-
-  if (adminUpdateError) {
-       // This is a server error, but we'll still redirect the user with a message
-       return NextResponse.json({ error: 'Gagal mengaktifkan akun, hubungi admin.' }, { status: 500 });
-  }
-
-  // Instead of redirecting, return a success response.
-  // The client will handle the redirect.
-  return NextResponse.json({ success: true, message: "Pendaftaran berhasil. Anda akan diarahkan..." });
 }
