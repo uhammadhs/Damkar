@@ -1,7 +1,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, BookCopy, CheckCircle, ArrowRight, Loader2 } from "lucide-react";
+import { Users, BookCopy, CheckCircle, ArrowRight } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,15 +9,9 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { Database } from "@/types/supabase";
 import * as React from 'react';
-import dynamic from 'next/dynamic';
+import { LeaveStatsChartWrapper } from "./leave-stats-chart-wrapper";
 
 export const revalidate = 60; // Cache for 60 seconds
-
-const LeaveStatsChart = dynamic(() => import('../laporan/leave-stats-chart').then(mod => mod.LeaveStatsChart), {
-  ssr: false,
-  loading: () => <div className="flex h-[250px] w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>,
-});
-
 
 type RecentRequest = {
     id: number;
@@ -29,7 +23,7 @@ type RecentRequest = {
     } | null;
 };
 
-type MonthlyRequestStat = {
+export type MonthlyRequestStat = {
     month: string;
     Disetujui: number;
     Ditolak: number;
@@ -134,7 +128,7 @@ export default async function AdminDashboardPage() {
                         <CardDescription>Menampilkan tren pengajuan cuti yang disetujui, ditolak, dan menunggu.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <LeaveStatsChart data={chartData} />
+                        <LeaveStatsChartWrapper data={chartData} />
                     </CardContent>
                 </Card>
                 <Card className="lg:col-span-2">
