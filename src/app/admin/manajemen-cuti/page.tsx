@@ -2,9 +2,13 @@
 import * as React from "react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LeaveRequestTable } from "./leave-request-table";
 import type { Database } from "@/types/supabase";
+import Link from "next/link";
+import { Suspense } from "react";
+import Loading from "./loading";
+
 
 export const revalidate = 60; // Cache for 60 seconds
 
@@ -37,6 +41,27 @@ async function getLeaveRequests(status: 'Menunggu' | 'Semua', page: number) {
     return { requests: data as LeaveRequest[], count: count || 0 };
 }
 
+async function LeaveTabs({ currentTab, currentPage }: { currentTab: 'Menunggu' | 'Semua', currentPage: number }) {
+  const { requests: waitingRequests, count: waitingCount } = await getLeaveRequests('Menunggu', currentTab === 'Menunggu' ? currentPage : 1);
+  const { requests: allRequests, count: allCount } = await getLeaveRequests('Semua', currentTab === 'Semua' ? currentPage : 1);
+
+  return (
+     <Tabs defaultValue={currentTab.toLowerCase()}>
+        <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="menunggu" asChild><Link href="?tab=menunggu">Menunggu ({waitingCount})</Link></TabsTrigger>
+            <TabsTrigger value="semua" asChild><Link href="?tab=semua">Semua ({allCount})</Link></TabsTrigger>
+        </TabsList>
+        <TabsContent value="menunggu">
+            <LeaveRequestTable requests={waitingRequests} />
+        </TabsContent>
+        <TabsContent value="semua">
+            <LeaveRequestTable requests={allRequests} />
+        </TabsContent>
+    </Tabs>
+  )
+}
+
+
 export default async function ManajemenCutiPage({
   searchParams
 }: {
@@ -48,24 +73,12 @@ export default async function ManajemenCutiPage({
   const currentTab = searchParams?.tab === 'semua' ? 'Semua' : 'Menunggu';
   const currentPage = Number(searchParams?.page) || 1;
   
-  const { requests: waitingRequests, count: waitingCount } = await getLeaveRequests('Menunggu', currentTab === 'Menunggu' ? currentPage : 1);
-  const { requests: allRequests, count: allCount } = await getLeaveRequests('Semua', currentTab === 'Semua' ? currentPage : 1);
-
   return (
     <Card>
       <CardContent className="pt-6">
-        <Tabs defaultValue={currentTab.toLowerCase()}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="menunggu">Menunggu ({waitingCount})</TabsTrigger>
-            <TabsTrigger value="semua">Semua ({allCount})</TabsTrigger>
-          </TabsList>
-          <TabsContent value="menunggu">
-            <LeaveRequestTable requests={waitingRequests} />
-          </TabsContent>
-          <TabsContent value="semua">
-            <LeaveRequestTable requests={allRequests} />
-          </TabsContent>
-        </Tabs>
+        <Suspense fallback={<Loading />}>
+          <LeaveTabs currentTab={currentTab} currentPage={currentPage} />
+        </Suspense>
       </CardContent>
     </Card>
   );

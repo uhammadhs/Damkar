@@ -27,7 +27,7 @@ const getLeaveBalances = async (year: number): Promise<LeaveBalance[]> => {
             year,
             total_days,
             used_days,
-            profiles (
+            profiles!inner(
                 id,
                 name,
                 nip
@@ -35,14 +35,13 @@ const getLeaveBalances = async (year: number): Promise<LeaveBalance[]> => {
         `)
         .eq('year', year)
         .eq('profiles.role', 'anggota')
-        .order('profiles(name)', { ascending: true });
+        .order('name', { foreignTable: 'profiles', ascending: true });
 
     if (error) {
         console.error("Error fetching leave balances:", error);
         return [];
     }
     
-    // The query now returns the correct shape directly
     return data as LeaveBalance[];
 }
 

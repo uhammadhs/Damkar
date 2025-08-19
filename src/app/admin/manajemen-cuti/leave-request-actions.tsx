@@ -2,7 +2,6 @@
 "use client"
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -28,12 +27,13 @@ const getStatusColor = (status: string): string => {
 
 export function LeaveRequestActions({ request }: { request: LeaveRequest }) {
     const { toast } = useToast();
-    const router = useRouter();
     const [open, setOpen] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);
+    const [action, setAction] = React.useState<"Disetujui" | "Ditolak" | null>(null);
     
     const handleUpdateRequest = async (status: "Disetujui" | "Ditolak") => {
         setIsLoading(true);
+        setAction(status);
         const result = await updateLeaveRequestStatus(request.id, status);
         
         if (result.success) {
@@ -41,7 +41,6 @@ export function LeaveRequestActions({ request }: { request: LeaveRequest }) {
               title: "Sukses",
               description: result.message,
           });
-          router.refresh();
         } else {
           toast({
             title: "Gagal",
@@ -50,6 +49,7 @@ export function LeaveRequestActions({ request }: { request: LeaveRequest }) {
           });
         }
         setIsLoading(false);
+        setAction(null);
         setOpen(false);
     };
 
@@ -95,11 +95,11 @@ export function LeaveRequestActions({ request }: { request: LeaveRequest }) {
                     {request.status === 'Menunggu' && (
                         <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
                             <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10" onClick={() => handleUpdateRequest("Ditolak")} disabled={isLoading}>
-                                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                                {isLoading && action === 'Ditolak' ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
                                 <span className="ml-2">Tolak Pengajuan</span>
                             </Button>
                             <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleUpdateRequest("Disetujui")} disabled={isLoading}>
-                                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                                {isLoading && action === 'Disetujui' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                                 <span className="ml-2">Setujui Pengajuan</span>
                             </Button>
                         </div>
@@ -109,11 +109,11 @@ export function LeaveRequestActions({ request }: { request: LeaveRequest }) {
             {request.status === 'Menunggu' && (
                 <>
                     <Button variant="outline" size="icon" className="h-9 w-9 text-destructive border-destructive hover:bg-destructive/10" onClick={() => handleUpdateRequest("Ditolak")} disabled={isLoading}>
-                        <X className="h-4 w-4" />
+                        {isLoading && action === 'Ditolak' ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
                         <span className="sr-only">Tolak</span>
                     </Button>
                     <Button variant="outline" size="icon" className="h-9 w-9 text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700" onClick={() => handleUpdateRequest("Disetujui")} disabled={isLoading}>
-                        <Check className="h-4 w-4" />
+                        {isLoading && action === 'Disetujui' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                         <span className="sr-only">Setujui</span>
                     </Button>
                 </>

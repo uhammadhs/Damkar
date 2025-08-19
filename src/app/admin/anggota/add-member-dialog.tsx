@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import { addMember } from './actions'
 
 export function AddMemberDialog() {
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
   const { toast } = useToast()
   const formRef = React.useRef<HTMLFormElement>(null)
 
@@ -28,6 +29,7 @@ export function AddMemberDialog() {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
     
+    setIsSubmitting(true)
     const result = await addMember(formData)
 
     if (result.success) {
@@ -44,6 +46,7 @@ export function AddMemberDialog() {
         variant: "destructive",
       })
     }
+    setIsSubmitting(false)
   }
 
   return (
@@ -85,9 +88,12 @@ export function AddMemberDialog() {
         </form>
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="secondary">Batal</Button>
+            <Button type="button" variant="secondary" disabled={isSubmitting}>Batal</Button>
           </DialogClose>
-          <Button type="submit" form="add-member-form">Simpan Anggota</Button>
+          <Button type="submit" form="add-member-form" disabled={isSubmitting}>
+             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+             {isSubmitting ? 'Menyimpan...' : 'Simpan Anggota'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,12 +1,12 @@
 
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { sendLeaveStatusEmail } from '@/lib/email'
 
 export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Disetujui' | 'Ditolak') {
-  const supabase = createClient()
+  const supabase = createAdminClient()
 
   // Ambil data pengajuan untuk mendapatkan user_id, durasi, dan data profil untuk email
   const { data: request, error: fetchError } = await supabase

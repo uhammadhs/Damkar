@@ -2,7 +2,6 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { deleteMember, editMember } from "./actions";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
@@ -15,7 +14,6 @@ import { Loader2 } from "lucide-react";
 
 export function MemberActions({ member }: { member: Profile }) {
     const { toast } = useToast();
-    const router = useRouter();
     const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
     const [isDeleting, setIsDeleting] = React.useState(false);
     const [isSaving, setIsSaving] = React.useState(false);
@@ -116,6 +114,7 @@ export function MemberActions({ member }: { member: Profile }) {
                 Edit
             </DropdownMenuItem>
             <DropdownMenuItem className="text-destructive" onSelect={handleDelete} disabled={isDeleting}>
+                {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {isDeleting ? 'Menghapus...' : 'Hapus'}
             </DropdownMenuItem>
         </>

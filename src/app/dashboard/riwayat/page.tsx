@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
+export const revalidate = 60; // Cache for 60 seconds
+
 export type LeaveHistoryItem = Pick<
   Database['public']['Tables']['leave_requests']['Row'],
   'id' | 'start_date' | 'end_date' | 'duration' | 'title' | 'reason' | 'status' | 'created_at'
