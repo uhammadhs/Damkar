@@ -1,5 +1,5 @@
 
-import { createRouteHandlerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -19,7 +19,23 @@ export async function POST(request: Request) {
   const rawData = Object.fromEntries(formData.entries());
   
   const cookieStore = cookies();
-  const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          cookieStore.set({ name, value, ...options })
+        },
+        remove(name: string, options: CookieOptions) {
+          cookieStore.set({ name, value: '', ...options })
+        },
+      },
+    }
+  );
 
   const validation = RegisterSchema.safeParse(rawData);
   if (!validation.success) {
@@ -29,11 +45,18 @@ export async function POST(request: Request) {
 
   const { name, email, password, id_pjlp, phone } = validation.data;
 
-  // We are using the standard signUp method which requires email confirmation.
-  // Additional user data is passed in the `options.data` field.
-  // This data will be available in the user's `user_metadata` after they confirm their email,
-  // and will be copied to the profiles table by a trigger.
-  const { error } = await supabase.auth.signUp({
+  // Check if ID PJLP already exists
+  const { data: existingProfile, error: existingProfileError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id_pjlp', id_pjlp)
+    .single();
+
+  if (existingProfile) {
+    return NextResponse.json({ error: 'ID PJLP sudah terdaftar. Silakan gunakan ID lain.' }, { status: 409 });
+  }
+
+  const { data: { user }, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -42,21 +65,40 @@ export async function POST(request: Request) {
         name: name,
         id_pjlp: id_pjlp,
         phone: phone,
-        role: 'anggota' // Set default role
+        role: 'anggota'
       }
     }
   });
 
-  if (error) {
-    console.error("Supabase SignUp Error:", error);
-    // Provide more user-friendly error messages
-    if (error.message.includes('User already registered')) {
-        return NextResponse.json({ error: 'Email atau pengguna dengan ID PJLP tersebut sudah terdaftar.' }, { status: 409 });
+  if (signUpError) {
+    console.error("Supabase SignUp Error:", signUpError);
+    if (signUpError.message.includes('User already registered')) {
+        return NextResponse.json({ error: 'Email sudah terdaftar.' }, { status: 409 });
     }
-    return NextResponse.json({ error: error.message || 'Terjadi kesalahan pada server.' }, { status: 500 });
+    return NextResponse.json({ error: signUpError.message || 'Terjadi kesalahan pada server.' }, { status: 500 });
   }
 
-  // On successful sign-up request, send a success response.
-  // The client will then redirect the user.
-  return NextResponse.json({ success: true });
+  if (!user) {
+    return NextResponse.json({ error: 'Gagal membuat pengguna, silakan coba lagi.' }, { status: 500 });
+  }
+  
+  // Explicitly insert into profiles table. This is more reliable than a trigger.
+  const { error: profileError } = await supabase.from('profiles').insert({
+      id: user.id,
+      name: name,
+      id_pjlp: id_pjlp,
+      phone: phone,
+      email: email,
+      role: 'anggota'
+  });
+
+  if (profileError) {
+      console.error("Error inserting profile:", profileError);
+      // This is a critical error. The auth user was created but the profile wasn't.
+      // For now, we'll log it and inform the user. A more robust solution might delete the auth user.
+      return NextResponse.json({ error: 'Gagal menyimpan profil pengguna. Hubungi admin.' }, { status: 500 });
+  }
+
+
+  return NextResponse.redirect(`${requestUrl.origin}/auth/confirm`);
 }
