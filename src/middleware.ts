@@ -1,7 +1,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { supabaseUrl, supabaseAnonKey } from './lib/config'
+import { supabaseUrl, supabaseAnonKey } from './lib/supabase/config'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
