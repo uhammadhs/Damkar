@@ -115,7 +115,7 @@ export async function deleteMember(id: string) {
 
     if (deleteAuthUserError) {
         console.error('Error deleting auth user:', deleteAuthUserError);
-        return { success: false, message: deleteAuthUserError.message || 'Gagal menghapus pengguna.' };
+        return { success: false, message: deleteAuthUserError.message || 'User not allowed' };
     }
 
     revalidatePath('/admin/anggota');

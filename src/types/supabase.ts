@@ -150,6 +150,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_monthly_leave_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          month: string
+          Menunggu: number
+          Disetujui: number
+          Ditolak: number
+        }[]
+      }
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -251,4 +260,3 @@ export type Enums<
   : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
     ? Database["public"]["Enums"][PublicEnumNameOrOptions]
     : never
-
