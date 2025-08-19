@@ -30,24 +30,23 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('id_pjlp', idPjlp);
-    formData.append('phone', phone);
-    formData.append('email', email);
-    formData.append('password', password);
+    const formData = new FormData(event.currentTarget);
 
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         body: formData,
       });
+
+      if (response.ok && response.redirected) {
+        // If the registration request is successful, the server will redirect.
+        // We follow that redirect on the client.
+        router.push(response.url);
+        return;
+      }
       
-      if (response.ok) {
-        // Registration was successful, now redirect to the verified page.
-        router.push('/auth/verified');
-      } else {
-        // If there's an error, the server should send a JSON error message.
+      // If the response is not OK, it means there was a validation error or server error.
+      if (!response.ok) {
         try {
             const errorData = await response.json();
             setError(errorData.error || 'Terjadi kesalahan saat pendaftaran.');
@@ -60,12 +59,7 @@ export default function RegisterPage() {
 
     } catch (e) {
       console.error('Fetch Error:', e);
-      // This catches network errors (e.g., no internet connection).
-      let errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
-      if (e instanceof SyntaxError) {
-          errorMessage = "Menerima respons tidak valid dari server. Hubungi admin.";
-      }
-      setError(errorMessage);
+      setError('Gagal terhubung ke server. Periksa koneksi internet Anda.');
     } finally {
       setIsLoading(false);
     }

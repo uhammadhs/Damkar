@@ -11,22 +11,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialError = searchParams.get('error');
+  const initialMessage = searchParams.get('message');
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [id_pjlp, setIdPjlp] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState<string | null>(initialError);
+  const [message, setMessage] = React.useState<string | null>(initialMessage);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
+    setMessage(null);
 
     const formData = new FormData();
     formData.append('id_pjlp', id_pjlp);
@@ -86,6 +90,13 @@ export default function LoginPage() {
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Login Gagal</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+           {message && (
+            <Alert variant="default" className="mb-4 border-green-500 text-green-700 dark:border-green-600 dark:text-green-400 [&>svg]:text-green-500 dark:[&>svg]:text-green-400">
+              <CheckCircle className="h-4 w-4" />
+              <AlertTitle>Sukses</AlertTitle>
+              <AlertDescription>{message}</AlertDescription>
             </Alert>
           )}
           <form className="space-y-4" onSubmit={handleSubmit}>

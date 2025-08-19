@@ -1,7 +1,7 @@
 
 'use server'
 
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
@@ -14,7 +14,8 @@ const RegisterSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const supabaseAdmin = createAdminClient();
+  const supabase = createClient();
+  const requestUrl = new URL(request.url);
   const formData = await request.formData();
   const rawData = Object.fromEntries(formData.entries());
 
@@ -26,72 +27,33 @@ export async function POST(request: Request) {
 
   const { name, email, password, id_pjlp, phone } = validation.data;
 
-  try {
-    // 1. Check if ID PJLP or Email already exists in the profiles table
-    const { data: existingProfile, error: profileCheckError } = await supabaseAdmin
-      .from('profiles')
-      .select('id_pjlp, email')
-      .or(`id_pjlp.eq.${id_pjlp},email.eq.${email}`)
-      .maybeSingle();
-
-    if (profileCheckError) {
-      console.error("Error checking for existing profile:", profileCheckError);
-      throw profileCheckError;
-    }
-
-    if (existingProfile) {
-      if (existingProfile.id_pjlp === id_pjlp) {
-        return NextResponse.json({ error: 'ID PJLP sudah terdaftar. Silakan login atau gunakan ID lain.' }, { status: 409 });
-      }
-      if (existingProfile.email === email) {
-        return NextResponse.json({ error: 'Email sudah terdaftar. Silakan gunakan email lain.' }, { status: 409 });
-      }
-    }
-
-    // 2. Create the user in Supabase Auth
-    const { data: { user }, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true, // Auto-confirm user's email
-      user_metadata: { name }, // We can still store name for convenience
-    });
-
-    if (signUpError) {
-      console.error("Error creating auth user:", signUpError);
-       if (signUpError.message.includes('unique constraint') || signUpError.message.includes('already registered')) {
-            return NextResponse.json({ error: 'Email sudah terdaftar. Silakan gunakan email lain.' }, { status: 409 });
-        }
-      throw signUpError;
-    }
-
-    if (!user) {
-      throw new Error('Gagal membuat pengguna di sistem otentikasi.');
-    }
-
-    // 3. **Explicitly** insert into the public.profiles table
-    const { error: profileInsertError } = await supabaseAdmin
-      .from('profiles')
-      .insert({
-        id: user.id, // This links the profile to the auth user
-        name,
-        id_pjlp,
-        phone,
-        email,
+  // We are using the standard signUp method which requires email confirmation.
+  // Additional user data is passed in the `options.data` field.
+  // This data will be available in the user's `user_metadata` after they confirm their email.
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${requestUrl.origin}/api/auth/callback`,
+      data: {
+        name: name,
+        id_pjlp: id_pjlp,
+        phone: phone,
         role: 'anggota' // Set default role
-      });
-
-    if (profileInsertError) {
-      console.error("Fatal: Auth user created, but failed to insert profile:", profileInsertError);
-      // In a real-world scenario, you might want to delete the auth user here to avoid orphans.
-      // For now, we'll return an error to the user.
-      return NextResponse.json({ error: 'Gagal menyimpan data profil. Hubungi administrator.' }, { status: 500 });
+      }
     }
+  });
 
-    // 4. Return success
-    return NextResponse.json({ success: true, message: 'Pendaftaran berhasil.' }, { status: 201 });
-
-  } catch (error: any) {
-    console.error('Registration Server Error:', error);
-    return NextResponse.json({ error: error.message || 'Terjadi kesalahan internal pada server.' }, { status: 500 });
+  if (error) {
+    console.error("Supabase SignUp Error:", error);
+    // Provide more user-friendly error messages
+    if (error.message.includes('User already registered')) {
+        return NextResponse.json({ error: 'Email atau pengguna sudah terdaftar.' }, { status: 409 });
+    }
+    return NextResponse.json({ error: error.message || 'Terjadi kesalahan pada server.' }, { status: 500 });
   }
+
+  // On successful sign-up request, redirect the user to a page
+  // that tells them to check their email.
+  return NextResponse.redirect(`${requestUrl.origin}/auth/confirm`, { status: 303 });
 }
