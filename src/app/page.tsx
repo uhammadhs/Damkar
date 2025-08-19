@@ -60,7 +60,7 @@ export default function LoginPage() {
 
       if (authError) {
          if (authError.message.includes('Email not confirmed')) {
-            throw new Error("Email belum diverifikasi. Silakan cek kotak masuk email Anda.");
+            throw new Error("Akun Anda belum aktif. Silakan hubungi admin jika masalah berlanjut.");
         }
         throw new Error("Password salah. Periksa kembali.");
       }

@@ -13,15 +13,15 @@ export default function VerifiedPage() {
             <CheckCircle className="h-10 w-10" />
           </div>
           <CardTitle className="mt-4 font-headline text-2xl">
-            Email Terverifikasi
+            Akun Berhasil Dibuat
           </CardTitle>
           <CardDescription>
-            Selamat! Akun Anda telah berhasil diverifikasi.
+            Selamat! Akun Anda telah berhasil dibuat dan aktif.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="mb-6 text-sm text-muted-foreground">
-            Anda sekarang dapat login ke aplikasi menggunakan kredensial yang telah Anda daftarkan.
+            Anda sekarang dapat login ke aplikasi menggunakan ID PJLP dan password yang telah Anda daftarkan.
           </p>
           <Button asChild className="w-full">
             <Link href="/">Lanjut ke Halaman Login</Link>

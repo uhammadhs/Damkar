@@ -48,8 +48,7 @@ export async function registerUser(formData: FormData) {
     return { success: false, message: 'ID PJLP sudah terdaftar. Silakan login atau gunakan ID lain.' };
   }
   
-  const redirectUrl = new URL('/auth/verified', process.env.NEXT_PUBLIC_SITE_URL).toString();
-
+  // Create user without email verification
   const { data, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
@@ -59,7 +58,8 @@ export async function registerUser(formData: FormData) {
         id_pjlp: id_pjlp,
         phone: phone,
       },
-      emailRedirectTo: redirectUrl,
+      // By REMOVING emailRedirectTo, Supabase will not send a confirmation email
+      // and the user will be created as active.
     },
   });
 
@@ -68,6 +68,10 @@ export async function registerUser(formData: FormData) {
     if (signUpError.message.includes('unique constraint')) {
         return { success: false, message: 'Email sudah terdaftar. Silakan gunakan email lain atau login.' };
     }
+    // Handle specific error for already registered user
+    if (signUpError.message.includes('User already registered')) {
+        return { success: false, message: 'Email ini sudah terdaftar. Silakan login atau gunakan email lain.' };
+    }
     return { success: false, message: signUpError.message };
   }
 
@@ -75,5 +79,5 @@ export async function registerUser(formData: FormData) {
     return { success: false, message: 'Gagal membuat pengguna, silakan coba lagi.' };
   }
 
-  return { success: true, message: 'Pendaftaran berhasil. Silakan cek email Anda untuk verifikasi.' };
+  return { success: true, message: 'Pendaftaran berhasil. Anda sekarang dapat login.' };
 }

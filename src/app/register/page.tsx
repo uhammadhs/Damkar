@@ -28,8 +28,8 @@ export default function RegisterPage() {
     if (result.success) {
       toast({
         title: "Pendaftaran Berhasil",
-        description: "Silakan periksa email Anda untuk verifikasi akun sebelum login.",
-        duration: 8000,
+        description: "Akun Anda telah berhasil dibuat. Silakan login.",
+        duration: 5000,
       });
       router.push('/');
     } else {
