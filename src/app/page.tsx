@@ -39,22 +39,26 @@ export default function LoginPage() {
       });
       
       // If the response is a redirect, the browser will handle it automatically.
-      // If it's not a redirect, it means there was an error message from the server-side logic
-      // that we need to display.
+      // We check for `response.ok` and `response.redirected` to be certain.
+      // After a successful login, the server sends a redirect response.
       if (response.ok && response.redirected) {
-          // The redirect is handled by the browser, but we might want to refresh the page state
-          // in case the user navigates back.
+          // The redirect is handled by the browser, we just need to navigate to the final URL.
           router.push(response.url);
           return;
       }
 
-      // If we reach here, it's likely an error response that didn't redirect.
+      // If we reach here, it's an error response that didn't redirect.
+      // We can safely parse the JSON.
       const errorData = await response.json();
       setError(errorData.error || 'Terjadi kesalahan yang tidak diketahui.');
 
     } catch (e) {
       console.error(e);
-      setError('Gagal terhubung ke server. Silakan coba lagi.');
+      let errorMessage = 'Gagal terhubung ke server. Silakan coba lagi.';
+      if (e instanceof SyntaxError) {
+          errorMessage = "Menerima respons tidak valid dari server. Hubungi admin.";
+      }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

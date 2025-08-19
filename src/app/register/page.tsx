@@ -42,22 +42,22 @@ export default function RegisterPage() {
         method: 'POST',
         body: formData,
       });
-
-      // The server will now consistently return JSON.
-      const data = await response.json();
-
+      
       if (response.ok) {
-        // Redirect on success
+        // Redirect on success, no need to parse JSON body
         router.push('/auth/verified');
       } else {
-        // Set error from the JSON response
-        setError(data.error || 'Terjadi kesalahan saat pendaftaran.');
+        // If there's an error, the server should send a JSON error message.
+        const errorData = await response.json();
+        setError(errorData.error || 'Terjadi kesalahan saat pendaftaran.');
       }
+
     } catch (e) {
       console.error(e);
       let errorMessage = 'Gagal terhubung ke server. Silakan coba lagi.';
+      // Check if the error is a syntax error, which indicates a non-JSON response from the server
       if (e instanceof SyntaxError) {
-          errorMessage = "Menerima respons tidak valid dari server.";
+          errorMessage = "Menerima respons tidak valid dari server. Hubungi admin.";
       }
       setError(errorMessage);
     } finally {
