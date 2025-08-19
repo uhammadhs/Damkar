@@ -15,8 +15,10 @@ const RegisterSchema = z.object({
 
 
 export async function registerUser(formData: FormData) {
+  // We need to call cookies() to get the cookie store.
   const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  // Then, we pass the cookie store to our createClient function.
+  const supabase = createClient();
 
   const rawData = {
     name: formData.get('name') as string,
