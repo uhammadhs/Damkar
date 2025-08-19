@@ -1,4 +1,3 @@
-
 "use client"
 
 import Image from 'next/image';
@@ -11,14 +10,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { createClient } from '@/lib/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const supabase = createClient();
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -26,6 +25,7 @@ export default function LoginPage() {
     event.preventDefault();
     setError(null);
     setIsLoading(true);
+    const supabase = createClient();
 
     try {
       const formData = new FormData(event.currentTarget);
