@@ -21,6 +21,8 @@ export type LeaveBalance = {
 
 const getLeaveBalances = async (year: number): Promise<LeaveBalance[]> => {
     const supabase = createClient();
+    // Admin has RLS policy to view all balances.
+    // We join with profiles to get member names.
     const { data, error } = await supabase
         .from('leave_balances')
         .select(`
@@ -34,7 +36,7 @@ const getLeaveBalances = async (year: number): Promise<LeaveBalance[]> => {
             )
         `)
         .eq('year', year)
-        .eq('profiles.role', 'anggota')
+        .eq('profiles.role', 'anggota') // Pastikan hanya mengambil data anggota
         .order('name', { foreignTable: 'profiles', ascending: true });
 
     if (error) {
@@ -42,7 +44,8 @@ const getLeaveBalances = async (year: number): Promise<LeaveBalance[]> => {
         return [];
     }
     
-    return data as LeaveBalance[];
+    // Supabase TypeScript generator might not be perfect for nested types, so we cast it.
+    return data as unknown as LeaveBalance[];
 }
 
 const getAvailableYears = async (): Promise<number[]> => {

@@ -67,40 +67,25 @@ export async function submitLeaveRequest(prevState: FormState | undefined, formD
 
   // Cek sisa cuti tahunan
   const currentYear = new Date().getFullYear();
-  let { data: leaveBalance, error: balanceError } = await supabase
+  // Gunakan .maybeSingle() untuk menghindari error jika belum ada data saldo
+  const { data: leaveBalance, error: balanceError } = await supabase
       .from('leave_balances')
-      .select('id, total_days, used_days')
+      .select('total_days, used_days')
       .eq('user_id', user.id)
       .eq('year', currentYear)
-      .maybeSingle(); // Use maybeSingle() to avoid error if no row is found
+      .maybeSingle(); 
   
-  // If there's an error and it's not a 'no rows' error, fail.
-  if (balanceError && balanceError.code !== 'PGRST116') {
+  if (balanceError) {
       console.error("Error fetching leave balance:", balanceError);
       return { success: false, message: 'Gagal memverifikasi jatah cuti. Silakan coba lagi.' };
   }
+  
+  // Jika belum ada data saldo, jatah cuti default 12 hari dan terpakai 0.
+  // Jika sudah ada, gunakan data dari database.
+  const totalDays = leaveBalance?.total_days ?? 12;
+  const usedDays = leaveBalance?.used_days ?? 0;
+  const remainingDays = totalDays - usedDays;
 
-  // If no leave balance record exists for the user this year, create one.
-  if (!leaveBalance) {
-      const { data: newBalance, error: createError } = await supabase
-        .from('leave_balances')
-        .insert({
-            user_id: user.id,
-            year: currentYear,
-            total_days: 12, // Default annual leave
-            used_days: 0
-        })
-        .select('id, total_days, used_days')
-        .single();
-      
-      if (createError) {
-          console.error("Error creating leave balance:", createError);
-          return { success: false, message: 'Gagal membuat data jatah cuti untuk tahun ini. Hubungi admin.' };
-      }
-      leaveBalance = newBalance;
-  }
-
-  const remainingDays = leaveBalance.total_days - leaveBalance.used_days;
   if (duration > remainingDays) {
       return { success: false, message: `Jatah cuti tidak mencukupi. Sisa cuti Anda: ${remainingDays} hari.` };
   }
