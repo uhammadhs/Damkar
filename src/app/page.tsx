@@ -5,67 +5,40 @@ import Image from 'next/image';
 import Link from 'next/link';
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, CheckCircle } from 'lucide-react';
-import { Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { login, type LoginState } from './actions';
+
+function LoginButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button className="w-full" type="submit" disabled={pending}>
+            {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {pending ? "Memproses..." : "Login"}
+        </Button>
+    )
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialError = searchParams.get('error');
-  const initialMessage = searchParams.get('message');
+  
+  const initialState: LoginState = { error: initialError, message: searchParams.get('message') };
+  const [state, formAction] = useActionState(login, initialState);
 
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [id_pjlp, setIdPjlp] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [error, setError] = React.useState<string | null>(initialError);
-  const [message, setMessage] = React.useState<string | null>(initialMessage);
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('id_pjlp', id_pjlp);
-      formData.append('password', password);
-
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        // Throw an error with the message from the server
-        // This will be caught by the catch block
-        throw new Error(result.error || 'Terjadi kesalahan pada server.');
-      }
-      
-      if (result.success) {
-          router.push(result.redirectUrl);
-      } else {
-          // Fallback for cases where response is OK but success is false
-          setError(result.error || 'Terjadi kesalahan yang tidak diketahui.');
-      }
-
-    } catch (err) {
-      console.error('Login Fetch Error:', err);
-      // Check if err is an Error object before accessing .message
-      const errorMessage = err instanceof Error ? err.message : 'Gagal terhubung ke server. Silakan coba lagi.';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
+  React.useEffect(() => {
+    if (state?.success) {
+      router.push(state.redirectUrl!);
     }
-  };
+  }, [state, router]);
 
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center justify-center">
@@ -84,21 +57,21 @@ export default function LoginPage() {
           <CardDescription>Sistem Izin Siaga dan Berhalangan</CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
+          {state?.error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Login Gagal</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>{state.error}</AlertDescription>
             </Alert>
           )}
-           {message && (
+           {state?.message && (
             <Alert variant="default" className="mb-4 border-green-500 text-green-700 dark:border-green-600 dark:text-green-400 [&>svg]:text-green-500 dark:[&>svg]:text-green-400">
               <CheckCircle className="h-4 w-4" />
               <AlertTitle>Sukses</AlertTitle>
-              <AlertDescription>{message}</AlertDescription>
+              <AlertDescription>{state.message}</AlertDescription>
             </Alert>
           )}
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-4" action={formAction}>
             <div className="space-y-2">
               <Label htmlFor="id_pjlp">ID PJLP</Label>
               <Input 
@@ -106,9 +79,6 @@ export default function LoginPage() {
                 name="id_pjlp" 
                 placeholder="Contoh: 123456789" 
                 required 
-                disabled={isLoading}
-                value={id_pjlp}
-                onChange={(e) => setIdPjlp(e.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -119,15 +89,9 @@ export default function LoginPage() {
                 required 
                 type="password" 
                 placeholder="••••••••" 
-                disabled={isLoading}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <Button className="w-full" type="submit" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLoading ? "Memproses..." : "Login"}
-            </Button>
+            <LoginButton />
             <div className="relative my-2">
                 <Separator />
             </div>
