@@ -10,7 +10,7 @@ import { Suspense } from "react";
 import Loading from "./loading";
 
 
-export const revalidate = 60; // Cache for 60 seconds
+export const revalidate = 0;
 
 export type LeaveRequest = Database['public']['Tables']['leave_requests']['Row'] & {
   profiles: Pick<Database['public']['Tables']['profiles']['Row'], 'name' | 'id_pjlp' | 'avatar_url'> | null;
@@ -41,7 +41,14 @@ async function getLeaveRequests(status: 'Menunggu' | 'Semua', page: number) {
     return { requests: data as LeaveRequest[], count: count || 0 };
 }
 
-async function LeaveTabs({ currentTab, currentPage }: { currentTab: 'Menunggu' | 'Semua', currentPage: number }) {
+async function LeaveTabs({ 
+  searchParams 
+} : { 
+  searchParams?: { tab?: string; page?: string; }
+}) {
+  const currentTab = searchParams?.tab === 'semua' ? 'Semua' : 'Menunggu';
+  const currentPage = Number(searchParams?.page) || 1;
+
   const { requests: waitingRequests, count: waitingCount } = await getLeaveRequests('Menunggu', currentTab === 'Menunggu' ? currentPage : 1);
   const { requests: allRequests, count: allCount } = await getLeaveRequests('Semua', currentTab === 'Semua' ? currentPage : 1);
 
@@ -70,14 +77,11 @@ export default async function ManajemenCutiPage({
     page?: string;
   }
 }) {
-  const currentTab = searchParams?.tab === 'semua' ? 'Semua' : 'Menunggu';
-  const currentPage = Number(searchParams?.page) || 1;
-  
   return (
     <Card>
       <CardContent className="pt-6">
         <Suspense fallback={<Loading />}>
-          <LeaveTabs currentTab={currentTab} currentPage={currentPage} />
+          <LeaveTabs searchParams={searchParams} />
         </Suspense>
       </CardContent>
     </Card>
