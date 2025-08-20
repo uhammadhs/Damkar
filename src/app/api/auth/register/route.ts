@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { Database } from '@/types/supabase';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const RegisterSchema = z.object({
   name: z.string().min(3, "Nama lengkap harus diisi"),
@@ -45,9 +46,9 @@ export async function POST(request: Request) {
 
   const { name, email, password, id_pjlp, phone } = validation.data;
 
-  // Check if ID PJLP or Email already exists
-  // We need to use the admin client to bypass RLS for this check
-   const { data: existingProfile, error: existingProfileError } = await supabase
+  // Use admin client to check for duplicates without RLS
+  const supabaseAdmin = createAdminClient();
+  const { data: existingProfile, error: existingProfileError } = await supabaseAdmin
     .from('profiles')
     .select('id')
     .or(`id_pjlp.eq.${id_pjlp},email.eq.${email}`)
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Gagal membuat pengguna, silakan coba lagi.' }, { status: 500 });
   }
 
-  // After sign up, the trigger in supabase will copy metadata to profiles table.
-  // We just redirect the user to a page telling them to check their email.
-  return NextResponse.redirect(`${requestUrl.origin}/auth/confirm`);
+  // The user is created in auth.users, but the profile data from options.data is now handled by a database trigger.
+  // We can return success and redirect the user to the confirmation page.
+  return NextResponse.json({ success: true, redirectUrl: `${requestUrl.origin}/auth/confirm` });
 }
