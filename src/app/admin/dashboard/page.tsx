@@ -1,4 +1,3 @@
-
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, BookCopy, CheckCircle, ArrowRight } from "lucide-react";
@@ -36,11 +35,15 @@ async function getDashboardData() {
     const today = new Date();
     
     // 1. Get total members
+    // Explicitly select 'id' to work better with RLS and head count.
     const { count: membersCount, error: membersError } = await supabase
         .from('profiles')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('role', 'anggota');
-    if (membersError) console.error("Error fetching members count:", membersError.message);
+
+    if (membersError) {
+        console.error("Error fetching members count:", membersError.message || 'Unknown error');
+    }
 
     // 2. Get monthly requests
     const firstDayOfMonth = format(startOfMonth(today), 'yyyy-MM-dd');
