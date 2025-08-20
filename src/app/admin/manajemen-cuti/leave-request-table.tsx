@@ -13,13 +13,13 @@ import { LeaveRequestActions } from "./leave-request-actions";
 const getStatusColor = (status: string): string => {
     switch (status) {
         case 'Menunggu':
-            return 'bg-accent text-accent-foreground';
+            return 'bg-accent text-accent-foreground hover:bg-accent/80';
         case 'Disetujui':
-            return 'bg-green-600 text-white';
+            return 'bg-green-600 text-white hover:bg-green-600/80';
         case 'Ditolak':
-            return 'bg-destructive text-destructive-foreground';
+            return 'bg-destructive text-destructive-foreground hover:bg-destructive/80';
         default:
-            return 'bg-gray-500 text-white';
+            return 'bg-gray-500 text-white hover:bg-gray-500/80';
     }
 }
 

@@ -15,13 +15,13 @@ import type { LeaveRequest } from "./page";
 const getStatusColor = (status: string): string => {
     switch (status) {
         case 'Menunggu':
-            return 'bg-accent text-accent-foreground';
+            return 'bg-accent text-accent-foreground hover:bg-accent/80';
         case 'Disetujui':
-            return 'bg-green-600 text-white';
+            return 'bg-green-600 text-white hover:bg-green-600/80';
         case 'Ditolak':
-            return 'bg-destructive text-destructive-foreground';
+            return 'bg-destructive text-destructive-foreground hover:bg-destructive/80';
         default:
-            return 'bg-gray-500 text-white';
+            return 'bg-gray-500 text-white hover:bg-gray-500/80';
     }
 }
 
@@ -107,7 +107,7 @@ export function LeaveRequestActions({ request }: { request: LeaveRequest }) {
                 </DialogContent>
             </Dialog>
             {request.status === 'Menunggu' && (
-                <>
+                <div className="hidden md:flex gap-2">
                     <Button variant="outline" size="icon" className="h-9 w-9 text-destructive border-destructive hover:bg-destructive/10" onClick={() => handleUpdateRequest("Ditolak")} disabled={isLoading}>
                         {isLoading && action === 'Ditolak' ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
                         <span className="sr-only">Tolak</span>
@@ -116,7 +116,7 @@ export function LeaveRequestActions({ request }: { request: LeaveRequest }) {
                         {isLoading && action === 'Disetujui' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                         <span className="sr-only">Setujui</span>
                     </Button>
-                </>
+                </div>
             )}
         </div>
     );
