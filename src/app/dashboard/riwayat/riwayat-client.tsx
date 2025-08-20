@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -31,7 +30,7 @@ export function RiwayatClient({ availableYears, selectedYear }: RiwayatClientPro
   return (
     <Select value={String(selectedYear)} onValueChange={handleYearChange}>
         <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Pilih Tahun" />
+            <SelectValue />
         </SelectTrigger>
         <SelectContent>
             {(availableYears.length > 0 ? availableYears : [currentYear]).map(year => (
