@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
   // Use admin client to check for duplicates without RLS
   const supabaseAdmin = createAdminClient();
-  const { data: existingProfile, error: existingProfileError } = await supabaseAdmin
+  const { data: existingProfile } = await supabaseAdmin
     .from('profiles')
     .select('id')
     .or(`id_pjlp.eq.${id_pjlp},email.eq.${email}`)
@@ -83,8 +83,6 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: 'Gagal membuat pengguna, silakan coba lagi.' }, { status: 500 });
   }
-
-  // Instead of redirecting from the server, we will return a success response
-  // and let the client-side handle the redirect. This is more robust.
+  
   return NextResponse.json({ success: true, message: 'Pendaftaran berhasil, silakan periksa email Anda untuk verifikasi.' });
 }
