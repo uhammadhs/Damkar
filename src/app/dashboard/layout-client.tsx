@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
 
 interface DashboardLayoutClientProps {
   children: React.ReactNode;
@@ -46,6 +47,25 @@ export function DashboardLayoutClient({ children }: DashboardLayoutClientProps) 
   const router = useRouter()
   const { setTheme, theme } = useTheme()
   const supabase = createClient()
+  const [user, setUser] = React.useState<SupabaseUser | null>(null)
+  const [avatarFallback, setAvatarFallback] = React.useState("U")
+
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      if (user?.user_metadata?.name) {
+        const name = user.user_metadata.name;
+        const parts = name.split(" ");
+        if (parts.length > 1) {
+            setAvatarFallback((parts[0][0] + parts[1][0]).toUpperCase());
+        } else {
+            setAvatarFallback(name.substring(0, 2).toUpperCase());
+        }
+      }
+    };
+    fetchUser();
+  }, [supabase.auth]);
   
   const navItems = [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -112,14 +132,14 @@ export function DashboardLayoutClient({ children }: DashboardLayoutClientProps) 
                   <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="rounded-full">
                           <Avatar className="h-8 w-8">
-                              <AvatarImage src="https://placehold.co/40x40.png" alt="Anggota" data-ai-hint="male portrait" />
-                              <AvatarFallback>U</AvatarFallback>
+                              <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.name} data-ai-hint="male portrait" />
+                              <AvatarFallback>{avatarFallback}</AvatarFallback>
                           </Avatar>
                           <span className="sr-only">Toggle user menu</span>
                       </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Anggota</DropdownMenuLabel>
+                      <DropdownMenuLabel>{user?.user_metadata?.name || 'Anggota'}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
                         <Link href="/dashboard/profil">
