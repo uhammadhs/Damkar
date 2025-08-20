@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { LaporanClient } from './laporan-client';
 import type { Database } from '@/types/supabase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { cookies } from 'next/headers';
+import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 
 export const revalidate = 300; // Cache for 5 minutes
 
@@ -19,8 +21,8 @@ export type LeaveBalance = {
     } | null;
 }
 
-const getLeaveBalances = async (year: number): Promise<LeaveBalance[]> => {
-    const supabase = createClient();
+const getLeaveBalances = async (year: number, cookieStore: ReadonlyRequestCookies): Promise<LeaveBalance[]> => {
+    const supabase = createClient(cookieStore);
     // Admin has RLS policy to view all balances.
     // We join with profiles to get member names.
     const { data, error } = await supabase
@@ -48,8 +50,8 @@ const getLeaveBalances = async (year: number): Promise<LeaveBalance[]> => {
     return data as unknown as LeaveBalance[];
 }
 
-const getAvailableYears = async (): Promise<number[]> => {
-    const supabase = createClient();
+const getAvailableYears = async (cookieStore: ReadonlyRequestCookies): Promise<number[]> => {
+    const supabase = createClient(cookieStore);
     const { data, error } = await supabase
         .from('leave_balances')
         .select('year')
@@ -71,10 +73,11 @@ export default async function LaporanPage({
     year?: string;
   };
 }) {
-    const availableYears = await getAvailableYears();
+    const cookieStore = cookies();
+    const availableYears = await getAvailableYears(cookieStore);
     const currentYear = new Date().getFullYear();
     const selectedYear = Number(searchParams?.year) || (availableYears.includes(currentYear) ? currentYear : availableYears[0] || currentYear);
-    const balances = await getLeaveBalances(selectedYear);
+    const balances = await getLeaveBalances(selectedYear, cookieStore);
     
     return (
         <Card>
