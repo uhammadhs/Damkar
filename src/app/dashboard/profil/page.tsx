@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ProfileActions } from "./profile-actions";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cookies } from "next/headers";
 
 function ProfileSkeleton() {
     return (
@@ -32,7 +33,8 @@ function ProfileSkeleton() {
 }
 
 async function ProfileData() {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
 
     const {
         data: { user },
@@ -111,5 +113,3 @@ export default async function ProfilPage() {
     </Card>
   );
 }
-
-    
