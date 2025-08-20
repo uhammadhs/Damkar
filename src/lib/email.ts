@@ -28,29 +28,36 @@ export async function sendLeaveStatusEmail({ to, name, status, requestTitle, sta
 
     const resend = new Resend(resendApiKey);
     
-    const subject = `Pembaruan Status Pengajuan Cuti: ${requestTitle}`;
+    const subject = status === 'Disetujui'
+        ? `Selamat! Pengajuan Cuti Anda Disetujui: "${requestTitle}"`
+        : `Informasi Pengajuan Cuti Ditolak: "${requestTitle}"`;
+    
     const statusText = status === 'Disetujui' ? 'telah disetujui' : 'ditolak';
+    const introText = status === 'Disetujui'
+        ? `Kami dengan gembira memberitahukan bahwa pengajuan cuti Anda telah disetujui oleh admin.`
+        : `Dengan berat hati kami memberitahukan bahwa pengajuan cuti Anda belum dapat disetujui oleh admin.`;
+
     const formattedStartDate = format(new Date(startDate), "EEEE, d MMMM yyyy", { locale: id });
     const formattedEndDate = format(new Date(endDate), "EEEE, d MMMM yyyy", { locale: id });
 
     const { data, error } = await resend.emails.send({
-        from: `SIAP CUTI <${resendFromEmail}>`,
+        from: `SIAP CUTI Admin <${resendFromEmail}>`,
         to: [to],
         subject: subject,
         html: `
-            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                <h2>Pembaruan Status Pengajuan Cuti</h2>
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <h2 style="color: #D32F2F;">Pembaruan Status Pengajuan Cuti</h2>
                 <p>Yth. ${name},</p>
-                <p>Kami memberitahukan bahwa pengajuan cuti Anda dengan detail sebagai berikut <strong>${statusText}</strong> oleh admin.</p>
-                <hr>
-                <p><strong>Judul Pengajuan:</strong> ${requestTitle}</p>
-                <p><strong>Tanggal:</strong> ${formattedStartDate} - ${formattedEndDate}</p>
-                <p><strong>Status Saat Ini:</strong> ${status}</p>
-                <hr>
+                <p>${introText}</p>
+                <hr style="border: none; border-top: 1px solid #eee;">
+                <p style="margin-bottom: 5px;"><strong>Judul Pengajuan:</strong> ${requestTitle}</p>
+                <p style="margin-bottom: 5px;"><strong>Tanggal:</strong> ${formattedStartDate} - ${formattedEndDate}</p>
+                <p style="margin-bottom: 5px;"><strong>Status Saat Ini:</strong> <strong style="color: ${status === 'Disetujui' ? '#28a745' : '#dc3545'};">${status}</strong></p>
+                <hr style="border: none; border-top: 1px solid #eee;">
                 <p>Anda dapat melihat detail lebih lanjut dengan login ke aplikasi SIAP CUTI.</p>
-                <p>Terima kasih.</p>
+                <p>Terima kasih atas perhatiannya.</p>
                 <br>
-                <p><em>Ini adalah email otomatis, mohon untuk tidak membalas.</em></p>
+                <p style="font-size: 0.8em; color: #777;"><em>Ini adalah email otomatis, mohon untuk tidak membalas.</em></p>
             </div>
         `,
     });
