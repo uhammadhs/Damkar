@@ -1,4 +1,5 @@
 
+import * as React from "react";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardLayoutClient } from "./layout-client";
 import { redirect } from "next/navigation";
