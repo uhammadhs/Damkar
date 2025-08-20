@@ -5,14 +5,12 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import * as React from "react"
 import {
-  Bell,
   History,
   LayoutDashboard,
   User,
   Moon,
   Sun,
   LogOut,
-  CheckCircle2,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -36,27 +34,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
-import { markUserNotificationAsRead } from "./actions"
-import type { UserNotification } from "./layout"
 
 interface DashboardLayoutClientProps {
   children: React.ReactNode;
-  initialNotifications: UserNotification[];
-  initialNotificationCount: number;
 }
 
-export function DashboardLayoutClient({ children, initialNotifications, initialNotificationCount }: DashboardLayoutClientProps) {
+export function DashboardLayoutClient({ children }: DashboardLayoutClientProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { setTheme, theme } = useTheme()
   const supabase = createClient()
   
-  const [notifications, setNotifications] = React.useState(initialNotifications);
-  const [notificationCount, setNotificationCount] = React.useState(initialNotificationCount);
-
   const navItems = [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/dashboard/riwayat", label: "Riwayat Cuti", icon: History },
@@ -69,30 +59,6 @@ export function DashboardLayoutClient({ children, initialNotifications, initialN
     router.refresh()
   };
   
-  const handleNotificationClick = async (notificationId: number) => {
-    // Optimistically remove from UI
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    setNotificationCount(prev => Math.max(0, prev - 1));
-    
-    // Navigate to history page
-    router.push('/dashboard/riwayat');
-
-    // Tell the server to mark this specific notification as read
-    await markUserNotificationAsRead(notificationId);
-  };
-  
-  
-  const getStatusInfo = (status: string) => {
-    switch (status) {
-        case 'Disetujui':
-            return { text: 'disetujui', color: 'text-green-500' };
-        case 'Ditolak':
-            return { text: 'ditolak', color: 'text-destructive' };
-        default:
-            return { text: 'diperbarui', color: 'text-muted-foreground' };
-    }
-  }
-
   return (
     <SidebarProvider>
       <Sidebar>
@@ -142,43 +108,6 @@ export function DashboardLayoutClient({ children, initialNotifications, initialN
                   <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                   <span className="sr-only">Toggle theme</span>
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative rounded-full">
-                    <Bell className="h-5 w-5" />
-                    {notificationCount > 0 && (
-                        <Badge className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full p-0 text-xs">
-                            {notificationCount}
-                        </Badge>
-                    )}
-                    <span className="sr-only">Toggle notifications</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80 md:w-96">
-                  <DropdownMenuLabel>Notifikasi Baru</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                   {notifications.length > 0 ? (
-                    notifications.map((notif) => {
-                      const statusInfo = getStatusInfo(notif.status);
-                      return (
-                        <DropdownMenuItem key={notif.id} onSelect={() => handleNotificationClick(notif.id)} className="flex items-start gap-3 whitespace-normal p-3">
-                          <div className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${statusInfo.color.replace('text-', 'bg-')}`} />
-                          <div className="grid gap-1">
-                              <p className="text-sm font-medium leading-none">
-                                Pengajuan Anda <span className="font-bold">"{notif.title}"</span> telah <span className={`font-bold ${statusInfo.color}`}>{statusInfo.text}</span>.
-                              </p>
-                          </div>
-                        </DropdownMenuItem>
-                      )
-                    })
-                  ) : (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                       <CheckCircle2 className="mx-auto h-8 w-8 text-green-500" />
-                       <p className="mt-2">Tidak ada notifikasi baru.</p>
-                    </div>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
               <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="rounded-full">
