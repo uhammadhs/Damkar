@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
+import type { Database } from '@/types/supabase'
 
 const RegisterSchema = z.object({
   name: z.string().min(3, 'Nama lengkap harus diisi'),
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
   }
 
   // Create a temporary standard client for the signUp process
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
