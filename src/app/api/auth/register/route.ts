@@ -3,7 +3,6 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import type { Database } from '@/types/supabase';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 const RegisterSchema = z.object({
@@ -20,7 +19,7 @@ export async function POST(request: Request) {
   const rawData = Object.fromEntries(formData.entries());
   
   const cookieStore = cookies();
-  const supabase = createServerClient<Database>(
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {

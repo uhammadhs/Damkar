@@ -10,6 +10,7 @@ export async function POST(request: Request) {
   const id_pjlp = formData.get('id_pjlp') as string;
   const password = formData.get('password') as string;
   const cookieStore = cookies();
+
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
