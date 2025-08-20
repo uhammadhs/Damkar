@@ -75,9 +75,12 @@ export default async function RiwayatPage({
         return <div>Gagal memuat data.</div>;
     }
     
-    const availableYears = Array.from(new Set(allHistory.map(item => new Date(item.start_date).getFullYear()))).sort((a, b) => b - a);
     const currentYear = new Date().getFullYear();
-    const selectedYear = Number(searchParams?.year) || (availableYears.includes(currentYear) ? currentYear : availableYears[0] || currentYear);
+    const yearsFromHistory = allHistory.map(item => new Date(item.start_date).getFullYear());
+    // Gabungkan tahun dari riwayat dengan tahun sekarang, hapus duplikat, dan urutkan.
+    const availableYears = Array.from(new Set([...yearsFromHistory, currentYear])).sort((a, b) => b - a);
+
+    const selectedYear = Number(searchParams?.year) || currentYear;
 
 
     const { data: filteredHistory, error } = await supabase
