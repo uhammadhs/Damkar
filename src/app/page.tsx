@@ -26,7 +26,7 @@ export default function LoginPage() {
   const [error, setError] = React.useState<string | null>(initialError);
   const [message, setMessage] = React.useState<string | null>(initialMessage);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -36,31 +36,32 @@ export default function LoginPage() {
     formData.append('id_pjlp', id_pjlp);
     formData.append('password', password);
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-          router.push(result.redirectUrl);
-          return;
-      }
-
-      setError(result.error || 'Terjadi kesalahan yang tidak diketahui.');
-
-    } catch (e) {
-      console.error(e);
-      let errorMessage = 'Gagal terhubung ke server. Silakan coba lagi.';
-      if (e instanceof SyntaxError) {
-          errorMessage = "Menerima respons tidak valid dari server. Hubungi admin.";
-      }
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
+    fetch('/api/auth/login', {
+      method: 'POST',
+      body: formData,
+    })
+    .then(response => {
+        if (!response.ok) {
+            // If response is not ok, parse the error JSON to throw it to the catch block
+            return response.json().then(err => Promise.reject(err));
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            router.push(result.redirectUrl);
+        } else {
+            // This case should be handled by the !response.ok check, but as a fallback
+            setError(result.error || 'Terjadi kesalahan yang tidak diketahui.');
+        }
+    })
+    .catch(err => {
+        console.error('Login Fetch Error:', err);
+        setError(err.error || 'Gagal terhubung ke server. Silakan coba lagi.');
+    })
+    .finally(() => {
+        setIsLoading(false);
+    });
   };
 
   return (
