@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Gagal membuat pengguna, silakan coba lagi.' }, { status: 500 });
   }
 
-  // The user is created in auth.users, but the profile data from options.data is now handled by a database trigger.
-  // We can return success and redirect the user to the confirmation page.
-  return NextResponse.json({ success: true, redirectUrl: `${requestUrl.origin}/auth/confirm` });
+  // Instead of redirecting from the server, we will return a success response
+  // and let the client-side handle the redirect. This is more robust.
+  return NextResponse.json({ success: true, message: 'Pendaftaran berhasil, silakan periksa email Anda untuk verifikasi.' });
 }

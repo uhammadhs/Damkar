@@ -18,13 +18,7 @@ export default function RegisterPage() {
   
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-
-  const [name, setName] = React.useState('');
-  const [idPjlp, setIdPjlp] = React.useState('');
-  const [phone, setPhone] = React.useState('');
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-
+  
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
@@ -38,24 +32,16 @@ export default function RegisterPage() {
         body: formData,
       });
 
-      if (response.ok && response.redirected) {
-        // If the registration request is successful, the server will redirect.
-        // We follow that redirect on the client.
-        router.push(response.url);
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Redirect to the confirmation page on success
+        router.push('/auth/confirm');
         return;
       }
       
-      // If the response is not OK, it means there was a validation error or server error.
-      if (!response.ok) {
-        try {
-            const errorData = await response.json();
-            setError(errorData.error || 'Terjadi kesalahan saat pendaftaran.');
-        } catch (e) {
-            // This catches errors where the response isn't valid JSON,
-            // like a 500 server error returning an HTML page.
-            setError('Gagal memproses respons dari server. Silakan coba lagi.');
-        }
-      }
+      // Handle errors from the server
+      setError(result.error || 'Terjadi kesalahan saat pendaftaran.');
 
     } catch (e) {
       console.error('Fetch Error:', e);
@@ -92,23 +78,23 @@ export default function RegisterPage() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="name">Nama Lengkap</Label>
-              <Input id="name" name="name" placeholder="Sesuai KTP" required disabled={isLoading} value={name} onChange={(e) => setName(e.target.value)} />
+              <Input id="name" name="name" placeholder="Sesuai KTP" required disabled={isLoading} />
             </div>
              <div className="space-y-2">
               <Label htmlFor="id_pjlp">ID PJLP</Label>
-              <Input id="id_pjlp" name="id_pjlp" placeholder="Contoh: 123456789" required disabled={isLoading} value={idPjlp} onChange={(e) => setIdPjlp(e.target.value)} />
+              <Input id="id_pjlp" name="id_pjlp" placeholder="Contoh: 123456789" required disabled={isLoading} />
             </div>
              <div className="space-y-2">
               <Label htmlFor="phone">Nomor HP</Label>
-              <Input id="phone" name="phone" placeholder="0812xxxxxxxx" required type="tel" disabled={isLoading} value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Input id="phone" name="phone" placeholder="0812xxxxxxxx" required type="tel" disabled={isLoading} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" placeholder="Untuk verifikasi & notifikasi" required type="email" disabled={isLoading} value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input id="email" name="email" placeholder="Untuk verifikasi & notifikasi" required type="email" disabled={isLoading} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" required type="password" placeholder="Minimal 6 karakter" disabled={isLoading} value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input id="password" name="password" required type="password" placeholder="Minimal 6 karakter" disabled={isLoading} />
             </div>
             <Button className="w-full" type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
