@@ -3,6 +3,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import type { Database } from '@/types/supabase';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(request: Request) {
   const requestUrl = new URL(request.url);
@@ -11,6 +12,28 @@ export async function POST(request: Request) {
   const password = formData.get('password') as string;
   const cookieStore = cookies();
 
+  if (!id_pjlp || !password) {
+     return NextResponse.json({ error: 'ID PJLP dan Password harus diisi.' }, { status: 400 });
+  }
+
+  // 1. Find user's email by their ID PJLP first using the Admin client to bypass RLS
+  const supabaseAdmin = createAdminClient();
+  const { data: profileData, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('email, role')
+    .eq('id_pjlp', id_pjlp)
+    .single();
+  
+  if (profileError || !profileData) {
+     return NextResponse.json({ error: 'ID PJLP tidak ditemukan. Periksa kembali.' }, { status: 404 });
+  }
+  
+  const email = profileData.email;
+  if (!email) {
+     return NextResponse.json({ error: 'Data email untuk pengguna ini tidak lengkap. Hubungi admin.' }, { status: 500 });
+  }
+
+  // 2. Now, sign in with the user's context using the standard server client
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -39,27 +62,6 @@ export async function POST(request: Request) {
     }
   );
 
-  if (!id_pjlp || !password) {
-     return NextResponse.json({ error: 'ID PJLP dan Password harus diisi.' }, { status: 400 });
-  }
-
-  // 1. Find user's email by their ID PJLP first
-  const { data: profileData, error: profileError } = await supabase
-    .from('profiles')
-    .select('email, role')
-    .eq('id_pjlp', id_pjlp)
-    .single();
-  
-  if (profileError || !profileData) {
-     return NextResponse.json({ error: 'ID PJLP tidak ditemukan. Periksa kembali.' }, { status: 404 });
-  }
-  
-  const email = profileData.email;
-  if (!email) {
-     return NextResponse.json({ error: 'Data email untuk pengguna ini tidak lengkap. Hubungi admin.' }, { status: 500 });
-  }
-
-  // 2. Sign in with the fetched email and provided password
   const { error: authError } = await supabase.auth.signInWithPassword({
     email,
     password,
