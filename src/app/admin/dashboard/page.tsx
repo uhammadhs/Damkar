@@ -1,3 +1,4 @@
+
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, BookCopy, CheckCircle, ArrowRight } from "lucide-react";
@@ -9,6 +10,8 @@ import Link from "next/link";
 import type { Database } from "@/types/supabase";
 import * as React from 'react';
 import { LeaveStatsChartWrapper } from "./leave-stats-chart-wrapper";
+import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
+import { cookies } from "next/headers";
 
 export const revalidate = 60; // Cache for 60 seconds
 
@@ -30,12 +33,11 @@ export type MonthlyRequestStat = {
 }
 
 
-async function getDashboardData() {
-    const supabase = createClient();
+async function getDashboardData(cookieStore: ReadonlyRequestCookies) {
+    const supabase = createClient(cookieStore);
     const today = new Date();
     
     // 1. Get total members
-    // Explicitly select 'id' to work better with RLS and head count.
     const { count: membersCount, error: membersError } = await supabase
         .from('profiles')
         .select('id', { count: 'exact', head: true })
@@ -115,13 +117,14 @@ async function getDashboardData() {
 
 
 export default async function AdminDashboardPage() {
+    const cookieStore = cookies();
     const { 
         totalMembers, 
         monthlyRequests, 
         approvedRequests, 
         recentRequests,
         chartData
-    } = await getDashboardData();
+    } = await getDashboardData(cookieStore);
     
     const stats = [
         { title: "Total Anggota", value: totalMembers, icon: Users },
