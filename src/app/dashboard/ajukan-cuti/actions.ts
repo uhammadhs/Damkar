@@ -67,15 +67,37 @@ export async function submitLeaveRequest(prevState: FormState | undefined, formD
 
   // Cek sisa cuti tahunan
   const currentYear = new Date().getFullYear();
-  const { data: leaveBalance, error: balanceError } = await supabase
+  let { data: leaveBalance, error: balanceError } = await supabase
       .from('leave_balances')
-      .select('total_days, used_days')
+      .select('id, total_days, used_days')
       .eq('user_id', user.id)
       .eq('year', currentYear)
-      .single();
+      .maybeSingle(); // Use maybeSingle() to avoid error if no row is found
   
-  if (balanceError || !leaveBalance) {
-      return { success: false, message: 'Gagal mengambil data jatah cuti. Pastikan data cuti Anda untuk tahun ini sudah diatur oleh admin.' };
+  // If there's an error and it's not a 'no rows' error, fail.
+  if (balanceError && balanceError.code !== 'PGRST116') {
+      console.error("Error fetching leave balance:", balanceError);
+      return { success: false, message: 'Gagal memverifikasi jatah cuti. Silakan coba lagi.' };
+  }
+
+  // If no leave balance record exists for the user this year, create one.
+  if (!leaveBalance) {
+      const { data: newBalance, error: createError } = await supabase
+        .from('leave_balances')
+        .insert({
+            user_id: user.id,
+            year: currentYear,
+            total_days: 12, // Default annual leave
+            used_days: 0
+        })
+        .select('id, total_days, used_days')
+        .single();
+      
+      if (createError) {
+          console.error("Error creating leave balance:", createError);
+          return { success: false, message: 'Gagal membuat data jatah cuti untuk tahun ini. Hubungi admin.' };
+      }
+      leaveBalance = newBalance;
   }
 
   const remainingDays = leaveBalance.total_days - leaveBalance.used_days;
