@@ -3,12 +3,13 @@ import * as React from "react";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardLayoutClient } from "./layout-client";
 import { redirect } from "next/navigation";
+import type { Database } from "@/types/supabase";
 
-type Notification = {
-  id: number;
-  title: string;
-  status: string;
-}
+export type UserNotification = Pick<
+  Database['public']['Tables']['leave_requests']['Row'],
+  'id' | 'title' | 'status'
+>;
+
 
 export default async function DashboardLayout({
   children,
@@ -23,7 +24,7 @@ export default async function DashboardLayout({
     redirect('/');
   }
 
-  let notifications: Notification[] = [];
+  let notifications: UserNotification[] = [];
   let notificationCount = 0;
 
   try {
@@ -31,7 +32,7 @@ export default async function DashboardLayout({
       .from('leave_requests')
       .select('id, title, status', { count: 'exact' })
       .eq('user_id', user.id)
-      .eq('is_read', false) // Only fetch unread notifications
+      .eq('is_read_by_user', false) // Use the new dedicated column
       .neq('status', 'Menunggu')
       .order('updated_at', { ascending: false })
       .limit(5);
@@ -40,7 +41,7 @@ export default async function DashboardLayout({
       throw error;
     }
     
-    notifications = data;
+    notifications = data || [];
     notificationCount = count || 0; 
 
   } catch (error) {

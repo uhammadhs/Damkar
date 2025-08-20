@@ -3,11 +3,9 @@ import * as React from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AdminLayoutClient } from "./layout-client";
-import type { LeaveRequest } from "./manajemen-cuti/page";
+import type { Database } from "@/types/supabase";
 
-// Store seen notification IDs in-memory on the server.
-// In a real-world scenario, you might use a more persistent cache like Redis.
-const seenNotifications = new Set<number>();
+export type AdminNotification = Database['public']['Tables']['notifications']['Row'];
 
 export default async function AdminLayout({
   children,
@@ -27,29 +25,21 @@ export default async function AdminLayout({
       redirect('/dashboard');
   }
 
-  let notifications: LeaveRequest[] = [];
+  let notifications: AdminNotification[] = [];
   let notificationCount = 0;
 
   try {
-    const { data: notificationsData, error: notificationsError } = await supabase
-      .from('leave_requests')
-      .select('id, title, created_at, profiles(name, avatar_url)')
-      .eq('status', 'Menunggu')
-      .order('created_at', { ascending: false })
-      .limit(10);
+    // Fetch unread notifications and their count for the current admin user
+    const { data: notificationsData, error, count } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact' })
+      .eq('user_id', user.id)
+      .eq('is_read', false)
+      .order('created_at', { ascending: false });
 
-    if (notificationsError) throw notificationsError;
+    if (error) throw error;
     
-    // Filter out notifications that have already been seen in this session
-    notifications = (notificationsData as unknown as LeaveRequest[] || []).filter(n => !seenNotifications.has(n.id));
-
-    // The badge count should reflect all pending requests, not just unseen ones
-    const { count, error: countError } = await supabase
-      .from('leave_requests')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'Menunggu');
-    
-    if (countError) throw countError;
+    notifications = notificationsData || [];
     notificationCount = count || 0;
 
   } catch(error) {

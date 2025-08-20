@@ -47,10 +47,14 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
     }
   }
 
-  // Perbarui status pengajuan cuti itu sendiri
+  // Perbarui status pengajuan cuti itu sendiri dan set is_read_by_user menjadi false
   const { error: updateError } = await supabase
     .from('leave_requests')
-    .update({ status: newStatus, updated_at: new Date().toISOString() })
+    .update({ 
+        status: newStatus, 
+        updated_at: new Date().toISOString(),
+        is_read_by_user: false // IMPORTANT: Mark as unread for the user
+    })
     .eq('id', requestId)
 
   if (updateError) {
@@ -80,6 +84,7 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
       revalidatePath('/admin/manajemen-cuti')
       revalidatePath('/admin/dashboard')
       revalidatePath('/admin/laporan')
+      revalidatePath('/dashboard') // Revalidate user dashboard for notifications
       return { success: true, message: `Pengajuan berhasil ${newStatus.toLowerCase()}, tetapi notifikasi email gagal dikirim.` }
   }
 
@@ -87,5 +92,6 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
   revalidatePath('/admin/manajemen-cuti')
   revalidatePath('/admin/dashboard')
   revalidatePath('/admin/laporan')
+  revalidatePath('/dashboard') // Revalidate user dashboard for notifications
   return { success: true, message: `Pengajuan berhasil ${newStatus.toLowerCase()} dan notifikasi email telah dikirim.` }
 }

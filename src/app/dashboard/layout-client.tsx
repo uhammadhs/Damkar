@@ -39,17 +39,12 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
-import { markUserNotificationsAsRead } from "./actions"
-
-type Notification = {
-  id: number;
-  title: string;
-  status: string;
-}
+import { markUserNotificationAsRead } from "./actions"
+import type { UserNotification } from "./layout"
 
 interface DashboardLayoutClientProps {
   children: React.ReactNode;
-  initialNotifications: Notification[];
+  initialNotifications: UserNotification[];
   initialNotificationCount: number;
 }
 
@@ -74,20 +69,18 @@ export function DashboardLayoutClient({ children, initialNotifications, initialN
     router.refresh()
   };
   
-  const handleNotificationClick = (notificationId: number) => {
-    router.push('/dashboard/riwayat');
+  const handleNotificationClick = async (notificationId: number) => {
+    // Optimistically remove from UI
     setNotifications(prev => prev.filter(n => n.id !== notificationId));
     setNotificationCount(prev => Math.max(0, prev - 1));
+    
+    // Navigate to history page
+    router.push('/dashboard/riwayat');
+
+    // Tell the server to mark this specific notification as read
+    await markUserNotificationAsRead(notificationId);
   };
   
-  const handleOpenNotifications = async (open: boolean) => {
-    if (open && notificationCount > 0) {
-      await markUserNotificationsAsRead();
-      // Optimistically clear notifications
-      setNotifications([]);
-      setNotificationCount(0);
-    }
-  }
   
   const getStatusInfo = (status: string) => {
     switch (status) {
@@ -149,7 +142,7 @@ export function DashboardLayoutClient({ children, initialNotifications, initialN
                   <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                   <span className="sr-only">Toggle theme</span>
               </Button>
-              <DropdownMenu onOpenChange={handleOpenNotifications}>
+              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative rounded-full">
                     <Bell className="h-5 w-5" />

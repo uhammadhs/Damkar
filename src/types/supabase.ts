@@ -49,7 +49,7 @@ export type Database = {
           duration: number
           end_date: string
           id: number
-          is_read: boolean
+          is_read_by_user: boolean
           reason: string | null
           start_date: string
           status: string
@@ -63,7 +63,7 @@ export type Database = {
           duration: number
           end_date: string
           id?: number
-          is_read?: boolean
+          is_read_by_user?: boolean
           reason?: string | null
           start_date: string
           status?: string
@@ -77,7 +77,7 @@ export type Database = {
           duration?: number
           end_date?: string
           id?: number
-          is_read?: boolean
+          is_read_by_user?: boolean
           reason?: string | null
           start_date?: string
           status?: string
@@ -88,6 +88,48 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "leave_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: number
+          is_read: boolean
+          leave_request_id: number
+          message: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          is_read?: boolean
+          leave_request_id: number
+          message: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          is_read?: boolean
+          leave_request_id?: number
+          message?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_leave_request_id_fkey"
+            columns: ["leave_request_id"]
+            isOneToOne: false
+            referencedRelation: "leave_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -141,6 +183,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_admin_notification_for_new_leave: {
+        Args: Record<PropertyKey, never>
+        Returns: unknown
+      }
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string

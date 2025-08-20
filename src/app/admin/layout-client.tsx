@@ -42,11 +42,12 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
-import type { LeaveRequest } from "./manajemen-cuti/page"
+import type { AdminNotification } from "./layout"
+import { markAdminNotificationsAsRead } from "./actions"
 
 interface AdminLayoutClientProps {
   children: React.ReactNode;
-  initialNotifications: LeaveRequest[];
+  initialNotifications: AdminNotification[];
   initialNotificationCount: number;
 }
 
@@ -79,23 +80,26 @@ export function AdminLayoutClient({ children, initialNotifications, initialNotif
   
   const handleNotificationClick = (notificationId: number) => {
     router.push('/admin/manajemen-cuti');
+    // Optimistically remove from UI
     setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    setNotificationCount(prev => Math.max(0, prev - 1));
   };
 
-  const handleOpenNotifications = (open: boolean) => {
+  const handleOpenNotifications = async (open: boolean) => {
+    // When the dropdown opens and there are unread notifications
     if (open && notifications.length > 0) {
+      // Get IDs of the notifications currently shown
+      const aMomentAgo = Date.now();
+      const notificationIds = notifications.map(n => n.id);
+      
+      // Optimistically clear the count and list
       setNotifications([]);
+      setNotificationCount(0);
+
+      // Tell the server to mark these as read
+      await markAdminNotificationsAsRead(notificationIds);
     }
   }
-
-  const getAvatarFallback = (name: string | null) => {
-    if (!name) return "??";
-    const parts = name.split(" ");
-    if (parts.length > 1) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
 
   return (
     <SidebarProvider>
@@ -164,16 +168,10 @@ export function AdminLayoutClient({ children, initialNotifications, initialNotif
                   {notifications.length > 0 ? (
                     notifications.map((notif) => (
                       <DropdownMenuItem key={notif.id} onSelect={() => handleNotificationClick(notif.id)} className="flex items-start gap-3 whitespace-normal p-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarImage src={notif.profiles?.avatar_url || ''} alt={notif.profiles?.name || 'Avatar'} data-ai-hint="male portrait" />
-                          <AvatarFallback>{getAvatarFallback(notif.profiles?.name || null)}</AvatarFallback>
-                        </Avatar>
+                        <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
                         <div className="grid gap-1">
                            <p className="text-sm font-medium leading-none">
-                              Pengajuan baru dari <span className="font-bold">{notif.profiles?.name || 'Anggota'}</span>
-                           </p>
-                           <p className="text-sm text-muted-foreground truncate">
-                              "{notif.title}"
+                              {notif.message}
                            </p>
                            <p className="text-xs text-muted-foreground">
                              {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true, locale: id })}

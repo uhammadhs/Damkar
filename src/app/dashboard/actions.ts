@@ -4,7 +4,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
-export async function markUserNotificationsAsRead() {
+export async function markUserNotificationAsRead(notificationId: number) {
     const supabase = createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -15,12 +15,12 @@ export async function markUserNotificationsAsRead() {
 
     const { error } = await supabase
         .from('leave_requests')
-        .update({ is_read: true })
-        .eq('user_id', user.id)
-        .eq('is_read', false)
+        .update({ is_read_by_user: true })
+        .eq('id', notificationId)
+        .eq('user_id', user.id) // Security check: user can only mark their own notifications
 
     if (error) {
-        console.error("Error marking notifications as read:", error)
+        console.error("Error marking notification as read:", error)
         return { success: false, message: 'Gagal memperbarui notifikasi.' }
     }
     
