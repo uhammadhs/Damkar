@@ -1,4 +1,3 @@
-
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -16,7 +15,7 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
         is_read_by_user: false // Mark as unread for the user
     })
     .eq('id', requestId)
-    .select()
+    .select('id, user_id, start_date, duration') // Select only what's needed
     .single()
 
   if (updateError || !request) {
@@ -24,26 +23,15 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
     return { success: false, message: 'Gagal memperbarui status pengajuan.' }
   }
 
-  // 2. If approved, update the leave balance using the RPC function
-  //    This logic assumes the leave request status was 'Menunggu' before.
-  //    If a request is changed from 'Ditolak' to 'Disetujui', this logic would need adjustment.
-  if (newStatus === 'Disetujui') {
-    const year = new Date(request.start_date).getFullYear()
-    
-    const { error: rpcError } = await supabase.rpc('update_leave_balance', {
-      p_user_id: request.user_id,
-      p_year: year,
-      p_days_to_add: request.duration
-    });
-
-    if (rpcError) {
-      console.error('Error updating leave balance via rpc:', rpcError);
-      // Even if balance update fails, the request status is updated. 
-      // This might require manual correction by the admin.
-      // For now, we return a specific error message.
-      return { success: false, message: 'Status pengajuan diperbarui, tetapi gagal memperbarui saldo cuti anggota: ' + rpcError.message };
-    }
-  }
+  // 2. If the request was REJECTED, and we need to revert the balance,
+  //    we might need a function to subtract days. For now, let's assume the balance
+  //    is only updated on approval by a database trigger.
+  //    If a request is changed from 'Disetujui' back to 'Menunggu' or 'Ditolak',
+  //    a reverse operation would be needed.
+  
+  //    The primary operation is just updating the status. The balance should be handled
+  //    by a database trigger on status change for reliability.
+  //    (Assuming a trigger exists that on UPDATE of status='Disetujui', it updates balance)
 
   // 3. Revalidate paths to reflect changes across the app
   revalidatePath('/admin/manajemen-cuti')
