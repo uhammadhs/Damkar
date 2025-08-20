@@ -26,42 +26,45 @@ export default function LoginPage() {
   const [error, setError] = React.useState<string | null>(initialError);
   const [message, setMessage] = React.useState<string | null>(initialMessage);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
     setMessage(null);
 
-    const formData = new FormData();
-    formData.append('id_pjlp', id_pjlp);
-    formData.append('password', password);
+    try {
+      const formData = new FormData();
+      formData.append('id_pjlp', id_pjlp);
+      formData.append('password', password);
 
-    fetch('/api/auth/login', {
-      method: 'POST',
-      body: formData,
-    })
-    .then(response => {
-        if (!response.ok) {
-            // If response is not ok, parse the error JSON to throw it to the catch block
-            return response.json().then(err => Promise.reject(err));
-        }
-        return response.json();
-    })
-    .then(result => {
-        if (result.success) {
-            router.push(result.redirectUrl);
-        } else {
-            // This case should be handled by the !response.ok check, but as a fallback
-            setError(result.error || 'Terjadi kesalahan yang tidak diketahui.');
-        }
-    })
-    .catch(err => {
-        console.error('Login Fetch Error:', err);
-        setError(err.error || 'Gagal terhubung ke server. Silakan coba lagi.');
-    })
-    .finally(() => {
-        setIsLoading(false);
-    });
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        // Throw an error with the message from the server
+        // This will be caught by the catch block
+        throw new Error(result.error || 'Terjadi kesalahan pada server.');
+      }
+      
+      if (result.success) {
+          router.push(result.redirectUrl);
+      } else {
+          // Fallback for cases where response is OK but success is false
+          setError(result.error || 'Terjadi kesalahan yang tidak diketahui.');
+      }
+
+    } catch (err) {
+      console.error('Login Fetch Error:', err);
+      // Check if err is an Error object before accessing .message
+      const errorMessage = err instanceof Error ? err.message : 'Gagal terhubung ke server. Silakan coba lagi.';
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
