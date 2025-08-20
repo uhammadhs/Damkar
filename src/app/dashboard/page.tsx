@@ -9,6 +9,7 @@ import { LeaveDonutChart } from "@/components/siap-cuti/leave-donut-chart";
 import { createClient } from "@/lib/supabase/server";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { cookies } from "next/headers";
 
 const getStatusColor = (status: string): string => {
     switch (status) {
@@ -24,7 +25,8 @@ const getStatusColor = (status: string): string => {
 }
 
 export default async function DashboardPage() {
-  const supabase = createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
