@@ -19,7 +19,6 @@ export function LaporanClient({ availableYears, selectedYear }: LaporanClientPro
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const currentYear = new Date().getFullYear();
 
   const handleYearChange = (year: string) => {
     const params = new URLSearchParams(searchParams);
@@ -27,16 +26,17 @@ export function LaporanClient({ availableYears, selectedYear }: LaporanClientPro
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
   
+  const yearsToDisplay = [...new Set([...availableYears, selectedYear])].sort((a, b) => b - a);
+
   return (
     <Select value={String(selectedYear)} onValueChange={handleYearChange}>
         <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue />
         </SelectTrigger>
         <SelectContent>
-            {(availableYears.length > 0 ? availableYears : [currentYear]).map(year => (
+            {yearsToDisplay.map(year => (
                  <SelectItem key={year} value={String(year)}>Tahun {year}</SelectItem>
             ))}
-             {!availableYears.includes(currentYear) && <SelectItem value={String(currentYear)}>Tahun {currentYear}</SelectItem>}
         </SelectContent>
     </Select>
   );
