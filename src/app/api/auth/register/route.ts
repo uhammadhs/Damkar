@@ -45,15 +45,16 @@ export async function POST(request: Request) {
 
   const { name, email, password, id_pjlp, phone } = validation.data;
 
-  // Check if ID PJLP already exists
-  const { data: existingProfile, error: existingProfileError } = await supabase
+  // Check if ID PJLP or Email already exists
+  // We need to use the admin client to bypass RLS for this check
+   const { data: existingProfile, error: existingProfileError } = await supabase
     .from('profiles')
     .select('id')
-    .eq('id_pjlp', id_pjlp)
-    .single();
+    .or(`id_pjlp.eq.${id_pjlp},email.eq.${email}`)
+    .maybeSingle();
 
   if (existingProfile) {
-    return NextResponse.json({ error: 'ID PJLP sudah terdaftar. Silakan gunakan ID lain.' }, { status: 409 });
+    return NextResponse.json({ error: 'ID PJLP atau Email sudah terdaftar. Silakan gunakan yang lain.' }, { status: 409 });
   }
 
   const { data: { user }, error: signUpError } = await supabase.auth.signUp({
@@ -81,24 +82,8 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: 'Gagal membuat pengguna, silakan coba lagi.' }, { status: 500 });
   }
-  
-  // Explicitly insert into profiles table. This is more reliable than a trigger.
-  const { error: profileError } = await supabase.from('profiles').insert({
-      id: user.id,
-      name: name,
-      id_pjlp: id_pjlp,
-      phone: phone,
-      email: email,
-      role: 'anggota'
-  });
 
-  if (profileError) {
-      console.error("Error inserting profile:", profileError);
-      // This is a critical error. The auth user was created but the profile wasn't.
-      // For now, we'll log it and inform the user. A more robust solution might delete the auth user.
-      return NextResponse.json({ error: 'Gagal menyimpan profil pengguna. Hubungi admin.' }, { status: 500 });
-  }
-
-
+  // After sign up, the trigger in supabase will copy metadata to profiles table.
+  // We just redirect the user to a page telling them to check their email.
   return NextResponse.redirect(`${requestUrl.origin}/auth/confirm`);
 }
