@@ -47,6 +47,6 @@ export async function GET(request: Request) {
     }
   }
 
-  // Redirect user to the login page with a success message
-  return NextResponse.redirect(`${origin}/?message=Email berhasil diverifikasi. Silakan login.`)
+  // Redirect user to a dedicated "verified" page
+  return NextResponse.redirect(`${origin}/auth/verified`)
 }

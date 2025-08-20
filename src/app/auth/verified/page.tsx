@@ -13,15 +13,15 @@ export default function VerifiedPage() {
             <CheckCircle className="h-10 w-10" />
           </div>
           <CardTitle className="mt-4 font-headline text-2xl">
-            Verifikasi Email Terkirim
+            Email Berhasil Diverifikasi!
           </CardTitle>
           <CardDescription>
-            Satu langkah lagi! Kami telah mengirimkan tautan verifikasi ke email Anda.
+            Akun Anda kini telah aktif dan siap digunakan.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="mb-6 text-sm text-muted-foreground">
-            Silakan periksa kotak masuk (dan folder spam) Anda, lalu klik tautan di dalamnya untuk mengaktifkan akun Anda. Setelah itu, Anda dapat kembali untuk login.
+            Terima kasih telah melakukan verifikasi. Silakan kembali ke halaman login untuk masuk ke akun Anda.
           </p>
           <Button asChild className="w-full">
             <Link href="/">Kembali ke Halaman Login</Link>
