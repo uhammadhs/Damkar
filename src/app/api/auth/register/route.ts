@@ -1,10 +1,9 @@
 
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { type NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { Database } from '@/types/supabase'
+import { createClient } from '@/lib/supabase/server'
 
 const RegisterSchema = z.object({
   name: z.string().min(3, 'Nama lengkap harus diisi'),
@@ -14,7 +13,7 @@ const RegisterSchema = z.object({
   password: z.string().min(6, 'Password minimal 6 karakter'),
 })
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const formData = await request.formData()
   const rawData = Object.fromEntries(formData.entries())
@@ -30,7 +29,7 @@ export async function POST(request: Request) {
   const { name, email, password, id_pjlp, phone } = validation.data
 
   // Use the admin client to check for duplicates, bypassing RLS
-  const supabaseAdmin = createAdminClient()
+  const supabaseAdmin = createAdminClient(cookieStore)
   const { data: existingProfile, error: checkError } = await supabaseAdmin
     .from('profiles')
     .select('id')
@@ -47,24 +46,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'ID PJLP atau Email sudah terdaftar. Silakan gunakan yang lain.' }, { status: 409 }) // 409 Conflict
   }
 
-  // Create a temporary standard client for the signUp process
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          cookieStore.set({ name, value, ...options })
-        },
-        remove(name: string, options: CookieOptions) {
-          cookieStore.set({ name, value: '', ...options })
-        },
-      },
-    }
-  )
+  const supabase = createClient(cookieStore)
 
   const { data: { user }, error: signUpError } = await supabase.auth.signUp({
     email,
