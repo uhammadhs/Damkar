@@ -38,6 +38,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { cn } from "@/lib/utils"
 
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -171,19 +172,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Mobile Bottom Nav */}
           <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-2 md:hidden">
             <div className="grid grid-cols-3 gap-2">
-              {navItems.map(item => (
+              {navItems.map(item => {
+                const isActive = pathname === item.href;
+                return (
                   <Button
                     key={item.href}
-                    variant={pathname === item.href ? "secondary" : "ghost"}
-                    className="flex h-12 flex-col items-center justify-center gap-1"
+                    variant={isActive ? "secondary" : "ghost"}
+                    className={cn(
+                        "flex h-12 flex-col items-center justify-center gap-1",
+                        isActive && "text-primary"
+                    )}
                     asChild
                   >
                     <Link href={item.href}>
-                      <item.icon className="h-5 w-5" />
+                      <item.icon className="h-6 w-6" />
                       <span className="text-xs">{item.label.split(' ')[0]}</span>
                     </Link>
                   </Button>
-              ))}
+                )
+              })}
             </div>
           </footer>
         </div>

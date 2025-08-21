@@ -120,7 +120,7 @@ export function ProfileActions({ profile }: ProfileActionsProps) {
 
       <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline">Ubah Password</Button>
+          <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:text-primary">Ubah Password</Button>
         </DialogTrigger>
         <DialogContent>
            <DialogHeader>
@@ -153,5 +153,3 @@ export function ProfileActions({ profile }: ProfileActionsProps) {
     </div>
   );
 }
-
-    

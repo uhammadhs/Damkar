@@ -13,7 +13,7 @@ function ProfileSkeleton() {
     return (
         <div className="flex flex-col items-center gap-8 md:flex-row md:items-start">
             <Skeleton className="h-32 w-32 rounded-full" />
-            <div className="flex-1 space-y-4 text-center md:text-left">
+            <div className="flex-1 space-y-4 w-full text-left">
                 <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
                     {Array.from({ length: 4 }).map((_, i) => (
                         <div key={i}>
@@ -70,8 +70,8 @@ async function ProfileData() {
             <AvatarImage src={profile.avatar_url || ''} alt={profile.name || ''} data-ai-hint="male portrait" />
             <AvatarFallback>{getAvatarFallback(profile.name)}</AvatarFallback>
           </Avatar>
-          <div className="flex-1 space-y-4 text-center md:text-left">
-            <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
+          <div className="flex-1 space-y-4 w-full text-left">
+            <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Nama Lengkap</p>
                 <p className="font-semibold">{profile.name || "-"}</p>
@@ -89,7 +89,7 @@ async function ProfileData() {
                 <p className="font-semibold">{profile.email || "-"}</p>
               </div>
             </div>
-            <Separator className="my-6" />
+            <Separator className="!my-6" />
             <ProfileActions profile={profile} />
           </div>
         </div>
