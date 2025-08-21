@@ -2,26 +2,27 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import type { CookieOptions } from '@supabase/ssr'
 
 // This route is called by Supabase after the user clicks the verification link in their email.
 export async function GET(request: Request) {
-  const requestUrl = new URL(request.url)
-  const code = requestUrl.searchParams.get('code')
-  const origin = requestUrl.origin
+  const { searchParams } = new URL(request.url)
+  const code = searchParams.get('code')
+  const next = searchParams.get('next') ?? '/auth/verified' // Default to verified page
+  
   const cookieStore = cookies()
 
   if (code) {
     const supabase = createClient(cookieStore);
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (error) {
-      console.error('Auth Callback Error:', error)
-      // Redirect to an error page or show a message
-      return NextResponse.redirect(`${origin}/?error=Gagal memverifikasi email. Silakan coba lagi.`)
+    if (!error) {
+      // URL is validated by Supabase so we can trust it.
+      return NextResponse.redirect(new URL(next, request.url))
     }
   }
 
-  // Redirect user to a dedicated "verified" page
-  return NextResponse.redirect(`${origin}/auth/verified`)
+  // Redirect to an error page or show a message if something went wrong
+  const redirectUrl = new URL('/', request.url)
+  redirectUrl.searchParams.set('error', 'Gagal memverifikasi email. Silakan coba lagi.')
+  return NextResponse.redirect(redirectUrl)
 }
