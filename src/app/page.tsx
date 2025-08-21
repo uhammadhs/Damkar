@@ -1,10 +1,8 @@
 
-"use client"
-
 import Image from 'next/image';
 import Link from 'next/link';
 import * as React from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
@@ -26,20 +24,79 @@ function LoginButton() {
     )
 }
 
-export default function LoginPage() {
-  const router = useRouter();
+function LoginPageContent() {
+  "use client"
+  
   const searchParams = useSearchParams();
   const initialError = searchParams.get('error');
   
   const initialState: LoginState = { error: initialError, message: searchParams.get('message') };
   const [state, formAction] = useActionState(login, initialState);
 
-  React.useEffect(() => {
-    if (state?.success) {
-      router.push(state.redirectUrl!);
-    }
-  }, [state, router]);
+  return (
+    <Card className="z-10 w-full max-w-sm">
+      <CardHeader className="text-center">
+        <CardTitle className="font-headline text-2xl">SIAP CUTI</CardTitle>
+        <CardDescription>Sistem Izin Siaga dan Berhalangan</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {state?.error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Login Gagal</AlertTitle>
+            <AlertDescription>{state.error}</AlertDescription>
+          </Alert>
+        )}
+         {state?.message && (
+          <Alert variant="default" className="mb-4 border-green-500 text-green-700 dark:border-green-600 dark:text-green-400 [&>svg]:text-green-500 dark:[&>svg]:text-green-400">
+            <CheckCircle className="h-4 w-4" />
+            <AlertTitle>Sukses</AlertTitle>
+            <AlertDescription>{state.message}</AlertDescription>
+          </Alert>
+        )}
+        <form className="space-y-4" action={formAction}>
+          <div className="space-y-2">
+            <Label htmlFor="id_pjlp">ID PJLP</Label>
+            <Input 
+              id="id_pjlp" 
+              name="id_pjlp" 
+              placeholder="Contoh: 123456789" 
+              required 
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input 
+              id="password" 
+              name="password" 
+              required 
+              type="password" 
+              placeholder="••••••••" 
+            />
+          </div>
+          <LoginButton />
+          <div className="relative my-2">
+              <Separator />
+          </div>
+          <div className="flex flex-col items-center space-y-2">
+             <p className="px-8 text-center text-sm text-muted-foreground">
+               Belum punya akun?{" "}
+              <Link href="/register" className="underline underline-offset-4 hover:text-primary">
+                  Daftar di sini
+              </Link>
+            </p>
+            <Button variant="link" size="sm" asChild>
+              <Link href="/forgot-password">Lupa Password?</Link>
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
 
+// The main page is now a Server Component that wraps the client component in Suspense
+export default function LoginPage() {
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center justify-center">
       <Image
@@ -51,64 +108,9 @@ export default function LoginPage() {
         data-ai-hint="firefighter heroic"
       />
       <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-      <Card className="z-10 w-full max-w-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="font-headline text-2xl">SIAP CUTI</CardTitle>
-          <CardDescription>Sistem Izin Siaga dan Berhalangan</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {state?.error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Login Gagal</AlertTitle>
-              <AlertDescription>{state.error}</AlertDescription>
-            </Alert>
-          )}
-           {state?.message && (
-            <Alert variant="default" className="mb-4 border-green-500 text-green-700 dark:border-green-600 dark:text-green-400 [&>svg]:text-green-500 dark:[&>svg]:text-green-400">
-              <CheckCircle className="h-4 w-4" />
-              <AlertTitle>Sukses</AlertTitle>
-              <AlertDescription>{state.message}</AlertDescription>
-            </Alert>
-          )}
-          <form className="space-y-4" action={formAction}>
-            <div className="space-y-2">
-              <Label htmlFor="id_pjlp">ID PJLP</Label>
-              <Input 
-                id="id_pjlp" 
-                name="id_pjlp" 
-                placeholder="Contoh: 123456789" 
-                required 
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                name="password" 
-                required 
-                type="password" 
-                placeholder="••••••••" 
-              />
-            </div>
-            <LoginButton />
-            <div className="relative my-2">
-                <Separator />
-            </div>
-            <div className="flex flex-col items-center space-y-2">
-               <p className="px-8 text-center text-sm text-muted-foreground">
-                 Belum punya akun?{" "}
-                <Link href="/register" className="underline underline-offset-4 hover:text-primary">
-                    Daftar di sini
-                </Link>
-              </p>
-              <Button variant="link" size="sm" asChild>
-                <Link href="/forgot-password">Lupa Password?</Link>
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <React.Suspense fallback={<div>Loading...</div>}>
+        <LoginPageContent />
+      </React.Suspense>
     </div>
   );
 }

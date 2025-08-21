@@ -12,7 +12,6 @@ export type LoginState = {
   error?: string | null;
   message?: string | null;
   success?: boolean;
-  redirectUrl?: string;
 }
 
 export async function login(prevState: LoginState | undefined, formData: FormData): Promise<LoginState> {
@@ -59,11 +58,11 @@ export async function login(prevState: LoginState | undefined, formData: FormDat
 
   const userRole = profileData.role;
   
-  // 3. Prepare redirect URL based on role
+  // 3. Perform redirect directly from the server action
   const redirectUrl = userRole === 'admin' 
-    ? `${origin}/admin/dashboard` 
-    : `${origin}/dashboard`;
+    ? `/admin/dashboard` 
+    : `/dashboard`;
   
-  // A Server Action can't redirect directly, so we pass the URL back to the client
-  return { success: true, redirectUrl };
+  // This will interrupt the execution and send a redirect response to the client.
+  return redirect(redirectUrl);
 }
