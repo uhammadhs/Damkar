@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { differenceInDays } from 'date-fns'
+import { cookies } from 'next/headers'
 
 const LeaveRequestSchema = z.object({
   start_date: z.string({ required_error: 'Tanggal mulai dan selesai harus diisi.' }).min(1, 'Tanggal mulai dan selesai harus diisi.'),
@@ -28,7 +29,8 @@ export type FormState = {
 }
 
 export async function submitLeaveRequest(prevState: FormState | undefined, formData: FormData): Promise<FormState> {
-  const supabase = createClient()
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
 
   const { data: { user } } = await supabase.auth.getUser()
 
