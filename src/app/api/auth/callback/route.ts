@@ -1,8 +1,8 @@
 
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import type { Database } from '@/types/supabase'
+import { createClient } from '@/lib/supabase/server'
+import type { CookieOptions } from '@supabase/ssr'
 
 // This route is called by Supabase after the user clicks the verification link in their email.
 export async function GET(request: Request) {
@@ -12,33 +12,7 @@ export async function GET(request: Request) {
   const cookieStore = cookies()
 
   if (code) {
-    const supabase = createServerClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          cookies: {
-            get(name: string) {
-              return cookieStore.get(name)?.value
-            },
-            set(name: string, value: string, options: CookieOptions) {
-              try {
-                cookieStore.set({ name, value, ...options })
-              } catch (error) {
-                // The `set` method was called from a Server Component.
-                // This can be ignored if you have middleware refreshing sessions.
-              }
-            },
-            remove(name: string, options: CookieOptions) {
-              try {
-                cookieStore.set({ name, value: '', ...options })
-              } catch (error) {
-                // The `delete` method was called from a Server Component.
-                // This can be ignored if you have middleware refreshing sessions.
-              }
-            },
-          },
-        }
-    );
+    const supabase = createClient(cookieStore);
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
