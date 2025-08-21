@@ -10,44 +10,51 @@ import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension
 
 export const revalidate = 300; // Cache for 5 minutes
 
-export type LeaveBalance = {
-    year: number;
+export type LeaveBalanceReport = {
+    id: string;
+    name: string | null;
+    id_pjlp: string | null;
     total_days: number;
     used_days: number;
-    profiles: {
-        id: string;
-        name: string | null;
-        id_pjlp: string | null;
-    } | null;
 }
 
-const getLeaveBalances = async (year: number, cookieStore: ReadonlyRequestCookies): Promise<LeaveBalance[]> => {
+const getLeaveBalances = async (year: number, cookieStore: ReadonlyRequestCookies): Promise<LeaveBalanceReport[]> => {
     const supabase = createClient(cookieStore);
-    // Admin has RLS policy to view all balances.
-    // We join with profiles to get member names.
+    // Fetch all members (profiles with 'anggota' role)
+    // and LEFT JOIN their leave balance for the selected year.
+    // This ensures all members are listed, even if they have no balance entry for that year.
     const { data, error } = await supabase
-        .from('leave_balances')
+        .from('profiles')
         .select(`
-            year,
-            total_days,
-            used_days,
-            profiles!inner(
-                id,
-                name,
-                id_pjlp
+            id,
+            name,
+            id_pjlp,
+            leave_balances (
+                total_days,
+                used_days
             )
         `)
-        .eq('year', year)
-        .eq('profiles.role', 'anggota') // Pastikan hanya mengambil data anggota
-        .order('name', { foreignTable: 'profiles', ascending: true });
+        .eq('role', 'anggota')
+        .eq('leave_balances.year', year)
+        .order('name', { ascending: true });
 
     if (error) {
-        console.error("Error fetching leave balances:", error);
+        console.error("Error fetching leave balances report:", error);
         return [];
     }
-    
-    // Supabase TypeScript generator might not be perfect for nested types, so we cast it.
-    return data as unknown as LeaveBalance[];
+
+    // Process the data to flatten the structure and handle members without a balance entry
+    return data.map(profile => {
+        // 'leave_balances' will be an array. Since we filter by year, it will have 0 or 1 item.
+        const balance = Array.isArray(profile.leave_balances) ? profile.leave_balances[0] : null;
+        return {
+            id: profile.id,
+            name: profile.name,
+            id_pjlp: profile.id_pjlp,
+            total_days: balance?.total_days ?? 12, // Default to 12 if no entry
+            used_days: balance?.used_days ?? 0,    // Default to 0 if no entry
+        };
+    });
 }
 
 const getAvailableYears = async (cookieStore: ReadonlyRequestCookies): Promise<number[]> => {
@@ -107,9 +114,9 @@ export default async function LaporanPage({
                         <TableBody>
                             {balances.length > 0 ? (
                                 balances.map(balance => (
-                                    <TableRow key={balance.profiles?.id}>
-                                        <TableCell className="font-medium">{balance.profiles?.name || 'N/A'}</TableCell>
-                                        <TableCell className="hidden sm:table-cell">{balance.profiles?.id_pjlp || 'N/A'}</TableCell>
+                                    <TableRow key={balance.id}>
+                                        <TableCell className="font-medium">{balance.name || 'N/A'}</TableCell>
+                                        <TableCell className="hidden sm:table-cell">{balance.id_pjlp || 'N/A'}</TableCell>
                                         <TableCell className="text-center">{balance.total_days} hari</TableCell>
                                         <TableCell className="text-center">{balance.used_days} hari</TableCell>
                                         <TableCell className="text-center font-semibold text-primary">
@@ -120,7 +127,7 @@ export default async function LaporanPage({
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                                        Tidak ada data saldo cuti untuk tahun {selectedYear}.
+                                        Tidak ada data anggota yang terdaftar.
                                     </TableCell>
                                 </TableRow>
                             )}
