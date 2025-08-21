@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -21,7 +22,7 @@ export function LaporanClient({ availableYears, selectedYear }: LaporanClientPro
   const searchParams = useSearchParams();
 
   const handleYearChange = (year: string) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams.toString());
     params.set('year', year);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
