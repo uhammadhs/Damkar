@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import type { Database } from "@/types/supabase";
-import { useFormStatus, useActionState } from "react-dom";
+import { useFormStatus, useActionState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -41,6 +41,16 @@ interface ProfileActionsProps {
 }
 
 
+function SubmitButton({ children }: { children: React.ReactNode }) {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {pending ? "Menyimpan..." : children}
+        </Button>
+    )
+}
+
 function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const { toast } = useToast();
     const formRef = React.useRef<HTMLFormElement>(null);
@@ -48,7 +58,6 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
     const initialState: FormState = { success: false, message: "", errors: null };
     const [state, formAction] = useActionState(updateProfile, initialState);
     
-    // Effect to handle toast notifications and dialog closing on success
     React.useEffect(() => {
         if (state.success) {
             toast({
@@ -57,7 +66,6 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
             });
             onOpenChange(false);
         } else if (state.message && !state.errors) {
-            // Handle general, non-field-specific errors from the server
             toast({
                 title: "Gagal",
                 description: state.message,
@@ -79,25 +87,24 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
                     </DialogDescription>
                 </DialogHeader>
                 <form ref={formRef} action={formAction} className="space-y-4 py-4">
-                    {/* Display general errors */}
                     {state?.message && !state.success && !state.errors && (
                          <p className="text-sm font-medium text-destructive">{state.message}</p>
                     )}
                     
                     <div className="space-y-2">
-                        <FormLabel htmlFor="name">Nama</FormLabel>
+                        <Label htmlFor="name">Nama</Label>
                         <Input id="name" name="name" defaultValue={profile.name || ''} />
                         {state?.errors?.name && <p className="text-sm font-medium text-destructive">{state.errors.name[0]}</p>}
                     </div>
 
                      <div className="space-y-2">
-                        <FormLabel htmlFor="id_pjlp">ID PJLP</FormLabel>
+                        <Label htmlFor="id_pjlp">ID PJLP</Label>
                         <Input id="id_pjlp" name="id_pjlp" defaultValue={profile.id_pjlp || ''} />
                         {state?.errors?.id_pjlp && <p className="text-sm font-medium text-destructive">{state.errors.id_pjlp[0]}</p>}
                     </div>
 
                     <div className="space-y-2">
-                        <FormLabel htmlFor="phone">Nomor HP</FormLabel>
+                        <Label htmlFor="phone">Nomor HP</Label>
                         <Input id="phone" name="phone" defaultValue={profile.phone || ''} />
                         {state?.errors?.phone && <p className="text-sm font-medium text-destructive">{state.errors.phone[0]}</p>}
                     </div>
@@ -106,9 +113,7 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
                     <DialogClose asChild>
                         <Button type="button" variant="secondary">Batal</Button>
                     </DialogClose>
-                    <Button type="submit" formAction={formAction} form={formRef.current?.id} onClick={() => formRef.current?.requestSubmit()}>
-                         Simpan Perubahan
-                    </Button>
+                     <SubmitButton>Simpan Perubahan</SubmitButton>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -157,11 +162,11 @@ function ChangePasswordDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                 </DialogHeader>
                 <form id="change-password-form" ref={formRef} onSubmit={handleChangePasswordSubmit} className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <FormLabel htmlFor="new_password">Password Baru</FormLabel>
+                        <Label htmlFor="new_password">Password Baru</Label>
                         <Input id="new_password" name="new_password" type="password" placeholder="••••••••" required/>
                     </div>
                     <div className="space-y-2">
-                        <FormLabel htmlFor="confirm_password">Konfirmasi</FormLabel>
+                        <Label htmlFor="confirm_password">Konfirmasi</Label>
                         <Input id="confirm_password" name="confirm_password" type="password" placeholder="••••••••" required/>
                     </div>
                 </form>
