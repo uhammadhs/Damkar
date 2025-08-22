@@ -91,59 +91,50 @@ async function ReportTable({ year, query }: { year: number, query: string }) {
     const balances = await getLeaveBalances(year, query, cookieStore);
     
     return (
-       <CardContent>
-         {balances.length === 0 ? (
-            <div className="text-center h-24 text-muted-foreground flex items-center justify-center">
-                {query 
-                    ? `Tidak ada anggota yang cocok dengan pencarian "${query}".`
-                    : 'Tidak ada data anggota yang terdaftar untuk tahun ini.'
-                }
-            </div>
-        ) : (
-            <div className="overflow-x-auto">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Nama Anggota</TableHead>
-                            <TableHead className="hidden sm:table-cell">ID PJLP</TableHead>
-                            <TableHead className="text-center">Total Hak Cuti</TableHead>
-                            <TableHead className="text-center">Cuti Terpakai</TableHead>
-                            <TableHead className="text-center font-semibold">Sisa Cuti</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {balances.map(balance => (
-                            <TableRow key={balance.id}>
-                                <TableCell className="font-medium">{balance.name || 'N/A'}</TableCell>
-                                <TableCell className="hidden sm:table-cell">{balance.id_pjlp || 'N/A'}</TableCell>
-                                <TableCell className="text-center">{balance.total_days} hari</TableCell>
-                                <TableCell className="text-center">{balance.used_days} hari</TableCell>
-                                <TableCell className="text-center font-semibold text-primary">
-                                    {balance.total_days - balance.used_days} hari
-                                </TableCell>
+        <CardContent>
+            {balances.length === 0 ? (
+                <div className="text-center h-24 text-muted-foreground flex items-center justify-center">
+                    {query 
+                        ? `Tidak ada anggota yang cocok dengan pencarian "${query}".`
+                        : 'Tidak ada data anggota yang terdaftar untuk tahun ini.'
+                    }
+                </div>
+            ) : (
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Nama Anggota</TableHead>
+                                <TableHead className="hidden sm:table-cell">ID PJLP</TableHead>
+                                <TableHead className="text-center">Total Hak Cuti</TableHead>
+                                <TableHead className="text-center">Cuti Terpakai</TableHead>
+                                <TableHead className="text-center font-semibold">Sisa Cuti</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-        )}
-    </CardContent>
+                        </TableHeader>
+                        <TableBody>
+                            {balances.map(balance => (
+                                <TableRow key={balance.id}>
+                                    <TableCell className="font-medium">{balance.name || 'N/A'}</TableCell>
+                                    <TableCell className="hidden sm:table-cell">{balance.id_pjlp || 'N/A'}</TableCell>
+                                    <TableCell className="text-center">{balance.total_days} hari</TableCell>
+                                    <TableCell className="text-center">{balance.used_days} hari</TableCell>
+                                    <TableCell className="text-center font-semibold text-primary">
+                                        {balance.total_days - balance.used_days} hari
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
+        </CardContent>
     )
 }
 
-export default async function LaporanPage({
-  searchParams,
-}: {
-  searchParams?: {
-    query?: string;
-    year?: string;
-  };
-}) {
-    const query = searchParams?.query || "";
-    const selectedYear = Number(searchParams?.year) || new Date().getFullYear();
+async function ReportPageContent({ query, selectedYear }: { query: string; selectedYear: number; }) {
     const cookieStore = cookies();
     const availableYears = await getAvailableYears(cookieStore);
-    
+
     return (
         <Card>
             <CardHeader>
@@ -157,23 +148,84 @@ export default async function LaporanPage({
                     <div className="flex flex-col gap-2 sm:flex-row">
                         <form className="w-full sm:w-auto">
                             <div className="relative">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                type="search"
-                                name="query"
-                                placeholder="Cari nama atau id pjlp..."
-                                className="pl-8 sm:w-[250px]"
-                                defaultValue={query}
-                            />
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    type="search"
+                                    name="query"
+                                    placeholder="Cari nama atau id pjlp..."
+                                    className="pl-8 sm:w-[250px]"
+                                    defaultValue={query}
+                                />
                             </div>
                         </form>
                         <LaporanClient availableYears={availableYears} selectedYear={selectedYear} />
                     </div>
                 </div>
             </CardHeader>
-            <Suspense key={query + selectedYear} fallback={<Loading />}>
+            {/* The Suspense for the table is now inside the main content component */}
+            <Suspense key={query + selectedYear} fallback={<LoadingTable />}>
                 <ReportTable year={selectedYear} query={query} />
             </Suspense>
         </Card>
+    );
+}
+
+// A smaller loading component just for the table part
+function LoadingTable() {
+    return (
+      <CardContent>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead><Skeleton className="h-5 w-32" /></TableHead>
+                <TableHead className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableHead>
+                <TableHead className="text-center"><Skeleton className="h-5 w-24 mx-auto" /></TableHead>
+                <TableHead className="text-center"><Skeleton className="h-5 w-24 mx-auto" /></TableHead>
+                <TableHead className="text-center"><Skeleton className="h-5 w-24 mx-auto" /></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    );
+}
+
+// A simple Skeleton component to avoid circular dependencies if moved to ui
+function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={`animate-pulse rounded-md bg-muted ${className}`}
+      {...props}
+    />
+  )
+}
+
+export default async function LaporanPage({
+  searchParams,
+}: {
+  searchParams?: {
+    query?: string;
+    year?: string;
+  };
+}) {
+    const query = searchParams?.query || "";
+    const selectedYear = Number(searchParams?.year) || new Date().getFullYear();
+    
+    return (
+       <Suspense fallback={<Loading />}>
+            <ReportPageContent query={query} selectedYear={selectedYear} />
+       </Suspense>
     );
 }

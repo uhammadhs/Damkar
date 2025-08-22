@@ -1,11 +1,26 @@
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow, TableHead, TableHeader } from '@/components/ui/table';
 
 export default function Loading() {
   return (
-    <CardContent>
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <CardTitle><Skeleton className="h-7 w-48" /></CardTitle>
+                <CardDescription>
+                    <Skeleton className="h-4 w-80 mt-2" />
+                </CardDescription>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+                <Skeleton className="h-10 w-full sm:w-[250px]" />
+                <Skeleton className="h-10 w-full sm:w-[180px]" />
+            </div>
+        </div>
+      </CardHeader>
+      <CardContent>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -31,5 +46,6 @@ export default function Loading() {
           </Table>
         </div>
       </CardContent>
+    </Card>
   );
 }
