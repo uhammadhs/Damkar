@@ -5,7 +5,7 @@ import * as React from "react";
 import type { Database } from "@/types/supabase";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { z } from "zod";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,14 +19,20 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { changePassword, updateProfile, ProfileUpdateSchema } from "./actions";
+import { changePassword, updateProfile } from "./actions";
 import { Loader2 } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
+
+// Schema is now defined in the client component where it is used.
+const ProfileUpdateSchema = z.object({
+  name: z.string().min(3, "Nama lengkap harus diisi (minimal 3 karakter)"),
+  id_pjlp: z.string().min(1, "ID PJLP tidak boleh kosong"),
+  phone: z.string().min(10, "Nomor HP tidak valid (minimal 10 digit)").optional(),
+});
 type ProfileFormData = z.infer<typeof ProfileUpdateSchema>;
 
 interface ProfileActionsProps {
@@ -43,6 +49,7 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
             id_pjlp: profile.id_pjlp || "",
             phone: profile.phone || "",
         },
+        mode: "onChange", // Validate on change for instant feedback
     });
 
     const { isSubmitting, isValid } = form.formState;
@@ -73,7 +80,17 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
     };
     
     return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <Dialog open={isOpen} onOpenChange={(open) => {
+            onOpenChange(open);
+            // Reset form when dialog is closed
+            if (!open) {
+                form.reset({
+                    name: profile.name || "",
+                    id_pjlp: profile.id_pjlp || "",
+                    phone: profile.phone || "",
+                })
+            }
+        }}>
             <DialogTrigger asChild>
                 <Button>Edit Profil</Button>
             </DialogTrigger>
@@ -85,17 +102,17 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
                     </DialogDescription>
                 </DialogHeader>
                  <Form {...form}>
-                    <form id="edit-profile-form" onSubmit={form.handleSubmit(handleProfileUpdate)} className="grid gap-4 py-4">
+                    <form id="edit-profile-form" onSubmit={form.handleSubmit(handleProfileUpdate)} className="space-y-4 py-4">
                         <FormField
                             control={form.control}
                             name="name"
                             render={({ field }) => (
-                                <FormItem className="grid grid-cols-4 items-center gap-4">
-                                    <FormLabel className="text-right">Nama</FormLabel>
-                                    <FormControl className="col-span-3">
+                                <FormItem>
+                                    <FormLabel>Nama</FormLabel>
+                                    <FormControl>
                                         <Input {...field} />
                                     </FormControl>
-                                    <FormMessage className="col-start-2 col-span-3" />
+                                    <FormMessage />
                                 </FormItem>
                             )}
                         />
@@ -103,12 +120,12 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
                             control={form.control}
                             name="id_pjlp"
                             render={({ field }) => (
-                                <FormItem className="grid grid-cols-4 items-center gap-4">
-                                    <FormLabel className="text-right">ID PJLP</FormLabel>
-                                    <FormControl className="col-span-3">
+                                <FormItem>
+                                    <FormLabel>ID PJLP</FormLabel>
+                                    <FormControl>
                                         <Input {...field} />
                                     </FormControl>
-                                    <FormMessage className="col-start-2 col-span-3" />
+                                    <FormMessage />
                                 </FormItem>
                             )}
                         />
@@ -116,12 +133,12 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
                             control={form.control}
                             name="phone"
                             render={({ field }) => (
-                                <FormItem className="grid grid-cols-4 items-center gap-4">
-                                    <FormLabel className="text-right">Nomor HP</FormLabel>
-                                    <FormControl className="col-span-3">
+                                <FormItem>
+                                    <FormLabel>Nomor HP</FormLabel>
+                                    <FormControl>
                                         <Input {...field} />
                                     </FormControl>
-                                    <FormMessage className="col-start-2 col-span-3" />
+                                    <FormMessage />
                                 </FormItem>
                             )}
                         />
@@ -181,14 +198,14 @@ function ChangePasswordDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                         Untuk keamanan, pastikan menggunakan password yang kuat. Password baru minimal 6 karakter.
                     </DialogDescription>
                 </DialogHeader>
-                <form id="change-password-form" ref={formRef} onSubmit={handleChangePasswordSubmit} className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="new_password" className="text-right">Password Baru</Label>
-                        <Input id="new_password" name="new_password" type="password" className="col-span-3" placeholder="••••••••" required/>
+                <form id="change-password-form" ref={formRef} onSubmit={handleChangePasswordSubmit} className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <FormLabel htmlFor="new_password">Password Baru</FormLabel>
+                        <Input id="new_password" name="new_password" type="password" placeholder="••••••••" required/>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="confirm_password" className="text-right">Konfirmasi</Label>
-                        <Input id="confirm_password" name="confirm_password" type="password" className="col-span-3" placeholder="••••••••" required/>
+                    <div className="space-y-2">
+                        <FormLabel htmlFor="confirm_password">Konfirmasi</FormLabel>
+                        <Input id="confirm_password" name="confirm_password" type="password" placeholder="••••••••" required/>
                     </div>
                 </form>
                 <DialogFooter>
@@ -211,7 +228,7 @@ export function ProfileActions({ profile }: ProfileActionsProps) {
   const [isChangePasswordOpen, setIsChangePasswordOpen] = React.useState(false);
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row">
+    <div className="flex flex-col gap-2 pt-4 sm:flex-row">
       <EditProfileDialog 
         profile={profile} 
         isOpen={isEditProfileOpen}

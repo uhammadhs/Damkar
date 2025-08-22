@@ -5,7 +5,9 @@ import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-export const ProfileUpdateSchema = z.object({
+// The schema is defined here for validation, but NOT exported,
+// which is allowed in a 'use server' file.
+const ProfileUpdateSchema = z.object({
   name: z.string().min(3, "Nama lengkap harus diisi (minimal 3 karakter)"),
   id_pjlp: z.string().min(1, "ID PJLP tidak boleh kosong"),
   phone: z.string().min(10, "Nomor HP tidak valid (minimal 10 digit)").optional(),
@@ -32,7 +34,10 @@ export async function updateProfile(formData: FormData) {
   const validation = ProfileUpdateSchema.safeParse(rawData);
 
   if (!validation.success) {
-    return { success: false, message: "Data tidak valid.", errors: validation.error.flatten().fieldErrors };
+    // This part is for server-side validation as a fallback.
+    // The main validation happens on the client.
+    const firstError = validation.error.errors[0]?.message || 'Data tidak valid.';
+    return { success: false, message: firstError };
   }
 
   const { name, id_pjlp, phone } = validation.data;
@@ -93,5 +98,3 @@ export async function changePassword(formData: FormData) {
 
     return { success: true, message: "Password berhasil diubah." };
 }
-
-    
