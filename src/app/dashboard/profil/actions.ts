@@ -5,16 +5,20 @@ import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-// The schema is defined here for validation, but NOT exported,
-// which is allowed in a 'use server' file.
+// This schema is now only used on the server for an extra layer of validation.
 const ProfileUpdateSchema = z.object({
   name: z.string().min(3, "Nama lengkap harus diisi (minimal 3 karakter)"),
   id_pjlp: z.string().min(1, "ID PJLP tidak boleh kosong"),
   phone: z.string().min(10, "Nomor HP tidak valid (minimal 10 digit)").optional(),
 });
 
+export type FormState = {
+    success: boolean;
+    message: string;
+    errors?: Record<string, string[]> | null;
+};
 
-export async function updateProfile(formData: FormData) {
+export async function updateProfile(prevState: FormState, formData: FormData): Promise<FormState> {
   const supabase = createClient();
 
   const {
@@ -22,7 +26,7 @@ export async function updateProfile(formData: FormData) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { success: false, message: "Pengguna tidak terautentikasi." };
+    return { success: false, message: "Pengguna tidak terautentikasi.", errors: null };
   }
 
   const rawData = {
@@ -34,10 +38,11 @@ export async function updateProfile(formData: FormData) {
   const validation = ProfileUpdateSchema.safeParse(rawData);
 
   if (!validation.success) {
-    // This part is for server-side validation as a fallback.
-    // The main validation happens on the client.
-    const firstError = validation.error.errors[0]?.message || 'Data tidak valid.';
-    return { success: false, message: firstError };
+    return { 
+      success: false, 
+      message: 'Data tidak valid.', 
+      errors: validation.error.flatten().fieldErrors 
+    };
   }
 
   const { name, id_pjlp, phone } = validation.data;
@@ -51,9 +56,9 @@ export async function updateProfile(formData: FormData) {
   if (profileError) {
     console.error("Error updating profile:", profileError);
     if (profileError.message.includes('unique constraint')) {
-        return { success: false, message: 'ID PJLP sudah digunakan oleh anggota lain.' };
+        return { success: false, message: 'ID PJLP sudah digunakan oleh anggota lain.', errors: null };
     }
-    return { success: false, message: profileError.message || "Gagal memperbarui profil." };
+    return { success: false, message: profileError.message || "Gagal memperbarui profil.", errors: null };
   }
 
   // 2. Update the user_metadata in Auth to keep it in sync
@@ -72,7 +77,7 @@ export async function updateProfile(formData: FormData) {
 
   revalidatePath("/dashboard/profil");
   revalidatePath("/dashboard"); // Revalidate layout to update user name in dropdown
-  return { success: true, message: "Profil berhasil diperbarui." };
+  return { success: true, message: "Profil berhasil diperbarui.", errors: null };
 }
 
 export async function changePassword(formData: FormData) {

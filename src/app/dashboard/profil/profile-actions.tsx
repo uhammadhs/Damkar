@@ -3,9 +3,10 @@
 
 import * as React from "react";
 import type { Database } from "@/types/supabase";
-import { useForm } from "react-hook-form";
+import { useFormStatus, useActionState } from "react-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,14 +21,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { changePassword, updateProfile } from "./actions";
+import { changePassword, updateProfile, type FormState } from "./actions";
 import { Loader2 } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
-// Schema is now defined in the client component where it is used.
+// Schema is defined in the client component where it is used by React Hook Form.
 const ProfileUpdateSchema = z.object({
   name: z.string().min(3, "Nama lengkap harus diisi (minimal 3 karakter)"),
   id_pjlp: z.string().min(1, "ID PJLP tidak boleh kosong"),
@@ -42,55 +43,31 @@ interface ProfileActionsProps {
 
 function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const { toast } = useToast();
-    const form = useForm<ProfileFormData>({
-        resolver: zodResolver(ProfileUpdateSchema),
-        defaultValues: {
-            name: profile.name || "",
-            id_pjlp: profile.id_pjlp || "",
-            phone: profile.phone || "",
-        },
-        mode: "onChange", // Validate on change for instant feedback
-    });
+    const formRef = React.useRef<HTMLFormElement>(null);
 
-    const { isSubmitting, isValid } = form.formState;
-
-    const handleProfileUpdate = async (values: ProfileFormData) => {
-        const formData = new FormData();
-        Object.entries(values).forEach(([key, value]) => {
-            if (value) {
-                formData.append(key, value);
-            }
-        });
-
-        const result = await updateProfile(formData);
-
-        if (result.success) {
-            onOpenChange(false);
+    const initialState: FormState = { success: false, message: "", errors: null };
+    const [state, formAction] = useActionState(updateProfile, initialState);
+    
+    // Effect to handle toast notifications and dialog closing on success
+    React.useEffect(() => {
+        if (state.success) {
             toast({
                 title: "Sukses",
-                description: result.message,
+                description: state.message,
             });
-        } else {
+            onOpenChange(false);
+        } else if (state.message && !state.errors) {
+            // Handle general, non-field-specific errors from the server
             toast({
                 title: "Gagal",
-                description: result.message,
+                description: state.message,
                 variant: "destructive",
             });
         }
-    };
-    
+    }, [state, toast, onOpenChange]);
+
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => {
-            onOpenChange(open);
-            // Reset form when dialog is closed
-            if (!open) {
-                form.reset({
-                    name: profile.name || "",
-                    id_pjlp: profile.id_pjlp || "",
-                    phone: profile.phone || "",
-                })
-            }
-        }}>
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
                 <Button>Edit Profil</Button>
             </DialogTrigger>
@@ -101,56 +78,36 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
                         Lakukan perubahan pada data profil Anda. Klik simpan jika sudah selesai.
                     </DialogDescription>
                 </DialogHeader>
-                 <Form {...form}>
-                    <form id="edit-profile-form" onSubmit={form.handleSubmit(handleProfileUpdate)} className="space-y-4 py-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Nama</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="id_pjlp"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>ID PJLP</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="phone"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Nomor HP</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </form>
-                </Form>
+                <form ref={formRef} action={formAction} className="space-y-4 py-4">
+                    {/* Display general errors */}
+                    {state?.message && !state.success && !state.errors && (
+                         <p className="text-sm font-medium text-destructive">{state.message}</p>
+                    )}
+                    
+                    <div className="space-y-2">
+                        <FormLabel htmlFor="name">Nama</FormLabel>
+                        <Input id="name" name="name" defaultValue={profile.name || ''} />
+                        {state?.errors?.name && <p className="text-sm font-medium text-destructive">{state.errors.name[0]}</p>}
+                    </div>
+
+                     <div className="space-y-2">
+                        <FormLabel htmlFor="id_pjlp">ID PJLP</FormLabel>
+                        <Input id="id_pjlp" name="id_pjlp" defaultValue={profile.id_pjlp || ''} />
+                        {state?.errors?.id_pjlp && <p className="text-sm font-medium text-destructive">{state.errors.id_pjlp[0]}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                        <FormLabel htmlFor="phone">Nomor HP</FormLabel>
+                        <Input id="phone" name="phone" defaultValue={profile.phone || ''} />
+                        {state?.errors?.phone && <p className="text-sm font-medium text-destructive">{state.errors.phone[0]}</p>}
+                    </div>
+                </form>
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button type="button" variant="secondary" disabled={isSubmitting}>Batal</Button>
+                        <Button type="button" variant="secondary">Batal</Button>
                     </DialogClose>
-                    <Button type="submit" form="edit-profile-form" disabled={isSubmitting || !isValid}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+                    <Button type="submit" formAction={formAction} form={formRef.current?.id} onClick={() => formRef.current?.requestSubmit()}>
+                         Simpan Perubahan
                     </Button>
                 </DialogFooter>
             </DialogContent>
