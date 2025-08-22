@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { Suspense } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import Loading from './loading';
 
 export const revalidate = 300; // Cache for 5 minutes
 
@@ -85,7 +85,6 @@ const getAvailableYears = async (): Promise<number[]> => {
 }
 
 async function ReportTable({ year, query }: { year: number, query: string }) {
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
     const balances = await getLeaveBalances(year, query);
     
     return (
@@ -129,34 +128,47 @@ async function ReportTable({ year, query }: { year: number, query: string }) {
     )
 }
 
-// A smaller loading component just for the table part
-function LoadingTable() {
-    return (
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead><Skeleton className="h-5 w-32" /></TableHead>
-                <TableHead className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableHead>
-                <TableHead className="text-center"><Skeleton className="h-5 w-24 mx-auto" /></TableHead>
-                <TableHead className="text-center"><Skeleton className="h-5 w-24 mx-auto" /></TableHead>
-                <TableHead className="text-center"><Skeleton className="h-5 w-24 mx-auto" /></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
-                  <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
-                  <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+async function ReportContent({
+  query,
+  selectedYear,
+  availableYears,
+}: {
+  query: string;
+  selectedYear: number;
+  availableYears: number[];
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="font-headline">Laporan Saldo Cuti</CardTitle>
+            <CardDescription>
+              Menampilkan rekapitulasi saldo cuti tahunan untuk setiap anggota.
+            </CardDescription>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <form className="w-full sm:w-auto">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  name="query"
+                  placeholder="Cari nama atau id pjlp..."
+                  className="pl-8 sm:w-[250px]"
+                  defaultValue={query}
+                />
+              </div>
+            </form>
+            <LaporanClient availableYears={availableYears} selectedYear={selectedYear} />
+          </div>
         </div>
-    );
+      </CardHeader>
+      <CardContent>
+        <ReportTable year={selectedYear} query={query} />
+      </CardContent>
+    </Card>
+  );
 }
 
 export default async function LaporanPage({
@@ -172,37 +184,13 @@ export default async function LaporanPage({
     const availableYears = await getAvailableYears();
     
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <CardTitle className="font-headline">Laporan Saldo Cuti</CardTitle>
-                        <CardDescription>
-                            Menampilkan rekapitulasi saldo cuti tahunan untuk setiap anggota.
-                        </CardDescription>
-                    </div>
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                        <form className="w-full sm:w-auto">
-                            <div className="relative">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    type="search"
-                                    name="query"
-                                    placeholder="Cari nama atau id pjlp..."
-                                    className="pl-8 sm:w-[250px]"
-                                    defaultValue={query}
-                                />
-                            </div>
-                        </form>
-                        <LaporanClient availableYears={availableYears} selectedYear={selectedYear} />
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <Suspense key={query + selectedYear} fallback={<LoadingTable />}>
-                    <ReportTable year={selectedYear} query={query} />
-                </Suspense>
-            </CardContent>
-        </Card>
+        <Suspense fallback={<Loading />}>
+            <ReportContent 
+                query={query} 
+                selectedYear={selectedYear} 
+                availableYears={availableYears} 
+            />
+        </Suspense>
     );
 }
+
