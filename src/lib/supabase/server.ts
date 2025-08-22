@@ -1,11 +1,8 @@
-'use server'
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from '@/types/supabase'
 
-// Define a function to create a Supabase client for server-side operations.
-// It now internally calls `cookies()` from `next/headers` to ensure it always has access.
 export function createClient() {
   const cookieStore = cookies()
 
