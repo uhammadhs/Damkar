@@ -6,8 +6,6 @@ import { LaporanClient } from './laporan-client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
-import { Suspense } from 'react';
-import Loading from './loading';
 
 export const revalidate = 300; // Cache for 5 minutes
 
@@ -128,49 +126,6 @@ async function ReportTable({ year, query }: { year: number, query: string }) {
     )
 }
 
-async function ReportContent({
-  query,
-  selectedYear,
-  availableYears,
-}: {
-  query: string;
-  selectedYear: number;
-  availableYears: number[];
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <CardTitle className="font-headline">Laporan Saldo Cuti</CardTitle>
-            <CardDescription>
-              Menampilkan rekapitulasi saldo cuti tahunan untuk setiap anggota.
-            </CardDescription>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <form className="w-full sm:w-auto">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  name="query"
-                  placeholder="Cari nama atau id pjlp..."
-                  className="pl-8 sm:w-[250px]"
-                  defaultValue={query}
-                />
-              </div>
-            </form>
-            <LaporanClient availableYears={availableYears} selectedYear={selectedYear} />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <ReportTable year={selectedYear} query={query} />
-      </CardContent>
-    </Card>
-  );
-}
-
 export default async function LaporanPage({
   searchParams,
 }: {
@@ -184,13 +139,35 @@ export default async function LaporanPage({
     const availableYears = await getAvailableYears();
     
     return (
-        <Suspense fallback={<Loading />}>
-            <ReportContent 
-                query={query} 
-                selectedYear={selectedYear} 
-                availableYears={availableYears} 
-            />
-        </Suspense>
+       <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="font-headline">Laporan Saldo Cuti</CardTitle>
+                <CardDescription>
+                  Menampilkan rekapitulasi saldo cuti tahunan untuk setiap anggota.
+                </CardDescription>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <form className="w-full sm:w-auto">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      name="query"
+                      placeholder="Cari nama atau id pjlp..."
+                      className="pl-8 sm:w-[250px]"
+                      defaultValue={query}
+                    />
+                  </div>
+                </form>
+                <LaporanClient availableYears={availableYears} selectedYear={selectedYear} />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ReportTable year={selectedYear} query={query} />
+          </CardContent>
+        </Card>
     );
 }
-
