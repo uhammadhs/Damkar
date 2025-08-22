@@ -21,6 +21,7 @@ async function ProfileData() {
         redirect("/");
     }
 
+    // Using user.id from the authenticated user is more secure and reliable
     const { data: profile, error } = await supabase
         .from("profiles")
         .select("*")
@@ -28,16 +29,16 @@ async function ProfileData() {
         .single();
 
     if (error || !profile) {
+        // This case should ideally not happen if a user is logged in,
+        // as the database trigger should have created a profile.
         console.error("Fatal: Could not find profile for a logged-in user.", { userId: user.id, error });
-        // This case should ideally not happen if a user is logged in.
-        // The trigger should have created a profile.
         return <div>Tidak dapat memuat profil. Terjadi kesalahan. Hubungi admin.</div>;
     }
 
     const getAvatarFallback = (name: string | null) => {
         if (!name) return "??";
         const parts = name.split(" ");
-        if (parts.length > 1) {
+        if (parts.length > 1 && parts[0] && parts[1]) {
             return (parts[0][0] + parts[1][0]).toUpperCase();
         }
         return name.substring(0, 2).toUpperCase();
@@ -77,18 +78,18 @@ async function ProfileData() {
 
 export default async function ProfilPage() {
   return (
-    <Suspense fallback={<Loading />}>
-        <Card>
-            <CardHeader>
-                <CardTitle className="font-headline">Profil Anggota</CardTitle>
-                <CardDescription>
-                Informasi pribadi dan pengaturan akun Anda.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
+    <Card>
+        <CardHeader>
+            <CardTitle className="font-headline">Profil Anggota</CardTitle>
+            <CardDescription>
+            Informasi pribadi dan pengaturan akun Anda.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Suspense fallback={<Loading />}>
                 <ProfileData />
-            </CardContent>
-        </Card>
-    </Suspense>
+            </Suspense>
+        </CardContent>
+    </Card>
   );
 }

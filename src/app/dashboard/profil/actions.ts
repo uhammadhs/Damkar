@@ -5,10 +5,10 @@ import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-const ProfileUpdateSchema = z.object({
-  name: z.string().min(1, "Nama tidak boleh kosong"),
+export const ProfileUpdateSchema = z.object({
+  name: z.string().min(3, "Nama lengkap harus diisi (minimal 3 karakter)"),
   id_pjlp: z.string().min(1, "ID PJLP tidak boleh kosong"),
-  phone: z.string().min(10, "Nomor HP tidak valid").optional(),
+  phone: z.string().min(10, "Nomor HP tidak valid (minimal 10 digit)").optional(),
 });
 
 
@@ -35,30 +35,48 @@ export async function updateProfile(formData: FormData) {
     return { success: false, message: "Data tidak valid.", errors: validation.error.flatten().fieldErrors };
   }
 
-  const { error } = await supabase
+  const { name, id_pjlp, phone } = validation.data;
+
+  // 1. Update the 'profiles' table
+  const { error: profileError } = await supabase
     .from("profiles")
-    .update(validation.data)
+    .update({ name, id_pjlp, phone })
     .eq("id", user.id);
 
-  if (error) {
-    console.error("Error updating profile:", error);
-    if (error.message.includes('unique constraint')) {
+  if (profileError) {
+    console.error("Error updating profile:", profileError);
+    if (profileError.message.includes('unique constraint')) {
         return { success: false, message: 'ID PJLP sudah digunakan oleh anggota lain.' };
     }
-    return { success: false, message: error.message || "Gagal memperbarui profil." };
+    return { success: false, message: profileError.message || "Gagal memperbarui profil." };
   }
 
+  // 2. Update the user_metadata in Auth to keep it in sync
+   const { error: authError } = await supabase.auth.updateUser({
+    data: {
+      name,
+      phone,
+    }
+  });
+
+   if (authError) {
+    console.warn("Warning: Profile table updated, but failed to update user_metadata in Auth:", authError);
+    // This is not a fatal error, but it's good to know. The primary source of truth is the profiles table.
+  }
+
+
   revalidatePath("/dashboard/profil");
+  revalidatePath("/dashboard"); // Revalidate layout to update user name in dropdown
   return { success: true, message: "Profil berhasil diperbarui." };
 }
 
 export async function changePassword(formData: FormData) {
     const supabase = createClient();
     
-    const newPassword = formData.get("new-password") as string;
-    const confirmPassword = formData.get("confirm-password") as string;
+    const newPassword = formData.get("new_password") as string;
+    const confirmPassword = formData.get("confirm_password") as string;
 
-    if (newPassword.length < 6) {
+    if (!newPassword || newPassword.length < 6) {
         return { success: false, message: "Password baru harus terdiri dari setidaknya 6 karakter." };
     }
 
