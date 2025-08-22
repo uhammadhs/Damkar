@@ -6,7 +6,7 @@ export default function Loading() {
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <Skeleton className="h-10 w-36 hidden md:inline-flex" />
+        <Skeleton className="hidden h-10 w-36 md:inline-flex" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -46,6 +46,9 @@ export default function Loading() {
           </CardContent>
         </Card>
       </div>
+
+      {/* FAB Skeleton for Mobile */}
+      <Skeleton className="fixed bottom-24 right-6 z-20 h-16 w-16 rounded-full shadow-lg md:hidden" />
     </div>
   );
 }

@@ -6,31 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { ProfileActions } from "./profile-actions";
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import Loading from "./loading";
 import { cookies } from "next/headers";
-
-function ProfileSkeleton() {
-    return (
-        <div className="flex flex-col items-center gap-8 md:flex-row md:items-start">
-            <Skeleton className="h-32 w-32 rounded-full" />
-            <div className="flex-1 space-y-4 w-full text-left">
-                <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i}>
-                            <Skeleton className="h-4 w-24 mb-2" />
-                            <Skeleton className="h-6 w-40" />
-                        </div>
-                    ))}
-                </div>
-                <Separator className="my-6" />
-                <div className="flex gap-2">
-                    <Skeleton className="h-10 w-24" />
-                    <Skeleton className="h-10 w-32" />
-                </div>
-            </div>
-        </div>
-    )
-}
 
 async function ProfileData() {
     const cookieStore = cookies();
@@ -52,7 +29,9 @@ async function ProfileData() {
 
     if (error || !profile) {
         console.error("Fatal: Could not find profile for a logged-in user.", { userId: user.id, error });
-        return <div>Tidak dapat memuat profil. Sesuatu yang kritis salah. Silakan hubungi admin.</div>;
+        // This case should ideally not happen if a user is logged in.
+        // The trigger should have created a profile.
+        return <div>Tidak dapat memuat profil. Terjadi kesalahan. Hubungi admin.</div>;
     }
 
     const getAvatarFallback = (name: string | null) => {
@@ -70,7 +49,7 @@ async function ProfileData() {
             <AvatarImage src={profile.avatar_url || ''} alt={profile.name || ''} data-ai-hint="male portrait" />
             <AvatarFallback>{getAvatarFallback(profile.name)}</AvatarFallback>
           </Avatar>
-          <div className="flex-1 space-y-4 w-full text-left">
+          <div className="flex-1 w-full space-y-4 text-left">
             <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Nama Lengkap</p>
@@ -98,18 +77,18 @@ async function ProfileData() {
 
 export default async function ProfilPage() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-headline">Profil Anggota</CardTitle>
-        <CardDescription>
-          Informasi pribadi dan pengaturan akun Anda.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-          <Suspense fallback={<ProfileSkeleton />}>
-              <ProfileData />
-          </Suspense>
-      </CardContent>
-    </Card>
+    <Suspense fallback={<Loading />}>
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Profil Anggota</CardTitle>
+                <CardDescription>
+                Informasi pribadi dan pengaturan akun Anda.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ProfileData />
+            </CardContent>
+        </Card>
+    </Suspense>
   );
 }

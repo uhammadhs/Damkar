@@ -7,9 +7,11 @@ export default function Loading() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-end gap-4">
-          <Skeleton className="h-10 w-[300px]" />
-          <Skeleton className="h-10 w-36" />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
+          <Skeleton className="h-10 w-full sm:w-[300px]" />
+          <div className="w-full sm:w-auto">
+             <Skeleton className="h-10 w-full sm:w-36" />
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -38,7 +40,7 @@ export default function Loading() {
                   <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
                   <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-48" /></TableCell>
                   <TableCell className="text-right">
-                    <Skeleton className="h-8 w-8 ml-auto" />
+                    <Skeleton className="h-8 w-8 ml-auto rounded-full" />
                   </TableCell>
                 </TableRow>
               ))}
