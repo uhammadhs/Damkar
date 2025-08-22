@@ -22,20 +22,18 @@ import { useToast } from "@/hooks/use-toast";
 import { changePassword, updateProfile, type FormState } from "./actions";
 import { Loader2 } from "lucide-react";
 
-
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
-// Schema is defined in the client component where it is used.
 const ProfileUpdateSchema = z.object({
   name: z.string().min(3, "Nama lengkap harus diisi (minimal 3 karakter)"),
   id_pjlp: z.string().min(1, "ID PJLP tidak boleh kosong"),
   phone: z.string().min(10, "Nomor HP tidak valid (minimal 10 digit)").optional(),
 });
 
+
 interface ProfileActionsProps {
     profile: Profile;
 }
-
 
 function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const { toast } = useToast();
@@ -48,7 +46,6 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
         setIsSubmitting(true);
         const formData = new FormData(event.currentTarget);
         
-        // Client-side validation first
         const rawData = Object.fromEntries(formData.entries());
         const validation = ProfileUpdateSchema.safeParse(rawData);
         
@@ -81,7 +78,6 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
         setIsSubmitting(false);
     }
     
-    // Clear state when dialog is closed
     React.useEffect(() => {
         if (!isOpen) {
             setState(undefined);
