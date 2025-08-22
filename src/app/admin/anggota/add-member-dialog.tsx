@@ -52,7 +52,7 @@ export function AddMemberDialog() {
   return (
     <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="w-full sm:w-auto">
           <Plus />
           Tambah Anggota
         </Button>
@@ -99,5 +99,3 @@ export function AddMemberDialog() {
     </Dialog>
   )
 }
-
-    

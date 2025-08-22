@@ -50,7 +50,7 @@ export async function LeaveRequestTable({ requests }: { requests: LeaveRequest[]
                                 {formatDateRange(req.start_date, req.end_date)} ({req.duration} hari)
                             </p>
                         </CardHeader>
-                        <CardFooter className="flex p-4 pt-0 gap-2">
+                        <CardFooter className="flex justify-end p-4 pt-2">
                             <LeaveRequestActions request={req} />
                         </CardFooter>
                     </Card>

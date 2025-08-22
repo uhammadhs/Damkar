@@ -79,7 +79,12 @@ const getAvailableYears = async (cookieStore: ReadonlyRequestCookies): Promise<n
     }
 
     const years = Array.from(new Set(data.map(item => item.year)));
-    return years.length > 0 ? years : [new Date().getFullYear()];
+    const currentYear = new Date().getFullYear();
+    if (!years.includes(currentYear)) {
+        years.push(currentYear);
+    }
+    
+    return years.sort((a, b) => b - a);
 }
 
 async function ReportData({ year, query }: { year: number, query: string }) {

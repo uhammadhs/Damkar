@@ -3,7 +3,7 @@ import * as React from "react"
 import { createClient } from "@/lib/supabase/server";
 import { RiwayatClient } from "./riwayat-client";
 import type { Database } from "@/types/supabase";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -22,13 +22,13 @@ export type LeaveHistoryItem = Pick<
 const getStatusColor = (status: string): string => {
     switch (status) {
         case 'Menunggu':
-            return 'bg-accent text-accent-foreground';
+            return 'bg-accent text-accent-foreground hover:bg-accent/80';
         case 'Disetujui':
-            return 'bg-green-600 text-white';
+            return 'bg-green-600 text-white hover:bg-green-600/80';
         case 'Ditolak':
-            return 'bg-destructive text-destructive-foreground';
+            return 'bg-destructive text-destructive-foreground hover:bg-destructive/80';
         default:
-            return 'bg-gray-500 text-white';
+            return 'bg-gray-500 text-white hover:bg-gray-500/80';
     }
 }
 
@@ -135,10 +135,12 @@ export default async function RiwayatPage({
                                         <p className="text-sm text-muted-foreground">
                                             {format(new Date(req.start_date), 'd MMM', { locale: id })} - {format(new Date(req.end_date), 'd MMM yyyy', { locale: id })} ({req.duration} hari)
                                         </p>
-                                        <p className="text-xs text-muted-foreground italic">"{req.reason}"</p>
                                     </div>
                                     <Badge className={`${getStatusColor(req.status)}`}>{req.status}</Badge>
                                 </div>
+                                {req.reason && (
+                                    <p className="text-sm text-muted-foreground italic mt-2 pt-2 border-t">"{req.reason}"</p>
+                                )}
                             </Card>
                         ))}
                     </div>

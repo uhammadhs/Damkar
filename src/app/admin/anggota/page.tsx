@@ -73,7 +73,9 @@ export default async function AnggotaPage({
               />
             </div>
           </form>
-          <AddMemberDialog />
+          <div className="w-full sm:w-auto">
+             <AddMemberDialog />
+          </div>
         </div>
       </CardHeader>
       <CardContent>
