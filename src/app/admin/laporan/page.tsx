@@ -9,7 +9,6 @@ import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { Suspense } from 'react';
-import Loading from './loading';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export const revalidate = 300; // Cache for 5 minutes
@@ -89,6 +88,7 @@ const getAvailableYears = async (cookieStore: ReadonlyRequestCookies): Promise<n
 
 async function ReportTable({ year, query }: { year: number, query: string }) {
     const cookieStore = cookies();
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
     const balances = await getLeaveBalances(year, query, cookieStore);
     
     return (
@@ -132,46 +132,6 @@ async function ReportTable({ year, query }: { year: number, query: string }) {
     )
 }
 
-async function ReportPageContent({ query, selectedYear }: { query: string; selectedYear: number; }) {
-    const cookieStore = cookies();
-    const availableYears = await getAvailableYears(cookieStore);
-
-    return (
-        <Card>
-            <CardHeader>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <CardTitle className="font-headline">Laporan Saldo Cuti</CardTitle>
-                        <CardDescription>
-                            Menampilkan rekapitulasi saldo cuti tahunan untuk setiap anggota.
-                        </CardDescription>
-                    </div>
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                        <form className="w-full sm:w-auto">
-                            <div className="relative">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    type="search"
-                                    name="query"
-                                    placeholder="Cari nama atau id pjlp..."
-                                    className="pl-8 sm:w-[250px]"
-                                    defaultValue={query}
-                                />
-                            </div>
-                        </form>
-                        <LaporanClient availableYears={availableYears} selectedYear={selectedYear} />
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <Suspense key={query + selectedYear} fallback={<LoadingTable />}>
-                    <ReportTable year={selectedYear} query={query} />
-                </Suspense>
-            </CardContent>
-        </Card>
-    );
-}
-
 // A smaller loading component just for the table part
 function LoadingTable() {
     return (
@@ -212,10 +172,41 @@ export default async function LaporanPage({
 }) {
     const query = searchParams?.query || "";
     const selectedYear = Number(searchParams?.year) || new Date().getFullYear();
+    const cookieStore = cookies();
+    const availableYears = await getAvailableYears(cookieStore);
     
     return (
-       <Suspense fallback={<Loading />}>
-            <ReportPageContent query={query} selectedYear={selectedYear} />
-       </Suspense>
+        <Card>
+            <CardHeader>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <CardTitle className="font-headline">Laporan Saldo Cuti</CardTitle>
+                        <CardDescription>
+                            Menampilkan rekapitulasi saldo cuti tahunan untuk setiap anggota.
+                        </CardDescription>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                        <form className="w-full sm:w-auto">
+                            <div className="relative">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    type="search"
+                                    name="query"
+                                    placeholder="Cari nama atau id pjlp..."
+                                    className="pl-8 sm:w-[250px]"
+                                    defaultValue={query}
+                                />
+                            </div>
+                        </form>
+                        <LaporanClient availableYears={availableYears} selectedYear={selectedYear} />
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Suspense key={query + selectedYear} fallback={<LoadingTable />}>
+                    <ReportTable year={selectedYear} query={query} />
+                </Suspense>
+            </CardContent>
+        </Card>
     );
 }

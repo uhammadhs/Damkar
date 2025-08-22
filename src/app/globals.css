@@ -91,6 +91,7 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    touch-action: manipulation;
   }
   
   /* Active sidebar item indicator */
