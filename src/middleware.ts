@@ -1,5 +1,6 @@
-import { type NextRequest, NextResponse } from 'next/server'
+
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -17,11 +18,13 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
+          // If the cookie is set, update the request's cookies.
           request.cookies.set({
             name,
             value,
             ...options,
           })
+          // Also update the response's cookies.
           response = NextResponse.next({
             request: {
               headers: request.headers,
@@ -34,11 +37,13 @@ export async function middleware(request: NextRequest) {
           })
         },
         remove(name: string, options: CookieOptions) {
+          // If the cookie is removed, update the request's cookies.
           request.cookies.set({
             name,
             value: '',
             ...options,
           })
+          // Also update the response's cookies.
           response = NextResponse.next({
             request: {
               headers: request.headers,
@@ -54,30 +59,23 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // IMPORTANT: Avoid running middleware on paths that contain a file extension
-  // or start with _next, as this can cause issues with static assets.
-  if (
-    request.nextUrl.pathname.startsWith('/_next') ||
-    request.nextUrl.pathname.includes('.')
-  ) {
-    return response
-  }
-
-  // Refresh session if expired - this will automatically handle the cookie chunking
+  // Refresh session if expired - this will refresh the token if it's expired.
+  // This will also handle the cookie chunking.
   await supabase.auth.getSession()
 
   return response
 }
 
+
 export const config = {
-    matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * Feel free to modify this pattern to include more paths.
-         */
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-    ],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * Feel free to modify this pattern to include more paths.
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }
