@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { Suspense } from 'react';
 import Loading from './loading';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export const revalidate = 300; // Cache for 5 minutes
 
@@ -91,7 +92,7 @@ async function ReportTable({ year, query }: { year: number, query: string }) {
     const balances = await getLeaveBalances(year, query, cookieStore);
     
     return (
-        <CardContent>
+        <>
             {balances.length === 0 ? (
                 <div className="text-center h-24 text-muted-foreground flex items-center justify-center">
                     {query 
@@ -127,7 +128,7 @@ async function ReportTable({ year, query }: { year: number, query: string }) {
                     </Table>
                 </div>
             )}
-        </CardContent>
+        </>
     )
 }
 
@@ -162,10 +163,11 @@ async function ReportPageContent({ query, selectedYear }: { query: string; selec
                     </div>
                 </div>
             </CardHeader>
-            {/* The Suspense for the table is now inside the main content component */}
-            <Suspense key={query + selectedYear} fallback={<LoadingTable />}>
-                <ReportTable year={selectedYear} query={query} />
-            </Suspense>
+            <CardContent>
+                <Suspense key={query + selectedYear} fallback={<LoadingTable />}>
+                    <ReportTable year={selectedYear} query={query} />
+                </Suspense>
+            </CardContent>
         </Card>
     );
 }
@@ -173,7 +175,6 @@ async function ReportPageContent({ query, selectedYear }: { query: string; selec
 // A smaller loading component just for the table part
 function LoadingTable() {
     return (
-      <CardContent>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -198,18 +199,7 @@ function LoadingTable() {
             </TableBody>
           </Table>
         </div>
-      </CardContent>
     );
-}
-
-// A simple Skeleton component to avoid circular dependencies if moved to ui
-function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={`animate-pulse rounded-md bg-muted ${className}`}
-      {...props}
-    />
-  )
 }
 
 export default async function LaporanPage({

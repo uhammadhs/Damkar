@@ -3,6 +3,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow, TableHead, TableHeader } from '@/components/ui/table';
 
+// This is the main loading skeleton for the entire page,
+// matching the new structure of LaporanPage.
 export default function Loading() {
   return (
     <Card>
