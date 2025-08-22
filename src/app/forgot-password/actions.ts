@@ -11,7 +11,7 @@ type State = {
     error?: string;
 }
 
-export async function requestPasswordReset(prevState: State | undefined, formData: FormData): Promise<State> {
+export async function requestPasswordReset(formData: FormData): Promise<State> {
     const origin = headers().get('origin');
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);

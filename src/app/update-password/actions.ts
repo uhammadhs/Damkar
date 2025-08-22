@@ -19,7 +19,7 @@ type State = {
     error?: string;
 }
 
-export async function updatePassword(prevState: State | undefined, formData: FormData): Promise<State> {
+export async function updatePassword(formData: FormData): Promise<State> {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
 
@@ -39,5 +39,5 @@ export async function updatePassword(prevState: State | undefined, formData: For
         return { success: false, error: 'Gagal memperbarui password. Sesi Anda mungkin sudah kedaluwarsa. Silakan coba minta reset password lagi.' };
     }
 
-    return { success: true, message: 'Password berhasil diubah. Silakan login kembali dengan password baru Anda.' };
+    return { success: true, message: 'Password berhasil diubah. Anda akan diarahkan ke halaman login.' };
 }
