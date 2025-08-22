@@ -1,6 +1,6 @@
 
 import { Roboto, Montserrat } from 'next/font/google';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
@@ -23,7 +23,12 @@ const fontMontserrat = Montserrat({
 export const metadata: Metadata = {
   title: 'SIAP CUTI',
   description: 'Sistem Informasi Approval Cuti',
+  manifest: '/manifest.webmanifest',
 };
+
+export const viewport: Viewport = {
+  themeColor: '#D32F2F',
+}
 
 export default function RootLayout({
   children,
