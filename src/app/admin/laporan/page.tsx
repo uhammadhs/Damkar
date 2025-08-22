@@ -86,12 +86,63 @@ const getAvailableYears = async (cookieStore: ReadonlyRequestCookies): Promise<n
     return years.sort((a, b) => b - a);
 }
 
-async function ReportData({ year, query }: { year: number, query: string }) {
+async function ReportTable({ year, query }: { year: number, query: string }) {
     const cookieStore = cookies();
-    const [balances, availableYears] = await Promise.all([
-        getLeaveBalances(year, query, cookieStore),
-        getAvailableYears(cookieStore)
-    ]);
+    const balances = await getLeaveBalances(year, query, cookieStore);
+    
+    return (
+       <CardContent>
+         {balances.length === 0 ? (
+            <div className="text-center h-24 text-muted-foreground flex items-center justify-center">
+                {query 
+                    ? `Tidak ada anggota yang cocok dengan pencarian "${query}".`
+                    : 'Tidak ada data anggota yang terdaftar untuk tahun ini.'
+                }
+            </div>
+        ) : (
+            <div className="overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Nama Anggota</TableHead>
+                            <TableHead className="hidden sm:table-cell">ID PJLP</TableHead>
+                            <TableHead className="text-center">Total Hak Cuti</TableHead>
+                            <TableHead className="text-center">Cuti Terpakai</TableHead>
+                            <TableHead className="text-center font-semibold">Sisa Cuti</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {balances.map(balance => (
+                            <TableRow key={balance.id}>
+                                <TableCell className="font-medium">{balance.name || 'N/A'}</TableCell>
+                                <TableCell className="hidden sm:table-cell">{balance.id_pjlp || 'N/A'}</TableCell>
+                                <TableCell className="text-center">{balance.total_days} hari</TableCell>
+                                <TableCell className="text-center">{balance.used_days} hari</TableCell>
+                                <TableCell className="text-center font-semibold text-primary">
+                                    {balance.total_days - balance.used_days} hari
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        )}
+    </CardContent>
+    )
+}
+
+export default async function LaporanPage({
+  searchParams,
+}: {
+  searchParams?: {
+    query?: string;
+    year?: string;
+  };
+}) {
+    const query = searchParams?.query || "";
+    const selectedYear = Number(searchParams?.year) || new Date().getFullYear();
+    const cookieStore = cookies();
+    const availableYears = await getAvailableYears(cookieStore);
     
     return (
         <Card>
@@ -116,65 +167,13 @@ async function ReportData({ year, query }: { year: number, query: string }) {
                             />
                             </div>
                         </form>
-                        <LaporanClient availableYears={availableYears} selectedYear={year} />
+                        <LaporanClient availableYears={availableYears} selectedYear={selectedYear} />
                     </div>
                 </div>
             </CardHeader>
-            <CardContent>
-                 {balances.length === 0 ? (
-                    <div className="text-center h-24 text-muted-foreground flex items-center justify-center">
-                        {query 
-                            ? `Tidak ada anggota yang cocok dengan pencarian "${query}".`
-                            : 'Tidak ada data anggota yang terdaftar untuk tahun ini.'
-                        }
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Nama Anggota</TableHead>
-                                    <TableHead className="hidden sm:table-cell">ID PJLP</TableHead>
-                                    <TableHead className="text-center">Total Hak Cuti</TableHead>
-                                    <TableHead className="text-center">Cuti Terpakai</TableHead>
-                                    <TableHead className="text-center font-semibold">Sisa Cuti</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {balances.map(balance => (
-                                    <TableRow key={balance.id}>
-                                        <TableCell className="font-medium">{balance.name || 'N/A'}</TableCell>
-                                        <TableCell className="hidden sm:table-cell">{balance.id_pjlp || 'N/A'}</TableCell>
-                                        <TableCell className="text-center">{balance.total_days} hari</TableCell>
-                                        <TableCell className="text-center">{balance.used_days} hari</TableCell>
-                                        <TableCell className="text-center font-semibold text-primary">
-                                            {balance.total_days - balance.used_days} hari
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
-            </CardContent>
+            <Suspense key={query + selectedYear} fallback={<Loading />}>
+                <ReportTable year={selectedYear} query={query} />
+            </Suspense>
         </Card>
-    )
-}
-
-export default async function LaporanPage({
-  searchParams,
-}: {
-  searchParams?: {
-    query?: string;
-    year?: string;
-  };
-}) {
-    const query = searchParams?.query || "";
-    const selectedYear = Number(searchParams?.year) || new Date().getFullYear();
-    
-    return (
-        <Suspense fallback={<Loading />}>
-            <ReportData year={selectedYear} query={query} />
-        </Suspense>
     );
 }
