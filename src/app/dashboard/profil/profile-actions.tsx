@@ -20,6 +20,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { changePassword, updateProfile, type FormState } from "./actions";
 import { Loader2 } from "lucide-react";
@@ -108,13 +109,13 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
                         <Input id="phone" name="phone" defaultValue={profile.phone || ''} />
                         {state?.errors?.phone && <p className="text-sm font-medium text-destructive">{state.errors.phone[0]}</p>}
                     </div>
+                     <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="secondary">Batal</Button>
+                        </DialogClose>
+                        <SubmitButton>Simpan Perubahan</SubmitButton>
+                    </DialogFooter>
                 </form>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button type="button" variant="secondary">Batal</Button>
-                    </DialogClose>
-                     <SubmitButton>Simpan Perubahan</SubmitButton>
-                </DialogFooter>
             </DialogContent>
         </Dialog>
     )
