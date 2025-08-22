@@ -7,11 +7,8 @@ import { id } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import type { Database } from "@/types/supabase";
 import * as React from 'react';
 import { LeaveStatsChartWrapper } from "./leave-stats-chart-wrapper";
-import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
-import { cookies } from "next/headers";
 
 export const revalidate = 60; // Cache for 60 seconds
 
@@ -33,8 +30,8 @@ export type MonthlyRequestStat = {
 }
 
 
-async function getDashboardData(cookieStore: ReadonlyRequestCookies) {
-    const supabase = createClient(cookieStore);
+async function getDashboardData() {
+    const supabase = createClient();
     const today = new Date();
     
     // 1. Get total members
@@ -117,14 +114,13 @@ async function getDashboardData(cookieStore: ReadonlyRequestCookies) {
 
 
 export default async function AdminDashboardPage() {
-    const cookieStore = cookies();
     const { 
         totalMembers, 
         monthlyRequests, 
         approvedRequests, 
         recentRequests,
         chartData
-    } = await getDashboardData(cookieStore);
+    } = await getDashboardData();
     
     const stats = [
         { title: "Total Anggota", value: totalMembers, icon: Users },

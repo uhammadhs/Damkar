@@ -4,8 +4,6 @@ import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LaporanClient } from './laporan-client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { cookies } from 'next/headers';
-import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { Suspense } from 'react';
@@ -21,8 +19,8 @@ export type LeaveBalanceReport = {
     used_days: number;
 }
 
-const getLeaveBalances = async (year: number, query: string, cookieStore: ReadonlyRequestCookies): Promise<LeaveBalanceReport[]> => {
-    const supabase = createClient(cookieStore);
+const getLeaveBalances = async (year: number, query: string): Promise<LeaveBalanceReport[]> => {
+    const supabase = createClient();
     
     let queryBuilder = supabase
         .from('profiles')
@@ -65,8 +63,8 @@ const getLeaveBalances = async (year: number, query: string, cookieStore: Readon
     });
 }
 
-const getAvailableYears = async (cookieStore: ReadonlyRequestCookies): Promise<number[]> => {
-    const supabase = createClient(cookieStore);
+const getAvailableYears = async (): Promise<number[]> => {
+    const supabase = createClient();
     const { data, error } = await supabase
         .from('leave_balances')
         .select('year')
@@ -87,9 +85,8 @@ const getAvailableYears = async (cookieStore: ReadonlyRequestCookies): Promise<n
 }
 
 async function ReportTable({ year, query }: { year: number, query: string }) {
-    const cookieStore = cookies();
     await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-    const balances = await getLeaveBalances(year, query, cookieStore);
+    const balances = await getLeaveBalances(year, query);
     
     return (
         <>
@@ -172,8 +169,7 @@ export default async function LaporanPage({
 }) {
     const query = searchParams?.query || "";
     const selectedYear = Number(searchParams?.year) || new Date().getFullYear();
-    const cookieStore = cookies();
-    const availableYears = await getAvailableYears(cookieStore);
+    const availableYears = await getAvailableYears();
     
     return (
         <Card>

@@ -2,7 +2,6 @@
 'use server'
 
 import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers";
 import { headers } from "next/headers";
 
 type State = {
@@ -13,8 +12,7 @@ type State = {
 
 export async function requestPasswordReset(formData: FormData): Promise<State> {
     const origin = headers().get('origin');
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createClient();
 
     const email = formData.get('email') as string;
     

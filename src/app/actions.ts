@@ -4,9 +4,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { headers } from "next/headers";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import type { Database } from "@/types/supabase";
 
 export type LoginState = {
   error?: string | null;
@@ -16,7 +14,6 @@ export type LoginState = {
 
 export async function login(prevState: LoginState | undefined, formData: FormData): Promise<LoginState> {
   const origin = headers().get('origin');
-  const cookieStore = cookies();
   
   const id_pjlp = formData.get('id_pjlp') as string;
   const password = formData.get('password') as string;
@@ -43,7 +40,7 @@ export async function login(prevState: LoginState | undefined, formData: FormDat
   }
 
   // 2. Now, sign in with the user's context using the standard server client
-  const supabase = createClient(cookieStore);
+  const supabase = createClient();
   const { error: authError } = await supabase.auth.signInWithPassword({
     email,
     password,

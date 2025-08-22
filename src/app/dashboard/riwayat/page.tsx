@@ -10,7 +10,6 @@ import { id } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { CalendarX2 } from "lucide-react";
 import Link from "next/link";
-import { cookies } from "next/headers";
 
 export const revalidate = 60; // Cache for 60 seconds
 
@@ -55,8 +54,7 @@ export default async function RiwayatPage({
     year?: string;
   }
 }) {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {

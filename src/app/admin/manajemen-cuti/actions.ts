@@ -1,16 +1,13 @@
 
 'use server'
 
-import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { sendLeaveStatusEmail } from '@/lib/email'
 import { resendApiKey, resendFromEmail } from '@/lib/config'
 import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
 
 export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Disetujui' | 'Ditolak') {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = createClient()
 
   // 1. Update status pengajuan dan ambil data yang diperlukan untuk email.
   const { data: request, error: updateError } = await supabase

@@ -1,15 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cookies } from "next/headers";
 import type { Database } from "@/types/supabase";
 import { ProfileClient } from "./profile-client";
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 
 async function getProfileData(): Promise<Profile | null> {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createClient();
 
     const {
         data: { user },

@@ -8,16 +8,14 @@ import type { Database } from "@/types/supabase";
 import { MemberTable } from "./member-table";
 import { Suspense } from "react";
 import Loading from "./loading";
-import { cookies } from "next/headers";
-import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 
 export const revalidate = 60; // Cache for 60 seconds
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 
 const ITEMS_PER_PAGE = 10;
 
-async function MemberList({ query, currentPage, cookieStore }: { query: string, currentPage: number, cookieStore: ReadonlyRequestCookies }) {
-  const supabase = createClient(cookieStore);
+async function MemberList({ query, currentPage }: { query: string, currentPage: number }) {
+  const supabase = createClient();
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   let queryBuilder = supabase
@@ -55,7 +53,6 @@ export default async function AnggotaPage({
 }) {
   const query = searchParams?.query || "";
   const currentPage = Number(searchParams?.page) || 1;
-  const cookieStore = cookies();
 
   return (
     <Card>
@@ -80,7 +77,7 @@ export default async function AnggotaPage({
       </CardHeader>
       <CardContent>
         <Suspense key={query + currentPage} fallback={<Loading />}>
-          <MemberList query={query} currentPage={currentPage} cookieStore={cookieStore} />
+          <MemberList query={query} currentPage={currentPage} />
         </Suspense>
       </CardContent>
     </Card>

@@ -1,6 +1,5 @@
 
 import { type NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -18,8 +17,6 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData()
   const rawData = Object.fromEntries(formData.entries())
 
-  const cookieStore = cookies()
-
   const validation = RegisterSchema.safeParse(rawData)
   if (!validation.success) {
     const errorMessages = validation.error.errors.map(e => e.message).join(', ')
@@ -29,7 +26,7 @@ export async function POST(request: NextRequest) {
   const { name, email, password, id_pjlp, phone } = validation.data
 
   // Use the admin client to check for duplicates, bypassing RLS
-  const supabaseAdmin = createAdminClient(cookieStore)
+  const supabaseAdmin = createAdminClient()
   const { data: existingProfile, error: checkError } = await supabaseAdmin
     .from('profiles')
     .select('id')
@@ -46,7 +43,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'ID PJLP atau Email sudah terdaftar. Silakan gunakan yang lain.' }, { status: 409 }) // 409 Conflict
   }
 
-  const supabase = createClient(cookieStore)
+  const supabase = createClient()
 
   const { data: { user }, error: signUpError } = await supabase.auth.signUp({
     email,

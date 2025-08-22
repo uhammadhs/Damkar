@@ -1,11 +1,14 @@
+'use server'
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
+import { cookies } from 'next/headers'
 import type { Database } from '@/types/supabase'
 
-// Define a function to create a Supabase client for server-side operations
-// It now accepts the cookie store as an argument to ensure it's called asynchronously.
-export function createClient(cookieStore: ReadonlyRequestCookies) {
+// Define a function to create a Supabase client for server-side operations.
+// It now internally calls `cookies()` from `next/headers` to ensure it always has access.
+export function createClient() {
+  const cookieStore = cookies()
+
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

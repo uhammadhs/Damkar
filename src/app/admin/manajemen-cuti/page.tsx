@@ -8,7 +8,6 @@ import type { Database } from "@/types/supabase";
 import Link from "next/link";
 import { Suspense } from "react";
 import Loading from "./loading";
-import { cookies } from "next/headers";
 
 export const revalidate = 0;
 
@@ -19,8 +18,7 @@ export type LeaveRequest = Database['public']['Tables']['leave_requests']['Row']
 const ITEMS_PER_PAGE = 10;
 
 async function getLeaveRequests(status: 'Menunggu' | 'Semua', page: number) {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createClient();
     const offset = (page - 1) * ITEMS_PER_PAGE;
 
     let query = supabase
