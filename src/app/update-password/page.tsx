@@ -1,4 +1,3 @@
-
 "use client"
 
 import Image from 'next/image';
@@ -11,12 +10,35 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { updatePassword } from './actions';
+import { createClient } from '@/lib/supabase/client';
+import { z } from 'zod';
+
+const PasswordSchema = z.object({
+    password: z.string().min(6, 'Password baru harus terdiri dari setidaknya 6 karakter.'),
+    confirm_password: z.string()
+}).refine(data => data.password === data.confirm_password, {
+    message: 'Password dan konfirmasi tidak cocok.',
+    path: ['confirm_password']
+});
+
 
 export default function UpdatePasswordPage() {
   const router = useRouter();
+  const supabase = createClient();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Check for password recovery error in URL hash on mount
+  React.useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      const params = new URLSearchParams(hash.substring(1)); // remove #
+      const errorDescription = params.get('error_description');
+      if (errorDescription) {
+        setError(errorDescription);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -24,13 +46,28 @@ export default function UpdatePasswordPage() {
     setError(null);
     
     const formData = new FormData(event.currentTarget);
-    const result = await updatePassword(formData);
+    const data = Object.fromEntries(formData.entries());
 
-    if (result.success) {
-      // Redirect to login page with a success message
-      router.push(`/?message=${encodeURIComponent(result.message || 'Password berhasil diubah. Silakan login.')}`);
+    const validation = PasswordSchema.safeParse(data);
+
+    if (!validation.success) {
+      const formError = validation.error.errors[0].message;
+      setError(formError);
+      setLoading(false);
+      return;
+    }
+
+    const { password } = validation.data;
+
+    // Supabase client automatically handles the session from the URL hash
+    const { error: updateError } = await supabase.auth.updateUser({ password });
+
+    if (updateError) {
+      setError(updateError.message || 'Gagal memperbarui password. Sesi Anda mungkin sudah kedaluwarsa. Silakan coba minta reset password lagi.');
     } else {
-      setError(result.error || 'Terjadi kesalahan.');
+      // Redirect to login page with a success message
+      const message = encodeURIComponent('Password berhasil diubah. Silakan login dengan password baru Anda.');
+      router.push(`/?message=${message}`);
     }
     setLoading(false);
   };
