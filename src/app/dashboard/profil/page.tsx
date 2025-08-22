@@ -1,9 +1,6 @@
-
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Suspense } from "react";
-import Loading from "./loading";
 import { cookies } from "next/headers";
 import type { Database } from "@/types/supabase";
 import { ProfileClient } from "./profile-client";
@@ -62,9 +59,7 @@ export default async function ProfilPage() {
             </CardDescription>
         </CardHeader>
         <CardContent>
-            <Suspense fallback={<Loading />}>
-                <ProfileClient profile={profile} />
-            </Suspense>
+            <ProfileClient profile={profile} />
         </CardContent>
     </Card>
   );
