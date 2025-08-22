@@ -3,10 +3,9 @@
 
 import * as React from "react";
 import type { Database } from "@/types/supabase";
-import { useFormStatus, useActionState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormStatus } from "react-dom";
+import { useActionState } from "react";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +23,6 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { changePassword, updateProfile, type FormState } from "./actions";
 import { Loader2 } from "lucide-react";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -35,7 +33,6 @@ const ProfileUpdateSchema = z.object({
   id_pjlp: z.string().min(1, "ID PJLP tidak boleh kosong"),
   phone: z.string().min(10, "Nomor HP tidak valid (minimal 10 digit)").optional(),
 });
-type ProfileFormData = z.infer<typeof ProfileUpdateSchema>;
 
 interface ProfileActionsProps {
     profile: Profile;
