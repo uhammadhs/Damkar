@@ -21,8 +21,21 @@ export default async function LaporanPage({
 }) {
     const query = searchParams?.query || "";
     const selectedYear = Number(searchParams?.year) || new Date().getFullYear();
-    const availableYears = [selectedYear, selectedYear - 1, selectedYear - 2];
+
+    // Fetch all distinct years from the database to make the dropdown dynamic
+    const supabase = createClient();
+    const { data: yearData, error } = await supabase
+      .from('leave_requests')
+      .select('start_date');
+
+    if (error) {
+      console.error("Error fetching years for dropdown:", error);
+    }
     
+    // Process the years: get unique values, add current year, and sort
+    const yearsFromHistory = yearData?.map(item => new Date(item.start_date).getFullYear()) || [];
+    const availableYears = Array.from(new Set([...yearsFromHistory, new Date().getFullYear()])).sort((a, b) => b - a);
+
     return (
          <Card>
             <CardHeader>

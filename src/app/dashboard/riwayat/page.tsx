@@ -10,6 +10,7 @@ import { id } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { CalendarX2 } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export const revalidate = 60; // Cache for 60 seconds
 
@@ -58,29 +59,28 @@ export default async function RiwayatPage({
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        return <div>Pengguna tidak ditemukan</div>;
+        redirect('/');
     }
 
-    const allHistoryQuery = supabase
+    // Fetch all distinct years from the user's leave history to make the dropdown dynamic
+    const { data: yearData, error: yearError } = await supabase
         .from('leave_requests')
-        .select('id, start_date')
-        .eq('user_id', user.id)
-        .order('start_date', { ascending: false });
+        .select('start_date')
+        .eq('user_id', user.id);
 
-    const { data: allHistory, error: allHistoryError } = await allHistoryQuery;
-    if (allHistoryError) {
-        console.error("Error fetching all leave history:", allHistoryError);
-        return <div>Gagal memuat data.</div>;
+    if (yearError) {
+        console.error("Error fetching all leave history years:", yearError);
+        return <div>Gagal memuat data tahun.</div>;
     }
     
     const currentYear = new Date().getFullYear();
-    const yearsFromHistory = allHistory.map(item => new Date(item.start_date).getFullYear());
-    // Gabungkan tahun dari riwayat dengan tahun sekarang, hapus duplikat, dan urutkan.
+    const yearsFromHistory = yearData.map(item => new Date(item.start_date).getFullYear());
+    // Combine years from history with the current year, remove duplicates, and sort descending
     const availableYears = Array.from(new Set([...yearsFromHistory, currentYear])).sort((a, b) => b - a);
 
     const selectedYear = Number(searchParams?.year) || currentYear;
 
-
+    // Fetch the history for the selected year
     const { data: filteredHistory, error } = await supabase
         .from('leave_requests')
         .select(`
@@ -99,7 +99,7 @@ export default async function RiwayatPage({
         .order('start_date', { ascending: false });
 
     if (error) {
-        console.error("Error fetching leave history:", error);
+        console.error("Error fetching leave history for year:", selectedYear, error);
         return <div>Gagal memuat riwayat cuti.</div>;
     }
     
