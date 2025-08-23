@@ -13,6 +13,7 @@ import {
   Sun,
   LogOut,
   Loader2,
+  Bell,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -38,6 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
+import { NotificationBell } from "./notification-bell"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -129,6 +131,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </h2>
             </div>
             <div className="flex items-center gap-2">
+              <NotificationBell />
               <Button
                   variant="ghost"
                   size="icon"
