@@ -1,11 +1,9 @@
 
 import * as React from 'react';
 import { createClient } from '@/lib/supabase/server';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LaporanClient } from './laporan-client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Suspense } from 'react';
+import Loading from './loading';
 
 export const revalidate = 300; // Cache for 5 minutes
 
@@ -59,27 +57,6 @@ const getLeaveBalances = async (year: number, query: string): Promise<LeaveBalan
             used_days: balance?.used_days ?? 0,    // Default to 0 if no entry
         };
     });
-}
-
-const getAvailableYears = async (): Promise<number[]> => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-        .from('leave_balances')
-        .select('year')
-        .order('year', { ascending: false });
-
-    if (error) {
-        console.error("Error fetching available years:", error);
-        return [new Date().getFullYear()];
-    }
-
-    const years = Array.from(new Set(data.map(item => item.year)));
-    const currentYear = new Date().getFullYear();
-    if (!years.includes(currentYear)) {
-        years.push(currentYear);
-    }
-    
-    return years.sort((a, b) => b - a);
 }
 
 async function ReportTable({ year, query }: { year: number, query: string }) {
@@ -136,38 +113,12 @@ export default async function LaporanPage({
 }) {
     const query = searchParams?.query || "";
     const selectedYear = Number(searchParams?.year) || new Date().getFullYear();
-    const availableYears = await getAvailableYears();
     
     return (
-       <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <CardTitle className="font-headline">Laporan Saldo Cuti</CardTitle>
-                <CardDescription>
-                  Menampilkan rekapitulasi saldo cuti tahunan untuk setiap anggota.
-                </CardDescription>
-              </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <form className="w-full sm:w-auto">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="search"
-                      name="query"
-                      placeholder="Cari nama atau id pjlp..."
-                      className="pl-8 sm:w-[250px]"
-                      defaultValue={query}
-                    />
-                  </div>
-                </form>
-                <LaporanClient availableYears={availableYears} selectedYear={selectedYear} />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ReportTable year={selectedYear} query={query} />
-          </CardContent>
-        </Card>
+       // The Card and CardHeader are now in layout.tsx.
+       // This component only renders the content.
+       <Suspense fallback={<Loading />}>
+         <ReportTable year={selectedYear} query={query} />
+       </Suspense>
     );
 }

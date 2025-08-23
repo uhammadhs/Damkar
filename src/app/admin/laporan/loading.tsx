@@ -1,9 +1,10 @@
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow, TableHead, TableHeader } from '@/components/ui/table';
 
-function LoadingTable() {
+// This loading component now ONLY renders the skeleton for the table content,
+// because the Card and Header skeletons are part of the main layout now.
+export default function Loading() {
     return (
         <div className="overflow-x-auto">
           <Table>
@@ -30,29 +31,4 @@ function LoadingTable() {
           </Table>
         </div>
     );
-}
-
-// This is the main loading skeleton for the entire page.
-export default function Loading() {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <CardTitle><Skeleton className="h-7 w-48" /></CardTitle>
-                <CardDescription>
-                    <Skeleton className="h-4 w-80 mt-2" />
-                </CardDescription>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-                <Skeleton className="h-10 w-full sm:w-[250px]" />
-                <Skeleton className="h-10 w-full sm:w-[180px]" />
-            </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <LoadingTable />
-      </CardContent>
-    </Card>
-  );
 }
