@@ -3,9 +3,8 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
-import { Calendar as CalendarIcon, Upload, Loader2 } from "lucide-react"
+import { useFormState, useFormStatus } from 'react-dom';
+import { Calendar as CalendarIcon, Upload, Loader2, Paperclip, X } from "lucide-react"
 import { format } from "date-fns"
 import type { DateRange } from "react-day-picker"
 import { id } from 'date-fns/locale'
@@ -19,7 +18,7 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { submitLeaveRequest, type FormState } from "./actions"
+import { submitLeaveRequest, type FormState, uploadAttachment } from "./actions"
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -36,11 +35,15 @@ export default function AjukanCutiPage() {
     const { toast } = useToast();
     const [date, setDate] = React.useState<DateRange | undefined>(undefined);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
-    const [fileName, setFileName] = React.useState<string | null>(null);
     const formRef = React.useRef<HTMLFormElement>(null);
+    const [isUploading, setIsUploading] = React.useState(false);
+
+    // State for attachment
+    const [attachmentUrl, setAttachmentUrl] = React.useState<string | null>(null);
+    const [attachmentName, setAttachmentName] = React.useState<string | null>(null);
 
     const initialState: FormState = { success: false, message: "" };
-    const [state, formAction] = useActionState(submitLeaveRequest, initialState);
+    const [state, formAction] = useFormState(submitLeaveRequest, initialState);
 
     React.useEffect(() => {
         if (state.success) {
@@ -59,12 +62,43 @@ export default function AjukanCutiPage() {
         }
     }, [state, router, toast]);
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files && event.target.files.length > 0) {
-            setFileName(event.target.files[0].name);
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('attachment', file);
+
+        const result = await uploadAttachment(formData);
+
+        if (result.success && result.url) {
+            setAttachmentUrl(result.url);
+            setAttachmentName(result.fileName || "File terlampir");
+             toast({
+                title: "Sukses",
+                description: "Lampiran berhasil diunggah.",
+            });
         } else {
-            setFileName(null);
+            toast({
+                title: "Gagal Mengunggah",
+                description: result.message,
+                variant: "destructive",
+            });
+            setAttachmentUrl(null);
+            setAttachmentName(null);
         }
+        setIsUploading(false);
+        // Reset file input value to allow re-uploading the same file
+        event.target.value = "";
+    };
+
+    const handleRemoveAttachment = () => {
+        // Note: This only removes it from the client-side state. 
+        // The file is already in storage but won't be linked to the leave request.
+        // A more robust solution might involve a "delete" action if a user cancels the form.
+        setAttachmentUrl(null);
+        setAttachmentName(null);
     };
 
     const dateError = state.errors?.start_date?.[0] || state.errors?.end_date?.[0];
@@ -72,9 +106,10 @@ export default function AjukanCutiPage() {
     return (
         <Card>
             <form ref={formRef} action={formAction}>
-                 {/* Hidden inputs to pass date range to server action */}
+                 {/* Hidden inputs to pass date range and attachment URL to server action */}
                 <input type="hidden" name="start_date" value={date?.from ? format(date.from, 'yyyy-MM-dd') : ''} />
                 <input type="hidden" name="end_date" value={date?.to ? format(date.to, 'yyyy-MM-dd') : ''} />
+                <input type="hidden" name="attachment_url" value={attachmentUrl || ''} />
 
                 <CardHeader>
                     <CardTitle className="font-headline">Formulir Pengajuan Cuti</CardTitle>
@@ -147,13 +182,26 @@ export default function AjukanCutiPage() {
                             className="hidden" 
                             ref={fileInputRef}
                             onChange={handleFileChange}
+                            disabled={isUploading || !!attachmentUrl}
                         />
-                        <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
-                            <Upload className="mr-2" />
-                            {fileName || "Unggah Dokumen Pendukung"}
-                        </Button>
+                        {!attachmentUrl ? (
+                            <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                                {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                                {isUploading ? "Mengunggah..." : "Unggah Dokumen Pendukung"}
+                            </Button>
+                        ) : (
+                            <div className="flex items-center justify-between rounded-md border border-input p-2">
+                                <div className="flex items-center gap-2 truncate">
+                                    <Paperclip className="h-4 w-4 shrink-0" />
+                                    <span className="truncate text-sm">{attachmentName}</span>
+                                </div>
+                                <Button type="button" variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={handleRemoveAttachment}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        )}
                          <p className="text-xs text-muted-foreground">
-                            Contoh: surat dokter untuk cuti sakit, surat undangan untuk izin, dll.
+                            Contoh: surat dokter, surat undangan, dll. Ukuran file maks 5MB.
                          </p>
                     </div>
 

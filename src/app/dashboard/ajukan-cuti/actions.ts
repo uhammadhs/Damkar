@@ -11,6 +11,7 @@ const LeaveRequestSchema = z.object({
   end_date: z.string({ required_error: 'Tanggal mulai dan selesai harus diisi.' }).min(1, 'Tanggal mulai dan selesai harus diisi.'),
   title: z.string().min(3, 'Judul pengajuan minimal 3 karakter.'),
   reason: z.string().min(10, 'Alasan harus diisi minimal 10 karakter.'),
+  attachment_url: z.string().url().optional().nullable(),
 })
 
 // Define a type for the structured error response
@@ -41,6 +42,7 @@ export async function submitLeaveRequest(prevState: FormState | undefined, formD
     end_date: formData.get('end_date'),
     title: formData.get('title'),
     reason: formData.get('reason'),
+    attachment_url: formData.get('attachment_url') || null,
   }
 
   const validation = LeaveRequestSchema.safeParse(rawData)
@@ -108,4 +110,44 @@ export async function submitLeaveRequest(prevState: FormState | undefined, formD
   revalidatePath('/dashboard/riwayat')
   // We can't redirect from here, but the success status will be used by the client to redirect.
   return { success: true, message: 'Pengajuan cuti berhasil dikirim.' }
+}
+
+
+export async function uploadAttachment(formData: FormData) {
+    const supabase = createClient();
+    const file = formData.get('attachment') as File | null;
+
+    if (!file || file.size === 0) {
+        return { success: false, message: 'Tidak ada file yang dipilih.' };
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { success: false, message: 'Pengguna tidak terautentikasi.' };
+    }
+
+    // Generate a unique file path
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `${user.id}-${Date.now()}.${fileExtension}`;
+    const filePath = `public/${fileName}`;
+
+    const { error } = await supabase.storage
+        .from('lampiran-cuti')
+        .upload(filePath, file);
+
+    if (error) {
+        console.error('Error uploading file to Supabase Storage:', error);
+        return { success: false, message: `Gagal mengunggah file: ${error.message}` };
+    }
+
+    // Get the public URL of the uploaded file
+    const { data } = supabase.storage
+        .from('lampiran-cuti')
+        .getPublicUrl(filePath);
+
+    if (!data.publicUrl) {
+         return { success: false, message: 'File berhasil diunggah tetapi gagal mendapatkan URL publik.' };
+    }
+
+    return { success: true, url: data.publicUrl, fileName: file.name };
 }
