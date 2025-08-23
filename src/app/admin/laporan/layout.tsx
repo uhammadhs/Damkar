@@ -2,23 +2,22 @@
 "use client"
 
 import * as React from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { LaporanClient } from './laporan-client';
 import { Search } from 'lucide-react';
-import type { Database } from '@/types/supabase';
 
 // This is a new layout file that wraps the report page.
-// It provides the consistent Card structure to prevent layout shifts.
+// It provides the consistent Card structure and now also includes the client components
+// to prevent layout shifts during hydration.
 
 export default function LaporanLayout({ children }: { children: React.ReactNode }) {
     const searchParams = useSearchParams();
     const query = searchParams.get("query") || "";
 
-    // We can't fetch server-side data here easily for the year dropdown,
-    // so we will pass a static list for now or accept the default.
-    // The main functionality remains on the page itself.
+    // The year selection logic is now part of the layout to ensure consistency.
+    // The actual data fetching based on the year still happens in the page.
     const selectedYear = Number(searchParams.get("year")) || new Date().getFullYear();
     const availableYears = [selectedYear, selectedYear - 1, selectedYear - 2];
 

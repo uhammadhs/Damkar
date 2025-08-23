@@ -2,7 +2,6 @@
 import * as React from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import Loading from './loading'; // Import the loading component
 
 export const revalidate = 300; // Cache for 5 minutes
 
@@ -113,7 +112,8 @@ export default async function LaporanPage({
     const query = searchParams?.query || "";
     const selectedYear = Number(searchParams?.year) || new Date().getFullYear();
     
-    // The Suspense wrapper is removed.
+    // The page now ONLY renders the data table. The surrounding Card and filters
+    // are handled by the new layout.tsx file.
     // Next.js will automatically use `loading.tsx` as the suspense boundary for this component.
     return <ReportTable year={selectedYear} query={query} />;
 }
