@@ -7,7 +7,7 @@ export default function LoginPage() {
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center justify-center">
       <Image
-        src="https://placehold.co/1920x1080.png"
+        src="https://source.unsplash.com/1920x1080/?firefighter,heroic"
         alt="Background"
         fill
         objectFit="cover"
@@ -27,4 +27,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

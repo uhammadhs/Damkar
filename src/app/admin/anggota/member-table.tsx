@@ -51,12 +51,12 @@ export async function MemberTable({ profiles, query }: { profiles: Profile[], qu
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {profiles.map((profile) => (
+                    {profiles.map((profile, index) => (
                         <TableRow key={profile.id}>
                             <TableCell>
                                 <div className="flex items-center gap-3">
                                     <Avatar className="hidden h-9 w-9 sm:flex">
-                                        <AvatarImage src={profile.avatar_url || ''} alt={profile.name || ''} data-ai-hint="male portrait" />
+                                        <AvatarImage src={profile.avatar_url || `https://source.unsplash.com/40x40/?portrait,person&sig=${index}`} alt={profile.name || ''} data-ai-hint="male portrait" />
                                         <AvatarFallback>{getAvatarFallback(profile.name)}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex flex-col">
@@ -87,5 +87,3 @@ export async function MemberTable({ profiles, query }: { profiles: Profile[], qu
         </div>
     )
 }
-
-    

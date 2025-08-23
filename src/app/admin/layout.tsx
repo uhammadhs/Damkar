@@ -146,7 +146,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="rounded-full">
                           <Avatar className="h-8 w-8">
-                              <AvatarImage src="https://placehold.co/40x40.png" alt="Admin" data-ai-hint="male portrait" />
+                              <AvatarImage src="https://source.unsplash.com/50x50/?portrait,person" alt="Admin" data-ai-hint="male portrait" />
                               <AvatarFallback>A</AvatarFallback>
                           </Avatar>
                           <span className="sr-only">Toggle user menu</span>
