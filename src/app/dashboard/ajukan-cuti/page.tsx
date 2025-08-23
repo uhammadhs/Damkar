@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react';
 import { Calendar as CalendarIcon, Upload, Loader2, Paperclip, X } from "lucide-react"
 import { format } from "date-fns"
 import type { DateRange } from "react-day-picker"
@@ -43,7 +43,7 @@ export default function AjukanCutiPage() {
     const [attachmentName, setAttachmentName] = React.useState<string | null>(null);
 
     const initialState: FormState = { success: false, message: "" };
-    const [state, formAction] = useFormState(submitLeaveRequest, initialState);
+    const [state, formAction] = useActionState(submitLeaveRequest, initialState);
 
     React.useEffect(() => {
         if (state.success) {
