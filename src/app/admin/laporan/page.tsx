@@ -2,8 +2,7 @@
 import * as React from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Suspense } from 'react';
-import Loading from './loading';
+import Loading from './loading'; // Import the loading component
 
 export const revalidate = 300; // Cache for 5 minutes
 
@@ -114,11 +113,7 @@ export default async function LaporanPage({
     const query = searchParams?.query || "";
     const selectedYear = Number(searchParams?.year) || new Date().getFullYear();
     
-    return (
-       // The Card and CardHeader are now in layout.tsx.
-       // This component only renders the content.
-       <Suspense fallback={<Loading />}>
-         <ReportTable year={selectedYear} query={query} />
-       </Suspense>
-    );
+    // The Suspense wrapper is removed.
+    // Next.js will automatically use `loading.tsx` as the suspense boundary for this component.
+    return <ReportTable year={selectedYear} query={query} />;
 }

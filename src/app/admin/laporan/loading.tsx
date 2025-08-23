@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableRow, TableHead, TableHeader } from '@/components/ui/table';
 
 // This loading component now ONLY renders the skeleton for the table content,
-// because the Card and Header skeletons are part of the main layout now.
+// because the Card and Header are part of the layout.
 export default function Loading() {
     return (
         <div className="overflow-x-auto">
