@@ -6,29 +6,27 @@ import { Table, TableBody, TableCell, TableRow, TableHead, TableHeader } from '@
 // because the Card and Header are part of the layout.
 export default function Loading() {
     return (
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead><Skeleton className="h-5 w-32" /></TableHead>
-                <TableHead className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableHead>
-                <TableHead className="text-center"><Skeleton className="h-5 w-24 mx-auto" /></TableHead>
-                <TableHead className="text-center"><Skeleton className="h-5 w-24 mx-auto" /></TableHead>
-                <TableHead className="text-center"><Skeleton className="h-5 w-24 mx-auto" /></TableHead>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead><Skeleton className="h-5 w-32" /></TableHead>
+              <TableHead className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableHead>
+              <TableHead className="text-center"><Skeleton className="h-5 w-24 mx-auto" /></TableHead>
+              <TableHead className="text-center"><Skeleton className="h-5 w-24 mx-auto" /></TableHead>
+              <TableHead className="text-center"><Skeleton className="h-5 w-24 mx-auto" /></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
+                <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
+                <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
-                  <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
-                  <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+            ))}
+          </TableBody>
+        </Table>
     );
 }

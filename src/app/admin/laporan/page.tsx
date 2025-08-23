@@ -70,32 +70,30 @@ async function ReportTable({ year, query }: { year: number, query: string }) {
                     }
                 </div>
             ) : (
-                <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Nama Anggota</TableHead>
-                                <TableHead className="hidden sm:table-cell">ID PJLP</TableHead>
-                                <TableHead className="text-center">Total Hak Cuti</TableHead>
-                                <TableHead className="text-center">Cuti Terpakai</TableHead>
-                                <TableHead className="text-center font-semibold">Sisa Cuti</TableHead>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Nama Anggota</TableHead>
+                            <TableHead className="hidden sm:table-cell">ID PJLP</TableHead>
+                            <TableHead className="text-center">Total Hak Cuti</TableHead>
+                            <TableHead className="text-center">Cuti Terpakai</TableHead>
+                            <TableHead className="text-center font-semibold">Sisa Cuti</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {balances.map(balance => (
+                            <TableRow key={balance.id}>
+                                <TableCell className="font-medium">{balance.name || 'N/A'}</TableCell>
+                                <TableCell className="hidden sm:table-cell">{balance.id_pjlp || 'N/A'}</TableCell>
+                                <TableCell className="text-center">{balance.total_days} hari</TableCell>
+                                <TableCell className="text-center">{balance.used_days} hari</TableCell>
+                                <TableCell className="text-center font-semibold text-primary">
+                                    {balance.total_days - balance.used_days} hari
+                                </TableCell>
                             </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {balances.map(balance => (
-                                <TableRow key={balance.id}>
-                                    <TableCell className="font-medium">{balance.name || 'N/A'}</TableCell>
-                                    <TableCell className="hidden sm:table-cell">{balance.id_pjlp || 'N/A'}</TableCell>
-                                    <TableCell className="text-center">{balance.total_days} hari</TableCell>
-                                    <TableCell className="text-center">{balance.used_days} hari</TableCell>
-                                    <TableCell className="text-center font-semibold text-primary">
-                                        {balance.total_days - balance.used_days} hari
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
+                        ))}
+                    </TableBody>
+                </Table>
             )}
         </>
     )
