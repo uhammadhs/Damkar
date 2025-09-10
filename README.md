@@ -35,6 +35,7 @@ Aplikasi ini dibagi menjadi dua peran utama: **Anggota** dan **Admin**.
 - **Komponen UI**: [ShadCN/UI](https://ui.shadcn.com/)
 - **Formulir**: React Hook Form & Server Actions
 - **Notifikasi Email**: [Resend](https://resend.com/)
+- **Penjadwalan Otomatis**: [GitHub Actions](https://github.com/features/actions)
 
 ---
 
@@ -46,6 +47,7 @@ Untuk menjalankan proyek ini di lingkungan lokal Anda, ikuti langkah-langkah di 
 - [Node.js](https://nodejs.org/en/) (v18 atau lebih baru)
 - [npm](https://www.npmjs.com/get-npm), [yarn](https://yarnpkg.com/), atau [pnpm](https://pnpm.io/)
 - Akun [Supabase](https://supabase.com/)
+- Akun [GitHub](https://github.com/)
 
 ### 2. Kloning Repositori
 ```bash
@@ -58,15 +60,15 @@ cd siap-cuti
 npm install
 ```
 
-### 4. Penyiapan Supabase
-1.  **Buat Proyek Baru**: Buka [Supabase Dashboard](https://app.supabase.com/) dan buat proyek baru.
-2.  **Dapatkan Kunci API**:
+### 4. Penyiapan Variabel Lingkungan
+1.  **Dapatkan Kunci Supabase**:
+    - Buka [Supabase Dashboard](https://app.supabase.com/) dan buat proyek baru.
     - Pergi ke **Project Settings > API**.
     - Salin **Project URL** dan **anon (public) key**.
     - Di bawah **Project API Keys**, salin juga **service_role key**.
-3.  **Konfigurasi Variabel Lingkungan**:
-    - Buat file bernama `.env.local` di direktori utama proyek.
-    - Tambahkan kunci yang telah Anda salin ke dalam file tersebut. Anda juga perlu menyiapkan kunci API dari Resend jika ingin menggunakan notifikasi email.
+2.  **Buat File `.env.local`**:
+    - Di direktori utama proyek, buat file bernama `.env.local`.
+    - Tambahkan kunci yang telah Anda salin. Anda juga perlu menyiapkan kunci dari Resend dan membuat kunci rahasia untuk Cron Job.
 
     ```.env.local
     # Supabase
@@ -77,40 +79,40 @@ npm install
     # Resend (Opsional, untuk notifikasi email)
     RESEND_API_KEY=KUNCI_API_RESEND_ANDA
     RESEND_FROM_EMAIL=ALAMAT_EMAIL_PENGIRIM_ANDA # Contoh: no-reply@domainanda.com
+    
+    # Cron Job Secret Key
+    CRON_SECRET=BUAT_PASSWORD_RAHASIA_YANG_KUAT_DAN_ACAK_DI_SINI
     ```
-4.  **Jalankan Skema SQL**:
+
+3.  **Jalankan Skema SQL**:
     - Buka **SQL Editor** di dashboard Supabase Anda.
     - Salin seluruh konten dari file `/src/lib/supabase/schema.sql` di proyek ini.
-    - Tempelkan ke SQL Editor dan klik **"RUN"**. Ini akan membuat semua tabel, fungsi, *trigger*, dan kebijakan keamanan (RLS) yang dibutuhkan oleh aplikasi.
+    - Tempelkan ke SQL Editor dan klik **"RUN"**. Ini akan membuat semua tabel dan fungsi yang dibutuhkan.
 
 ### 5. Jalankan Aplikasi
-Setelah semua penyiapan selesai, Anda siap menjalankan server pengembangan.
-
 ```bash
 npm run dev
 ```
-
 Aplikasi sekarang akan berjalan di [http://localhost:9002](http://localhost:9002).
 
 ---
 
-## ⚙️ Pemeliharaan Tahunan (Penting!)
+## ⚙️ Konfigurasi Otomatisasi Reset Cuti Tahunan (PENTING!)
 
-Aplikasi ini memiliki fungsi untuk mereset saldo cuti tahunan setiap anggota secara otomatis. Namun, jika Anda menggunakan paket gratis Supabase, fitur penjadwalan otomatis (Cron Job) tidak tersedia.
+Aplikasi ini menggunakan **GitHub Actions** untuk menjalankan reset saldo cuti tahunan secara otomatis setiap tanggal 1 Januari. Ini adalah **pengaturan satu kali** yang penting agar aplikasi berfungsi penuh.
 
-Anda perlu menjalankan fungsi ini secara manual **satu kali setiap awal tahun** (misalnya pada tanggal 1 Januari).
+### Cara Konfigurasi:
+1.  Pastikan proyek Anda sudah ada di repositori GitHub.
+2.  Buka repositori GitHub proyek Anda.
+3.  Pergi ke tab **Settings**.
+4.  Di menu samping kiri, navigasi ke **Secrets and variables > Actions**.
+5.  Di bagian "Repository secrets", klik **"New repository secret"** dan tambahkan dua *secret* berikut:
+    *   **Nama Secret:** `APP_URL`
+        *   **Isi (Value):** Masukkan URL utama tempat aplikasi Anda akan di-deploy (misalnya: `https://siap-cuti.vercel.app`).
+    *   **Nama Secret:** `CRON_SECRET`
+        *   **Isi (Value):** Masukkan nilai yang **sama persis** dengan yang Anda definisikan untuk `CRON_SECRET` di file `.env.local` Anda.
 
-### Cara Menjalankan Reset Cuti Tahunan Manual:
-1.  Masuk ke dasbor proyek Supabase Anda.
-2.  Buka **SQL Editor** dari menu samping.
-3.  Klik **"New query"**.
-4.  Salin dan tempelkan perintah SQL berikut:
-    ```sql
-    SELECT handle_new_year_leave_balances();
-    ```
-5.  Klik tombol **"RUN"**.
-
-Proses ini akan memastikan semua anggota mendapatkan jatah cuti baru untuk tahun yang baru.
+Setelah *secrets* ini disimpan, GitHub Actions akan secara otomatis menjalankan reset cuti setiap tahun tanpa perlu intervensi manual.
 
 ---
 

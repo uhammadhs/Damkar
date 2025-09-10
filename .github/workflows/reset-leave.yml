@@ -1,0 +1,22 @@
+
+# GitHub Action untuk menjalankan reset saldo cuti tahunan secara otomatis
+
+name: 'Jalankan Reset Saldo Cuti Tahunan'
+
+on:
+  # 0 1 1 * -> Berjalan pada pukul 00:00, pada tanggal 1, di bulan Januari.
+  # https://crontab.guru/#0_0_1_1_*
+  schedule:
+    - cron: '0 0 1 1 *'
+  # Opsi untuk menjalankan secara manual dari tab Actions di GitHub
+  workflow_dispatch:
+
+jobs:
+  reset-leave-balance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Panggil API Route untuk Reset Cuti
+        run: |
+          curl --request POST \
+          --url '${{ secrets.APP_URL }}/api/cron' \
+          --header 'Authorization: Bearer ${{ secrets.CRON_SECRET }}'
