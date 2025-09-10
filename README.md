@@ -94,6 +94,26 @@ Aplikasi sekarang akan berjalan di [http://localhost:9002](http://localhost:9002
 
 ---
 
+## ⚙️ Pemeliharaan Tahunan (Penting!)
+
+Aplikasi ini memiliki fungsi untuk mereset saldo cuti tahunan setiap anggota secara otomatis. Namun, jika Anda menggunakan paket gratis Supabase, fitur penjadwalan otomatis (Cron Job) tidak tersedia.
+
+Anda perlu menjalankan fungsi ini secara manual **satu kali setiap awal tahun** (misalnya pada tanggal 1 Januari).
+
+### Cara Menjalankan Reset Cuti Tahunan Manual:
+1.  Masuk ke dasbor proyek Supabase Anda.
+2.  Buka **SQL Editor** dari menu samping.
+3.  Klik **"New query"**.
+4.  Salin dan tempelkan perintah SQL berikut:
+    ```sql
+    SELECT handle_new_year_leave_balances();
+    ```
+5.  Klik tombol **"RUN"**.
+
+Proses ini akan memastikan semua anggota mendapatkan jatah cuti baru untuk tahun yang baru.
+
+---
+
 ## 🤝 Berkontribusi
 
 Kontribusi dalam bentuk *pull request*, laporan *bug*, atau saran fitur sangat kami hargai.
