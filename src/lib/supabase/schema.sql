@@ -1,137 +1,142 @@
 
 -- ----------------------------
--- Enable RLS for all tables
+-- Enable Realtime for tables
 -- ----------------------------
+begin;
+  drop publication if exists supabase_realtime;
+  create publication supabase_realtime;
+commit;
+alter publication supabase_realtime add table notifications;
+
+-- ----------------------------
+-- Create Profiles Table
+-- ----------------------------
+CREATE TABLE public.profiles (
+    id uuid NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    updated_at timestamptz,
+    name text,
+    avatar_url text,
+    id_pjlp text UNIQUE,
+    phone text,
+    email text UNIQUE,
+    role text DEFAULT 'anggota'
+);
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- ----------------------------
+-- Create Leave Requests Table
+-- ----------------------------
+CREATE TABLE public.leave_requests (
+    id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    title text NOT NULL,
+    start_date date NOT NULL,
+    end_date date NOT NULL,
+    duration integer NOT NULL,
+    reason text,
+    status text NOT NULL DEFAULT 'Menunggu',
+    attachment_url text,
+    is_read_by_user boolean NOT NULL DEFAULT false,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
 ALTER TABLE public.leave_requests ENABLE ROW LEVEL SECURITY;
+
+-- ----------------------------
+-- Create Leave Balances Table
+-- ----------------------------
+CREATE TABLE public.leave_balances (
+    id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    year integer NOT NULL,
+    total_days integer NOT NULL DEFAULT 12,
+    used_days integer NOT NULL DEFAULT 0,
+    UNIQUE (user_id, year)
+);
 ALTER TABLE public.leave_balances ENABLE ROW LEVEL SECURITY;
+
+-- ----------------------------
+-- Create Notifications Table
+-- ----------------------------
+CREATE TABLE public.notifications (
+    id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    leave_request_id bigint NOT NULL REFERENCES public.leave_requests(id) ON DELETE CASCADE,
+    message text NOT NULL,
+    is_read boolean NOT NULL DEFAULT false,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 
 -- ----------------------------
--- Drop existing policies if they exist to prevent errors on re-run
+-- RLS Policies for Profiles
 -- ----------------------------
-DROP POLICY IF EXISTS "Allow public read-only access" ON public.profiles;
-DROP POLICY IF EXISTS "Allow individual user to read and update their own profile" ON public.profiles;
-DROP POLICY IF EXISTS "Allow admin full access to profiles" ON public.profiles;
+CREATE POLICY "Public profiles are viewable by everyone." 
+ON public.profiles FOR SELECT USING (true);
 
-DROP POLICY IF EXISTS "Allow individual user to read their own requests" ON public.leave_requests;
-DROP POLICY IF EXISTS "Allow individual user to create their own request" ON public.leave_requests;
-DROP POLICY IF EXISTS "Allow individual user to update their own unread status" ON public.leave_requests;
-DROP POLICY IF EXISTS "Allow admin full access to leave requests" ON public.leave_requests;
+CREATE POLICY "Users can insert their own profile." 
+ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
-DROP POLICY IF EXISTS "Allow individual user to read their own balances" ON public.leave_balances;
-DROP POLICY IF EXISTS "Allow admin full access to leave balances" ON public.leave_balances;
+CREATE POLICY "Users can update their own profile." 
+ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
-DROP POLICY IF EXISTS "Allow individual user to read their own notifications" ON public.notifications;
-DROP POLICY IF EXISTS "Allow admin to update their own notifications" ON public.notifications;
+CREATE POLICY "Admins can update any profile." 
+ON public.profiles FOR UPDATE USING (public.get_user_role() = 'admin');
 
-
--- ----------------------------
--- Table structure for profiles
--- ----------------------------
-CREATE TABLE IF NOT EXISTS public.profiles (
-    id uuid NOT NULL,
-    updated_at timestamp with time zone,
-    name character varying,
-    id_pjlp character varying,
-    avatar_url character varying,
-    role character varying DEFAULT 'anggota'::character varying,
-    phone character varying,
-    email character varying,
-    CONSTRAINT profiles_pkey PRIMARY KEY (id),
-    CONSTRAINT profiles_id_pjlp_key UNIQUE (id_pjlp),
-    CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
-) TABLESPACE pg_default;
-
--- Policies for profiles
-CREATE POLICY "Allow public read-only access" ON public.profiles FOR SELECT USING (true);
-CREATE POLICY "Allow individual user to read and update their own profile" ON public.profiles FOR ALL USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
-CREATE POLICY "Allow admin full access to profiles" ON public.profiles FOR ALL USING (public.get_user_role() = 'admin');
+CREATE POLICY "Admins can delete any profile."
+ON public.profiles FOR DELETE USING (public.get_user_role() = 'admin');
 
 -- ----------------------------
--- Table structure for leave_requests
+-- RLS Policies for Leave Requests
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS public.leave_requests (
-    id bigint GENERATED BY DEFAULT AS IDENTITY,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    user_id uuid NOT NULL,
-    start_date date NOT NULL,
-    end_date date NOT NULL,
-    duration integer NOT NULL,
-    title character varying NOT NULL,
-    reason text,
-    status character varying DEFAULT 'Menunggu'::character varying NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    attachment_url character varying,
-    is_read_by_user boolean DEFAULT false NOT NULL,
-    CONSTRAINT leave_requests_pkey PRIMARY KEY (id),
-    CONSTRAINT leave_requests_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
-) TABLESPACE pg_default;
+CREATE POLICY "Users can view their own leave requests." 
+ON public.leave_requests FOR SELECT USING (auth.uid() = user_id);
 
--- Policies for leave_requests
-CREATE POLICY "Allow individual user to read their own requests" ON public.leave_requests FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Allow individual user to create their own request" ON public.leave_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Allow individual user to update their own unread status" ON public.leave_requests FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Allow admin full access to leave requests" ON public.leave_requests FOR ALL USING (public.get_user_role() = 'admin');
+CREATE POLICY "Users can create leave requests." 
+ON public.leave_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Admins can view all leave requests." 
+ON public.leave_requests FOR SELECT USING (public.get_user_role() = 'admin');
+
+CREATE POLICY "Admins can update any leave request." 
+ON public.leave_requests FOR UPDATE USING (public.get_user_role() = 'admin');
 
 -- ----------------------------
--- Table structure for leave_balances
+-- RLS Policies for Leave Balances
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS public.leave_balances (
-    id bigint GENERATED BY DEFAULT AS IDENTITY,
-    user_id uuid NOT NULL,
-    year integer NOT NULL,
-    total_days integer DEFAULT 12 NOT NULL,
-    used_days integer DEFAULT 0 NOT NULL,
-    CONSTRAINT leave_balances_pkey PRIMARY KEY (id),
-    CONSTRAINT leave_balances_user_id_year_key UNIQUE (user_id, year),
-    CONSTRAINT leave_balances_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
-) TABLESPACE pg_default;
+CREATE POLICY "Users can view their own leave balances." 
+ON public.leave_balances FOR SELECT USING (auth.uid() = user_id);
 
--- Policies for leave_balances
-CREATE POLICY "Allow individual user to read their own balances" ON public.leave_balances FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Allow admin full access to leave balances" ON public.leave_balances FOR ALL USING (public.get_user_role() = 'admin');
+CREATE POLICY "Admins can view all leave balances." 
+ON public.leave_balances FOR SELECT USING (public.get_user_role() = 'admin');
+
+CREATE POLICY "Enable all for service_role"
+ON public.leave_balances FOR ALL USING (true);
 
 -- ----------------------------
--- Table structure for notifications
+-- RLS Policies for Notifications
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS public.notifications (
-    id bigint GENERATED BY DEFAULT AS IDENTITY,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    user_id uuid NOT NULL,
-    leave_request_id bigint NOT NULL,
-    message text NOT NULL,
-    is_read boolean DEFAULT false NOT NULL,
-    CONSTRAINT notifications_pkey PRIMARY KEY (id),
-    CONSTRAINT notifications_leave_request_id_fkey FOREIGN KEY (leave_request_id) REFERENCES public.leave_requests(id) ON DELETE CASCADE,
-    CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
-) TABLESPACE pg_default;
+CREATE POLICY "Users can view their own notifications." 
+ON public.notifications FOR SELECT USING (auth.uid() = user_id);
 
--- Policies for notifications
-CREATE POLICY "Allow individual user to read their own notifications" ON public.notifications FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Allow admin to update their own notifications" ON public.notifications FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can update their own notifications."
+ON public.notifications FOR UPDATE USING (auth.uid() = user_id);
 
 -- ----------------------------
 -- Function to get user role
 -- ----------------------------
 CREATE OR REPLACE FUNCTION public.get_user_role()
 RETURNS text
-LANGUAGE plpgsql
+LANGUAGE sql
 SECURITY DEFINER
 AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RETURN 'anon';
-  ELSE
-    RETURN (SELECT role FROM public.profiles WHERE id = auth.uid());
-  END IF;
-END;
+    SELECT role FROM public.profiles WHERE id = auth.uid();
 $$;
 
 
 -- ----------------------------
--- Function to handle new user registration
+-- Function and Trigger to handle new user
 -- ----------------------------
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
@@ -139,52 +144,44 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, name, email, id_pjlp, phone, role)
-  VALUES (
-    new.id, 
-    new.raw_user_meta_data->>'name',
-    new.email,
-    new.raw_user_meta_data->>'id_pjlp',
-    new.raw_user_meta_data->>'phone',
-    'anggota' -- Default role for new sign-ups
-  );
-  RETURN new;
+    INSERT INTO public.profiles (id, name, email, avatar_url, id_pjlp, phone)
+    VALUES (
+        new.id,
+        new.raw_user_meta_data->>'name',
+        new.email,
+        new.raw_user_meta_data->>'avatar_url',
+        new.raw_user_meta_data->>'id_pjlp',
+        new.raw_user_meta_data->>'phone'
+    );
+    RETURN new;
 END;
 $$;
 
--- Trigger for new user
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+AFTER INSERT ON auth.users
+FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ----------------------------
--- Function to create initial leave balance for a new user
+-- Function and Trigger to create initial leave balance
 -- ----------------------------
 CREATE OR REPLACE FUNCTION public.on_new_user_create_leave_balance()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
-DECLARE
-  current_year integer;
 BEGIN
-  current_year := date_part('year', CURRENT_DATE);
-  INSERT INTO public.leave_balances(user_id, year, total_days, used_days)
-  VALUES(NEW.id, current_year, 12, 0);
-  RETURN NEW;
+  INSERT INTO public.leave_balances (user_id, year, total_days, used_days)
+  VALUES (new.id, date_part('year', now()), 12, 0);
+  RETURN new;
 END;
 $$;
 
--- Trigger for new profile
-DROP TRIGGER IF EXISTS on_profile_created ON public.profiles;
 CREATE TRIGGER on_profile_created
-  AFTER INSERT ON public.profiles
-  FOR EACH ROW EXECUTE FUNCTION public.on_new_user_create_leave_balance();
-
+AFTER INSERT ON public.profiles
+FOR EACH ROW EXECUTE FUNCTION public.on_new_user_create_leave_balance();
 
 -- ----------------------------
--- Function to create notification for admins on new leave request
+-- Function and Trigger to create admin notifications
 -- ----------------------------
 CREATE OR REPLACE FUNCTION public.create_admin_notification_for_new_leave()
 RETURNS trigger
@@ -195,95 +192,56 @@ DECLARE
   admin_record record;
   applicant_name text;
 BEGIN
-  -- Get the name of the user who submitted the request
+  -- Get the applicant's name
   SELECT name INTO applicant_name FROM public.profiles WHERE id = NEW.user_id;
-  
-  -- If name is not found, use a default
-  IF applicant_name IS NULL THEN
-    applicant_name := 'Seorang anggota';
-  END IF;
 
   -- Loop through all admins and create a notification for each
-  FOR admin_record IN SELECT id FROM public.profiles WHERE role = 'admin'
-  LOOP
-    INSERT INTO public.notifications(user_id, leave_request_id, message)
-    VALUES(admin_record.id, NEW.id, applicant_name || ' telah mengajukan cuti baru: "' || NEW.title || '".');
+  FOR admin_record IN SELECT id FROM public.profiles WHERE role = 'admin' LOOP
+    INSERT INTO public.notifications (user_id, leave_request_id, message)
+    VALUES (admin_record.id, NEW.id, applicant_name || ' mengajukan cuti baru: ' || NEW.title);
   END LOOP;
   
   RETURN NEW;
 END;
 $$;
 
--- Trigger for new leave request
-DROP TRIGGER IF EXISTS on_leave_request_created ON public.leave_requests;
-CREATE TRIGGER on_leave_request_created
-  AFTER INSERT ON public.leave_requests
-  FOR EACH ROW EXECUTE FUNCTION public.create_admin_notification_for_new_leave();
+CREATE TRIGGER on_new_leave_request
+AFTER INSERT ON public.leave_requests
+FOR EACH ROW EXECUTE FUNCTION public.create_admin_notification_for_new_leave();
 
 
 -- ----------------------------
--- Function to handle yearly leave balance reset (for cron job)
+-- Function to handle yearly leave balance reset (for Cron Job)
 -- ----------------------------
 CREATE OR REPLACE FUNCTION public.handle_new_year_leave_balances()
 RETURNS void
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    user_record record;
+    anggota_record record;
     current_year integer;
 BEGIN
-    current_year := extract(year from current_date);
-
-    -- Loop through all non-admin users
-    FOR user_record IN SELECT id FROM public.profiles WHERE role = 'anggota'
-    LOOP
-        -- Check if a balance entry for the new year already exists
-        IF NOT EXISTS (
-            SELECT 1
-            FROM public.leave_balances
-            WHERE user_id = user_record.id AND year = current_year
-        ) THEN
+    current_year := date_part('year', now());
+    FOR anggota_record IN SELECT id FROM public.profiles WHERE role = 'anggota' LOOP
+        -- Check if a balance for the current year already exists
+        IF NOT EXISTS (SELECT 1 FROM public.leave_balances WHERE user_id = anggota_record.id AND year = current_year) THEN
             -- If not, insert a new balance entry for the new year
             INSERT INTO public.leave_balances (user_id, year, total_days, used_days)
-            VALUES (user_record.id, current_year, 12, 0);
+            VALUES (anggota_record.id, current_year, 12, 0);
         END IF;
     END LOOP;
 END;
 $$;
 
--- Grant usage to postgres role so it can be called by cron job
-GRANT USAGE ON SCHEMA public TO postgres;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres;
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO postgres;
-
--- Grant permissions for anon and authenticated roles
-GRANT USAGE ON SCHEMA public TO anon, authenticated;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated;
-
 
 -- ----------------------------
--- Setup Supabase Storage for attachments
+-- Grant permissions
 -- ----------------------------
--- 1. Create bucket
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('lampiran-cuti', 'lampiran-cuti', true, 5242880, ARRAY['image/jpeg', 'image/png', 'application/pdf'])
-ON CONFLICT (id) DO NOTHING;
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
 
--- 2. Create policies for the bucket
--- Allow public read access
-CREATE POLICY "Allow public read access" ON storage.objects FOR SELECT USING ( bucket_id = 'lampiran-cuti' );
-
--- Allow authenticated users to upload to their own folder
-CREATE POLICY "Allow authenticated user to upload" ON storage.objects FOR INSERT TO authenticated WITH CHECK (
-  bucket_id = 'lampiran-cuti' AND
-  auth.uid()::text = (storage.foldername(name))[1] -- Assumes file path is "public/USER_ID-filename.ext"
-);
-
--- Allow authenticated users to update/delete their own files
-CREATE POLICY "Allow authenticated user to update/delete" ON storage.objects FOR UPDATE TO authenticated USING (
-  bucket_id = 'lampiran-cuti' AND
-  auth.uid()::text = (storage.foldername(name))[1]
-);
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
