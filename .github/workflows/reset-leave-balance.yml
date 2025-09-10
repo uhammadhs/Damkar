@@ -1,0 +1,29 @@
+
+# Nama workflow
+name: 'Jalankan Reset Saldo Cuti Tahunan'
+
+# Pemicu workflow
+on:
+  # Dijadwalkan untuk berjalan pada 00:05 UTC pada tanggal 1 Januari setiap tahun.
+  # (07:05 WIB jika server di UTC+7)
+  schedule:
+    - cron: '5 0 1 1 *'
+  
+  # Juga memungkinkan untuk menjalankan workflow ini secara manual dari tab Actions di GitHub
+  workflow_dispatch:
+
+jobs:
+  # Nama job
+  reset-leave-balances:
+    # Menjalankan job di environment Ubuntu terbaru
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Langkah untuk mengirim permintaan ke API route kita
+      - name: Panggil API untuk me-reset saldo cuti
+        # Menggunakan 'curl' untuk mengirim permintaan GET
+        run: |
+          curl --request GET \
+          --url '${{ secrets.APP_URL }}/api/cron/reset-leave' \
+          --header 'Authorization: Bearer ${{ secrets.CRON_SECRET }}'
+
