@@ -1,27 +1,47 @@
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
   const { response, user } = await updateSession(request)
   const { pathname } = request.nextUrl
 
-  // Protected routes for authenticated users
+  // Define protected and auth-related routes
   const protectedRoutes = ['/dashboard', '/admin']
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+  const authRoutes = ['/', '/register', '/forgot-password', '/update-password']
 
-  if (isProtectedRoute && !user) {
-    // Redirect to login page if user is not authenticated
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+  const isAuthRoute = authRoutes.includes(pathname)
+
+  // Scenario 1: User is not logged in and tries to access a protected route
+  if (!user && isProtectedRoute) {
+    // Redirect to login page
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // If user is logged in, prevent access to login/register pages
-  if (user && (pathname === '/' || pathname.startsWith('/register') || pathname.startsWith('/forgot-password') || pathname.startsWith('/update-password'))) {
-     const { data: role } = await response.supabase.rpc('get_user_role');
-     const redirectUrl = role === 'admin' ? '/admin/dashboard' : '/dashboard';
-     return NextResponse.redirect(new URL(redirectUrl, request.url));
+  // Scenario 2: User is logged in and tries to access an auth route (e.g., login, register)
+  if (user && isAuthRoute) {
+    // IMPORTANT FIX: Create a new Supabase client within the middleware scope
+    // to correctly fetch the user's role. The 'response' object from 
+    // updateSession does not contain a 'supabase' instance.
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                get(name: string) {
+                    return request.cookies.get(name)?.value
+                },
+            },
+        }
+    )
+    const { data: role } = await supabase.rpc('get_user_role');
+    const redirectUrl = role === 'admin' ? '/admin/dashboard' : '/dashboard'
+    return NextResponse.redirect(new URL(redirectUrl, request.url))
   }
 
+  // Default case: If no specific redirection logic matched, continue the request chain.
   return response
 }
 
