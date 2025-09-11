@@ -9,20 +9,21 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 async function updateLeaveBalance(userId: string, year: number, days: number) {
     const supabase = createAdminClient();
+    // Gunakan .maybeSingle() untuk menghindari error jika belum ada entri saldo untuk tahun tersebut
     const { data: balance, error } = await supabase
         .from('leave_balances')
         .select('id, used_days')
         .eq('user_id', userId)
         .eq('year', year)
-        .single();
+        .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') { // Ignore 'No rows found' error
+    if (error) {
         console.error('Error fetching leave balance for update:', error);
         throw new Error('Gagal mengambil data saldo cuti untuk pembaruan.');
     }
 
     if (balance) {
-        // Update existing balance
+        // Jika saldo sudah ada, tambahkan hari yang digunakan
         const { error: updateError } = await supabase
             .from('leave_balances')
             .update({ used_days: balance.used_days + days })
@@ -33,7 +34,7 @@ async function updateLeaveBalance(userId: string, year: number, days: number) {
             throw new Error('Gagal memperbarui saldo cuti.');
         }
     } else {
-        // Insert new balance if it doesn't exist (should be rare due to trigger, but good for robustness)
+        // Jika belum ada (kasus langka), buat entri baru
         const { error: insertError } = await supabase
             .from('leave_balances')
             .insert({ user_id: userId, year, used_days: days, total_days: 12 });
@@ -49,8 +50,6 @@ async function updateLeaveBalance(userId: string, year: number, days: number) {
 export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Disetujui' | 'Ditolak') {
   const supabase = createClient()
 
-  // Here, `profiles` might be returned as an array by Supabase due to relationships.
-  // We specify it can be an object or an array of objects.
   const { data: request, error: updateError } = await supabase
     .from('leave_requests')
     .update({
@@ -78,14 +77,14 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
     return { success: false, message: 'Gagal memperbarui status pengajuan. Kesalahan: ' + updateError?.message }
   }
 
-  // If approved, update the leave balance
+  // Jika disetujui, perbarui saldo cuti
   if (newStatus === 'Disetujui') {
       try {
           const year = new Date(request.start_date).getFullYear();
-          await updateLeaveBalance(request.user_id, request.duration);
+          // Panggil fungsi dengan argumen yang benar: userId, year, dan days
+          await updateLeaveBalance(request.user_id, year, request.duration);
       } catch (balanceError: any) {
           console.error(`Pembaruan status berhasil, namun gagal memperbarui saldo cuti untuk request ID ${request.id}:`, balanceError);
-          // Return a specific error to the admin
           return { success: false, message: `Status berhasil diubah, tapi GAGAL memperbarui saldo cuti anggota. ${balanceError.message}` };
       }
   }
@@ -106,8 +105,8 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
   }
 
   try {
-    // Safely access the profile object, whether it's a single object or the first element of an array.
-    const profile = Array.isArray(request.profiles) ? request.profiles[0] : request.profiles;
+    // Safely access the profile object. Supabase returns it as an object when using .single()
+    const profile = request.profiles;
 
     if (!profile || !profile.email || !profile.name) {
         throw new Error('Informasi profil (nama/email) tidak lengkap untuk pengiriman notifikasi.');
@@ -130,4 +129,3 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
 
   return { success: true, message: `Pengajuan berhasil diubah menjadi "${newStatus}" dan notifikasi email telah dikirim.` }
 }
-
