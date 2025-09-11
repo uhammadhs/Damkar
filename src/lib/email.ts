@@ -4,7 +4,6 @@
 import { Resend } from 'resend';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { resendApiKey, resendFromEmail } from './config';
 
 interface LeaveStatusEmailProps {
     to: string;
@@ -16,6 +15,9 @@ interface LeaveStatusEmailProps {
 }
 
 export async function sendLeaveStatusEmail({ to, name, status, requestTitle, startDate, endDate }: LeaveStatusEmailProps) {
+    // Membaca environment variables langsung di dalam fungsi untuk menjamin ketersediaan.
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const resendFromEmail = process.env.RESEND_FROM_EMAIL;
 
     if (!resendApiKey) {
         console.error("Resend API Key is missing. Email will not be sent.");

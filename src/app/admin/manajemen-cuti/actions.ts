@@ -3,7 +3,6 @@
 
 import { revalidatePath } from 'next/cache'
 import { sendLeaveStatusEmail } from '@/lib/email'
-import { resendApiKey, resendFromEmail } from '@/lib/config'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -107,15 +106,7 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
   revalidatePath('/dashboard')
   revalidatePath('/dashboard/riwayat')
 
-  // Step 5: Check email config and send the notification email.
-  if (!resendApiKey || !resendFromEmail) {
-    console.warn("Peringatan: Konfigurasi email (Resend API Key atau From Email) tidak ditemukan. Notifikasi email dilewati.");
-    return { 
-      success: true, 
-      message: `Status pengajuan berhasil diperbarui, namun notifikasi email tidak terkirim karena konfigurasi server email belum lengkap.` 
-    };
-  }
-
+  // Step 5: Send the notification email.
   try {
     await sendLeaveStatusEmail({
         to: profile.email,
@@ -125,7 +116,7 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
         startDate: originalRequest.start_date,
         endDate: originalRequest.end_date
     });
-  } catch (emailError) {
+  } catch (emailError: any) {
       console.error(`Pembaruan status berhasil, namun gagal mengirim email notifikasi untuk request ID ${originalRequest.id}:`, emailError);
       return { success: true, message: `Pengajuan berhasil diubah, namun notifikasi email gagal dikirim.` };
   }
