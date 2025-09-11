@@ -2,9 +2,8 @@
 'use server'
 
 import { createClient } from "@/lib/supabase/server";
-import { headers } from "next/headers";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
-import type { Database } from "@/types/supabase";
 
 export type LoginState = {
   error?: string | null;
@@ -12,16 +11,7 @@ export type LoginState = {
   success?: boolean;
 }
 
-// Type for the successful return of our RPC function
-type LoginResult = {
-  user_id: string;
-  role: string;
-  email: string;
-}
-
 export async function login(prevState: LoginState | undefined, formData: FormData): Promise<LoginState> {
-  const origin = headers().get('origin');
-  
   const id_pjlp = formData.get('id_pjlp') as string;
   const password = formData.get('password') as string;
   
@@ -29,30 +19,33 @@ export async function login(prevState: LoginState | undefined, formData: FormDat
      return { error: 'ID PJLP dan Password harus diisi.' };
   }
 
+  // 1. Dapatkan email dari ID PJLP menggunakan service role client untuk bypass RLS
+  const supabaseAdmin = createAdminClient();
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('email, role')
+    .eq('id_pjlp', id_pjlp)
+    .single();
+
+  if (profileError || !profile || !profile.email) {
+      console.error('Login error - profile not found:', profileError);
+      return { error: 'ID PJLP atau Password salah.' };
+  }
+
+  // 2. Lakukan login menggunakan email dan password dengan client standar
   const supabase = createClient();
-  
-  // Call the new RPC function in a single database call
-  const { data, error: rpcError } = await supabase.rpc('login_with_id_pjlp', {
-      p_id_pjlp: id_pjlp,
-      p_password: password
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: profile.email,
+      password: password,
   });
 
-  // Handle potential errors from the RPC function itself
-  if (rpcError) {
-      console.error('RPC login error:', rpcError);
-      return { error: 'Terjadi kesalahan internal saat login.' };
+  if (signInError) {
+      console.error('Login error - signIn failed:', signInError);
+      return { error: 'ID PJLP atau Password salah.' };
   }
   
-  // The RPC function returns a JSON object with an error or success field
-  if (data.error) {
-      return { error: data.error };
-  }
-
-  // If successful, the RPC returns the user's role.
-  const userRole = data.role;
-  
-  // Perform redirect directly from the server action
-  const redirectUrl = userRole === 'admin' 
+  // 3. Jika berhasil, redirect berdasarkan peran
+  const redirectUrl = profile.role === 'admin' 
     ? `/admin/dashboard` 
     : `/dashboard`;
   

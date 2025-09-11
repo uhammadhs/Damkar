@@ -191,19 +191,12 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      login_with_id_pjlp: {
-        Args: {
-          p_id_pjlp: string
-          p_password: string
-        }
-        Returns: Json
+      handle_new_user: {
+        Args: Record<PropertyKey, never>
+        Returns: unknown
       }
-      update_leave_balance: {
-        Args: {
-          p_user_id: string
-          p_year: number
-          p_days_to_add: number
-        }
+      handle_new_year_leave_balances: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
     }
@@ -295,5 +288,3 @@ export type Enums<
   : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
     ? Database["public"]["Enums"][PublicEnumNameOrOptions]
     : never
-
-    
