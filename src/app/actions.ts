@@ -2,14 +2,21 @@
 'use server'
 
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import type { Database } from "@/types/supabase";
 
 export type LoginState = {
   error?: string | null;
   message?: string | null;
   success?: boolean;
+}
+
+// Type for the successful return of our RPC function
+type LoginResult = {
+  user_id: string;
+  role: string;
+  email: string;
 }
 
 export async function login(prevState: LoginState | undefined, formData: FormData): Promise<LoginState> {
@@ -22,44 +29,32 @@ export async function login(prevState: LoginState | undefined, formData: FormDat
      return { error: 'ID PJLP dan Password harus diisi.' };
   }
 
-  // 1. Find user's email by their ID PJLP first using the Admin client to bypass RLS
-  const supabaseAdmin = createAdminClient();
-  const { data: profileData, error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .select('email, role')
-    .eq('id_pjlp', id_pjlp)
-    .single();
-  
-  if (profileError || !profileData) {
-     return { error: 'ID PJLP tidak ditemukan. Periksa kembali.' };
-  }
-  
-  const email = profileData.email;
-  if (!email) {
-     return { error: 'Data email untuk pengguna ini tidak lengkap. Hubungi admin.' };
-  }
-
-  // 2. Now, sign in with the user's context using the standard server client
   const supabase = createClient();
-  const { error: authError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
+  
+  // Call the new RPC function in a single database call
+  const { data, error: rpcError } = await supabase.rpc('login_with_id_pjlp', {
+      p_id_pjlp: id_pjlp,
+      p_password: password
   });
 
-  if (authError) {
-    if (authError.message.includes('Email not confirmed')) {
-       return { error: 'Akun Anda belum aktif. Silakan periksa email verifikasi Anda.' };
-    }
-     return { error: 'Password salah. Periksa kembali.' };
+  // Handle potential errors from the RPC function itself
+  if (rpcError) {
+      console.error('RPC login error:', rpcError);
+      return { error: 'Terjadi kesalahan pada server. Silakan coba lagi.' };
+  }
+  
+  // The RPC function returns a JSON object with an error or success field
+  if (data.error) {
+      return { error: data.error };
   }
 
-  const userRole = profileData.role;
+  // If successful, the RPC returns the user's role.
+  const userRole = data.role;
   
-  // 3. Perform redirect directly from the server action
+  // Perform redirect directly from the server action
   const redirectUrl = userRole === 'admin' 
     ? `/admin/dashboard` 
     : `/dashboard`;
   
-  // This will interrupt the execution and send a redirect response to the client.
   return redirect(redirectUrl);
 }

@@ -191,6 +191,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      login_with_id_pjlp: {
+        Args: {
+          p_id_pjlp: string
+          p_password: string
+        }
+        Returns: Json
+      }
       update_leave_balance: {
         Args: {
           p_user_id: string
