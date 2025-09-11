@@ -1,21 +1,13 @@
 
 "use client"
 
-import { TrendingUp } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, XAxis, Tooltip, YAxis, Legend } from "recharts"
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
 } from "@/components/ui/chart"
 
 type MonthlyRequestStat = {
@@ -32,22 +24,22 @@ interface LeaveStatsChartProps {
 const chartConfig = {
   Disetujui: {
     label: "Disetujui",
-    color: "hsl(var(--chart-2))",
+    color: "hsl(var(--chart-1))",
   },
   Ditolak: {
     label: "Ditolak",
-    color: "hsl(var(--destructive))",
+    color: "hsl(var(--chart-2))",
   },
    Menunggu: {
     label: "Menunggu",
-    color: "hsl(var(--accent))",
+    color: "hsl(var(--chart-3))",
   },
 }
 
 export function LeaveStatsChart({ data }: LeaveStatsChartProps) {
   return (
         <ChartContainer config={chartConfig} className="h-[250px] w-full">
-            <BarChart accessibilityLayer data={data}>
+            <BarChart accessibilityLayer data={data} margin={{ top: 20 }}>
                  <CartesianGrid vertical={false} />
                 <XAxis
                     dataKey="month"
@@ -56,14 +48,14 @@ export function LeaveStatsChart({ data }: LeaveStatsChartProps) {
                     axisLine={false}
                     tickFormatter={(value) => value.slice(0, 3)}
                 />
-                <YAxis />
-                <Tooltip
+                <YAxis allowDecimals={false} />
+                <ChartTooltip
                     cursor={false}
                     content={<ChartTooltipContent indicator="dot" />}
                 />
-                <Legend />
-                <Bar dataKey="Menunggu" stackId="a" fill="var(--color-Menunggu)" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="Ditolak" stackId="a" fill="var(--color-Ditolak)" radius={[0, 0, 0, 0]} />
+                 <ChartLegend content={<ChartLegendContent />} />
+                <Bar dataKey="Menunggu" stackId="a" fill="var(--color-Menunggu)" radius={0} />
+                <Bar dataKey="Ditolak" stackId="a" fill="var(--color-Ditolak)" radius={0} />
                 <Bar dataKey="Disetujui" stackId="a" fill="var(--color-Disetujui)" radius={[4, 4, 0, 0]} />
             </BarChart>
         </ChartContainer>

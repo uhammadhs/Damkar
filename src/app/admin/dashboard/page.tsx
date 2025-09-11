@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import * as React from 'react';
 import { LeaveStatsChartWrapper } from "./leave-stats-chart-wrapper";
+import { Badge } from "@/components/ui/badge";
 
 export const revalidate = 60; // Cache for 60 seconds
 
@@ -16,6 +17,7 @@ type RecentRequest = {
     id: number;
     title: string;
     created_at: string;
+    status: string;
     profiles: {
         name: string | null;
         avatar_url: string | null;
@@ -60,11 +62,10 @@ async function getDashboardData() {
         .eq('status', 'Disetujui');
     if (approvedError) console.error("Error fetching approved requests count:", approvedError.message);
 
-    // 4. Get recent pending requests
+    // 4. Get recent requests (all statuses)
     const { data: recentRequestsData, error: recentRequestsError } = await supabase
         .from('leave_requests')
-        .select('id, title, created_at, profiles (name, avatar_url)')
-        .eq('status', 'Menunggu')
+        .select('id, title, created_at, status, profiles (name, avatar_url)')
         .order('created_at', { ascending: false })
         .limit(5);
     if (recentRequestsError) console.error("Error fetching recent requests:", recentRequestsError.message);
@@ -124,8 +125,8 @@ export default async function AdminDashboardPage() {
     
     const stats = [
         { title: "Total Anggota", value: totalMembers, icon: Users },
-        { title: "Pengajuan Cuti (Bulan Ini)", value: monthlyRequests, icon: BookCopy },
-        { title: "Pengajuan Disetujui", value: approvedRequests, icon: CheckCircle },
+        { title: "Pengajuan Bulan Ini", value: monthlyRequests, icon: BookCopy },
+        { title: "Disetujui Bulan Ini", value: approvedRequests, icon: CheckCircle },
     ];
 
     const getAvatarFallback = (name: string | null) => {
@@ -136,6 +137,16 @@ export default async function AdminDashboardPage() {
         }
         return name.substring(0, 2).toUpperCase();
     };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'Menunggu': return 'bg-accent text-accent-foreground';
+            case 'Disetujui': return 'bg-green-600 text-white';
+            case 'Ditolak': return 'bg-destructive text-destructive-foreground';
+            default: return 'bg-muted-foreground text-muted';
+        }
+    };
+
 
     return (
         <div className="space-y-6">
@@ -156,8 +167,8 @@ export default async function AdminDashboardPage() {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
                 <Card className="lg:col-span-3">
                     <CardHeader>
-                        <CardTitle className="font-headline">Statistik Pengajuan Cuti (6 Bulan Terakhir)</CardTitle>
-                        <CardDescription>Menampilkan tren pengajuan cuti yang disetujui, ditolak, dan menunggu.</CardDescription>
+                        <CardTitle className="font-headline">Statistik Pengajuan Cuti</CardTitle>
+                        <CardDescription>6 Bulan Terakhir</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <LeaveStatsChartWrapper data={chartData} />
@@ -165,8 +176,18 @@ export default async function AdminDashboardPage() {
                 </Card>
                 <Card className="lg:col-span-2">
                     <CardHeader>
-                        <CardTitle className="font-headline">Aktivitas Terkini</CardTitle>
-                        <CardDescription className="text-xs">Menampilkan pengajuan cuti terbaru yang menunggu persetujuan.</CardDescription>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="font-headline">Aktivitas Terkini</CardTitle>
+                                <CardDescription className="text-xs">5 pengajuan terakhir.</CardDescription>
+                            </div>
+                            <Button asChild variant="outline" size="sm">
+                                <Link href="/admin/manajemen-cuti">
+                                    Lihat Semua
+                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         {recentRequests.length > 0 ? (
@@ -178,27 +199,22 @@ export default async function AdminDashboardPage() {
                                             <AvatarFallback>{getAvatarFallback(request.profiles?.name || null)}</AvatarFallback>
                                         </Avatar>
                                         <div className="flex-1">
-                                            <p className="text-sm font-medium">
-                                                <span className="font-semibold">{request.profiles?.name || 'Anggota'}</span> mengajukan <span className="font-semibold">"{request.title}"</span>
+                                            <p className="text-sm font-medium leading-snug">
+                                                <span className="font-semibold">{request.profiles?.name || 'Anggota'}</span> mengajukan <span className="font-semibold text-primary">"{request.title}"</span>
                                             </p>
                                             <p className="text-xs text-muted-foreground">
                                                 {formatDistanceToNow(new Date(request.created_at), { addSuffix: true, locale: id })}
                                             </p>
                                         </div>
-                                        <Button asChild variant="outline" size="sm">
-                                            <Link href="/admin/manajemen-cuti">
-                                                Lihat
-                                                <ArrowRight className="ml-2 h-4 w-4" />
-                                            </Link>
-                                        </Button>
+                                        <Badge variant="outline" className={getStatusColor(request.status)}>{request.status}</Badge>
                                     </div>
                                 ))}
                             </div>
                         ) : (
                             <div className="text-center text-muted-foreground py-6">
-                                <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
-                                <p className="mt-4">Semua pengajuan sudah diproses.</p>
-                                <p className="text-sm">Tidak ada aktivitas yang menunggu persetujuan saat ini.</p>
+                                <BookCopy className="mx-auto h-12 w-12" />
+                                <p className="mt-4">Belum Ada Pengajuan</p>
+                                <p className="text-sm">Saat ini tidak ada pengajuan cuti yang tercatat.</p>
                             </div>
                         )}
                     </CardContent>
