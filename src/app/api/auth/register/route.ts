@@ -55,7 +55,8 @@ export async function POST(request: NextRequest) {
         id_pjlp,
         phone,
       },
-      // The verification email will redirect to this URL
+      // The verification email will redirect to this URL.
+      // This URL will handle the session exchange and then redirect the user to the final '/auth/verified' page.
       emailRedirectTo: `${requestUrl.origin}/api/auth/callback`,
     },
   })
