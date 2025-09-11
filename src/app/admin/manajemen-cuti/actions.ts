@@ -46,56 +46,68 @@ async function updateLeaveBalance(userId: string, year: number, days: number) {
     }
 }
 
-
 export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Disetujui' | 'Ditolak') {
   const supabase = createClient()
 
-  const { data: request, error: updateError } = await supabase
+  // Step 1: Fetch the original request to get all necessary data first.
+  const { data: originalRequest, error: fetchError } = await supabase
+    .from('leave_requests')
+    .select('id, title, start_date, end_date, user_id, duration')
+    .eq('id', requestId)
+    .single();
+
+  if (fetchError || !originalRequest) {
+    console.error('Error fetching original leave request:', fetchError);
+    return { success: false, message: 'Gagal menemukan data pengajuan yang akan diperbarui.' };
+  }
+
+  // Step 2: Fetch the user profile data separately to ensure we have it for the email.
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('name, email')
+    .eq('id', originalRequest.user_id)
+    .single();
+
+  if (profileError || !profile || !profile.name || !profile.email) {
+    console.error('Error fetching profile for notification:', profileError);
+    return { success: false, message: 'Gagal mengambil data profil pengguna untuk mengirim notifikasi.' };
+  }
+
+  // Step 3: Update the leave request status.
+  const { error: updateError } = await supabase
     .from('leave_requests')
     .update({
         status: newStatus,
         updated_at: new Date().toISOString(),
         is_read_by_user: false
     })
-    .eq('id', requestId)
-    .select(`
-        id,
-        title,
-        start_date,
-        end_date,
-        user_id,
-        duration,
-        profiles (
-            name,
-            email
-        )
-    `)
-    .single()
+    .eq('id', requestId);
 
-  if (updateError || !request) {
-    console.error('Error updating leave request status:', updateError)
-    return { success: false, message: 'Gagal memperbarui status pengajuan. Kesalahan: ' + updateError?.message }
+  if (updateError) {
+    console.error('Error updating leave request status:', updateError);
+    return { success: false, message: 'Gagal memperbarui status pengajuan. Kesalahan: ' + updateError?.message };
   }
 
-  // Jika disetujui, perbarui saldo cuti
+  // Step 4: If approved, update the leave balance.
   if (newStatus === 'Disetujui') {
       try {
-          const year = new Date(request.start_date).getFullYear();
-          // Panggil fungsi dengan argumen yang benar: userId, year, dan days
-          await updateLeaveBalance(request.user_id, year, request.duration);
+          const year = new Date(originalRequest.start_date).getFullYear();
+          await updateLeaveBalance(originalRequest.user_id, year, originalRequest.duration);
       } catch (balanceError: any) {
-          console.error(`Pembaruan status berhasil, namun gagal memperbarui saldo cuti untuk request ID ${request.id}:`, balanceError);
+          console.error(`Pembaruan status berhasil, namun gagal memperbarui saldo cuti untuk request ID ${originalRequest.id}:`, balanceError);
+          // Return a failure so the admin knows the balance update failed.
           return { success: false, message: `Status berhasil diubah, tapi GAGAL memperbarui saldo cuti anggota. ${balanceError.message}` };
       }
   }
 
-
+  // Revalidate paths to reflect changes across the app.
   revalidatePath('/admin/manajemen-cuti')
   revalidatePath('/admin/dashboard')
   revalidatePath('/admin/laporan')
   revalidatePath('/dashboard')
   revalidatePath('/dashboard/riwayat')
 
+  // Step 5: Check email config and send the notification email.
   if (!resendApiKey || !resendFromEmail) {
     console.warn("Peringatan: Konfigurasi email (Resend API Key atau From Email) tidak ditemukan. Notifikasi email dilewati.");
     return { 
@@ -105,27 +117,18 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
   }
 
   try {
-    // Safely access the profile object. Supabase returns it as an object when using .single()
-    const profile = request.profiles;
-
-    if (!profile || !profile.email || !profile.name) {
-        throw new Error('Informasi profil (nama/email) tidak lengkap untuk pengiriman notifikasi.');
-    }
-    
     await sendLeaveStatusEmail({
         to: profile.email,
         name: profile.name,
         status: newStatus,
-        requestTitle: request.title,
-        startDate: request.start_date,
-        endDate: request.end_date
+        requestTitle: originalRequest.title,
+        startDate: originalRequest.start_date,
+        endDate: originalRequest.end_date
     });
-
   } catch (emailError) {
-      console.error(`Pembaruan status berhasil, namun gagal mengirim email notifikasi untuk request ID ${request.id}:`, emailError);
-      return { success: true, message: `Pengajuan berhasil diubah, namun notifikasi email gagal dikirim.` }
+      console.error(`Pembaruan status berhasil, namun gagal mengirim email notifikasi untuk request ID ${originalRequest.id}:`, emailError);
+      return { success: true, message: `Pengajuan berhasil diubah, namun notifikasi email gagal dikirim.` };
   }
 
-
-  return { success: true, message: `Pengajuan berhasil diubah menjadi "${newStatus}" dan notifikasi email telah dikirim.` }
+  return { success: true, message: `Pengajuan berhasil diubah menjadi "${newStatus}" dan notifikasi email telah dikirim.` };
 }
