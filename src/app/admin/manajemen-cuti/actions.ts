@@ -49,6 +49,8 @@ async function updateLeaveBalance(userId: string, year: number, days: number) {
 export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Disetujui' | 'Ditolak') {
   const supabase = createClient()
 
+  // Here, `profiles` might be returned as an array by Supabase due to relationships.
+  // We specify it can be an object or an array of objects.
   const { data: request, error: updateError } = await supabase
     .from('leave_requests')
     .update({
@@ -80,7 +82,7 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
   if (newStatus === 'Disetujui') {
       try {
           const year = new Date(request.start_date).getFullYear();
-          await updateLeaveBalance(request.user_id, year, request.duration);
+          await updateLeaveBalance(request.user_id, request.duration);
       } catch (balanceError: any) {
           console.error(`Pembaruan status berhasil, namun gagal memperbarui saldo cuti untuk request ID ${request.id}:`, balanceError);
           // Return a specific error to the admin
@@ -104,7 +106,9 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
   }
 
   try {
-    const profile = request.profiles;
+    // Safely access the profile object, whether it's a single object or the first element of an array.
+    const profile = Array.isArray(request.profiles) ? request.profiles[0] : request.profiles;
+
     if (!profile || !profile.email || !profile.name) {
         throw new Error('Informasi profil (nama/email) tidak lengkap untuk pengiriman notifikasi.');
     }
@@ -126,3 +130,4 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
 
   return { success: true, message: `Pengajuan berhasil diubah menjadi "${newStatus}" dan notifikasi email telah dikirim.` }
 }
+
