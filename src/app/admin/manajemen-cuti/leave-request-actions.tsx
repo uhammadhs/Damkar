@@ -7,10 +7,11 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, Loader2, X } from "lucide-react";
+import { Check, Loader2, X, User, Hash, Calendar, Hourglass, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { updateLeaveRequestStatus } from "./actions";
 import type { LeaveRequest } from "./page";
+import { Separator } from "@/components/ui/separator";
 
 const getStatusColor = (status: string): string => {
     switch (status) {
@@ -23,6 +24,20 @@ const getStatusColor = (status: string): string => {
         default:
             return 'bg-gray-500 text-white hover:bg-gray-500/80';
     }
+}
+
+function DetailItem({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: React.ReactNode }) {
+    return (
+        <div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Icon className="h-4 w-4" />
+                <span>{label}</span>
+            </div>
+            <div className="pl-6 text-base font-semibold text-foreground">
+                {value}
+            </div>
+        </div>
+    )
 }
 
 export function LeaveRequestActions({ request }: { request: LeaveRequest }) {
@@ -59,48 +74,56 @@ export function LeaveRequestActions({ request }: { request: LeaveRequest }) {
                 <DialogTrigger asChild>
                     <Button variant="outline" size="sm">Lihat Detail</Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="font-headline">{request.title}</DialogTitle>
-                        <DialogDescription>
-                            Pengajuan oleh {request.profiles?.name || 'N/A'}
-                        </DialogDescription>
+                <DialogContent className="sm:max-w-lg p-0">
+                    <DialogHeader className="p-6 pb-4">
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                <DialogTitle className="font-headline text-2xl">{request.title}</DialogTitle>
+                                <DialogDescription>
+                                    Pengajuan oleh {request.profiles?.name || 'N/A'}
+                                </DialogDescription>
+                            </div>
+                            <Badge className={`${getStatusColor(request.status)}`}>{request.status}</Badge>
+                        </div>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-3 items-center gap-4">
-                            <span className="text-sm font-medium text-muted-foreground">Status</span>
-                            <Badge className={`${getStatusColor(request.status)} col-span-2 w-min`}>{request.status}</Badge>
+                    <div className="space-y-6 px-6 pb-6">
+                        <Separator />
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-medium text-muted-foreground">Data Pemohon</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <DetailItem icon={User} label="Nama" value={request.profiles?.name || 'N/A'} />
+                                <DetailItem icon={Hash} label="ID PJLP" value={request.profiles?.id_pjlp || 'N/A'} />
+                            </div>
                         </div>
-                        <div className="grid grid-cols-3 items-center gap-4">
-                            <span className="text-sm font-medium text-muted-foreground">Nama</span>
-                            <span className="col-span-2 font-semibold">{request.profiles?.name || 'N/A'}</span>
-                        </div>
-                        <div className="grid grid-cols-3 items-center gap-4">
-                            <span className="text-sm font-medium text-muted-foreground">ID PJLP</span>
-                            <span className="col-span-2 font-semibold">{request.profiles?.id_pjlp || 'N/A'}</span>
-                        </div>
-                        <div className="grid grid-cols-3 items-center gap-4">
-                            <span className="text-sm font-medium text-muted-foreground">Tanggal</span>
-                            <span className="col-span-2 font-semibold">{format(new Date(request.start_date), 'd MMM', { locale: id })} - {format(new Date(request.end_date), 'd MMM yyyy', { locale: id })}</span>
-                        </div>
-                        <div className="grid grid-cols-3 items-center gap-4">
-                            <span className="text-sm font-medium text-muted-foreground">Durasi</span>
-                            <span className="col-span-2 font-semibold">{request.duration} hari</span>
-                        </div>
-                        <div className="grid grid-cols-3 items-start gap-4">
-                            <span className="text-sm font-medium text-muted-foreground pt-1">Alasan</span>
-                            <p className="col-span-2">{request.reason}</p>
+                        <Separator />
+                         <div className="space-y-4">
+                            <h3 className="text-sm font-medium text-muted-foreground">Detail Pengajuan</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <DetailItem 
+                                    icon={Calendar} 
+                                    label="Tanggal" 
+                                    value={`${format(new Date(request.start_date), 'd MMM', { locale: id })} - ${format(new Date(request.end_date), 'd MMM yyyy', { locale: id })}`} 
+                                />
+                                <DetailItem icon={Hourglass} label="Durasi" value={`${request.duration} hari`} />
+                            </div>
+                            <div>
+                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <FileText className="h-4 w-4" />
+                                    <span>Alasan</span>
+                                </div>
+                                <p className="pl-6 pt-1 text-base text-foreground bg-muted/50 p-3 rounded-md mt-1">{request.reason}</p>
+                            </div>
                         </div>
                     </div>
                     {request.status === 'Menunggu' && (
-                        <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
-                            <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10" onClick={() => handleUpdateRequest("Ditolak")} disabled={isLoading}>
-                                {isLoading && action === 'Ditolak' ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                                <span className="ml-2">Tolak Pengajuan</span>
+                        <div className="flex justify-end gap-2 p-4 bg-muted/50 border-t">
+                            <Button variant="outline" className="w-full sm:w-auto text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => handleUpdateRequest("Ditolak")} disabled={isLoading}>
+                                {isLoading && action === 'Ditolak' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <X className="mr-2 h-4 w-4" />}
+                                Tolak
                             </Button>
-                            <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleUpdateRequest("Disetujui")} disabled={isLoading}>
-                                {isLoading && action === 'Disetujui' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                                <span className="ml-2">Setujui Pengajuan</span>
+                            <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white" onClick={() => handleUpdateRequest("Disetujui")} disabled={isLoading}>
+                                {isLoading && action === 'Disetujui' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                                Setujui
                             </Button>
                         </div>
                     )}
