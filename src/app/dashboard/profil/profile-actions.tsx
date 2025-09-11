@@ -2,8 +2,8 @@
 "use client"
 
 import * as React from "react";
+import { useActionState } from "react";
 import type { Database } from "@/types/supabase";
-import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,68 +21,44 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { changePassword, updateProfile, type FormState } from "./actions";
 import { Loader2 } from "lucide-react";
+import { useFormStatus } from "react-dom";
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
-
-const ProfileUpdateSchema = z.object({
-  name: z.string().min(3, "Nama lengkap harus diisi (minimal 3 karakter)"),
-  id_pjlp: z.string().min(1, "ID PJLP tidak boleh kosong"),
-  phone: z.string().min(10, "Nomor HP tidak valid (minimal 10 digit)").optional(),
-});
-
 
 interface ProfileActionsProps {
     profile: Profile;
 }
 
+function EditProfileSubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {pending ? "Menyimpan..." : "Simpan Perubahan"}
+        </Button>
+    )
+}
+
 function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const { toast } = useToast();
-    const formRef = React.useRef<HTMLFormElement>(null);
-    const [state, setState] = React.useState<FormState | undefined>(undefined);
-    const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const initialState: FormState = { success: false, message: "" };
+    const [state, formAction] = useActionState(updateProfile, initialState);
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setIsSubmitting(true);
-        const formData = new FormData(event.currentTarget);
-        
-        const rawData = Object.fromEntries(formData.entries());
-        const validation = ProfileUpdateSchema.safeParse(rawData);
-        
-        if (!validation.success) {
-            setState({
-                success: false,
-                message: 'Data tidak valid.',
-                errors: validation.error.flatten().fieldErrors,
-            });
-            setIsSubmitting(false);
-            return;
-        }
-
-        const result = await updateProfile(state!, formData);
-        setState(result);
-
-        if (result.success) {
+    React.useEffect(() => {
+        if (state.success) {
             toast({
                 title: "Sukses",
-                description: result.message,
+                description: state.message,
             });
             onOpenChange(false);
-        } else if (result.message && !result.errors) {
+        } else if (state.message && !state.errors) {
             toast({
                 title: "Gagal",
-                description: result.message,
+                description: state.message,
                 variant: "destructive",
             });
         }
-        setIsSubmitting(false);
-    }
-    
-    React.useEffect(() => {
-        if (!isOpen) {
-            setState(undefined);
-        }
-    }, [isOpen]);
+    }, [state, toast, onOpenChange]);
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -96,7 +72,7 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
                         Lakukan perubahan pada data profil Anda. Klik simpan jika sudah selesai.
                     </DialogDescription>
                 </DialogHeader>
-                <form ref={formRef} onSubmit={handleSubmit} className="space-y-4 py-4">
+                <form action={formAction} className="space-y-4 py-4">
                     {state?.message && !state.success && !state.errors && (
                          <p className="text-sm font-medium text-destructive">{state.message}</p>
                     )}
@@ -120,12 +96,9 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
                     </div>
                      <DialogFooter>
                         <DialogClose asChild>
-                            <Button type="button" variant="secondary" disabled={isSubmitting}>Batal</Button>
+                            <Button type="button" variant="secondary">Batal</Button>
                         </DialogClose>
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
-                        </Button>
+                        <EditProfileSubmitButton />
                     </DialogFooter>
                 </form>
             </DialogContent>

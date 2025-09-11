@@ -120,5 +120,3 @@ export function MemberActions({ member }: { member: Profile }) {
         </>
     )
 }
-
-    
