@@ -9,6 +9,8 @@ import {
   Moon,
   Sun,
   LogOut,
+  LayoutDashboard,
+  History,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -91,8 +93,13 @@ export function UserNav({ user }: { user: SupabaseUser | null }) {
 
 // We extract the mobile navigation into a separate component
 // so that it can use the `usePathname` hook without making the whole layout a client component.
-function MobileNav({ navItems }: { navItems: { href: string, label: string, icon: React.ElementType }[] }) {
+function MobileNav() {
     const pathname = usePathname();
+    const navItems = [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/dashboard/riwayat", label: "Riwayat", icon: History },
+      { href: "/dashboard/profil", label: "Profil", icon: UserIcon },
+  ];
 
     return (
         <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-2 md:hidden">
@@ -111,7 +118,7 @@ function MobileNav({ navItems }: { navItems: { href: string, label: string, icon
                 >
                     <Link href={item.href}>
                     <item.icon className="h-6 w-6" />
-                    <span className="text-xs">{item.label.split(' ')[0]}</span>
+                    <span className="text-xs">{item.label}</span>
                     </Link>
                 </Button>
                 )

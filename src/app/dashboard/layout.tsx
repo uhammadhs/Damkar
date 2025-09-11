@@ -83,11 +83,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
           {/* Mobile Bottom Nav is now in UserNav client component to get active state */}
           <Suspense>
-            <UserNav.MobileNav navItems={navItems} />
+            <UserNav.MobileNav />
           </Suspense>
         </div>
       </SidebarInset>
     </SidebarProvider>
   )
 }
-
