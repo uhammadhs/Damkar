@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -22,7 +23,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarTrigger,
   SidebarInset,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
@@ -51,8 +51,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   React.useEffect(() => {
     const fetchUser = async () => {
+      // Middleware ensures user is logged in.
+      // This effect just fetches the user data for display purposes.
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+          // This should not happen due to middleware, but as a fallback:
           router.replace('/');
           return;
       }

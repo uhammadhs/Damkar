@@ -25,12 +25,15 @@ import type { Notification } from './notification-content'
 import { NotificationContent } from './notification-content'
 import { useIsMobile } from '@/hooks/use-mobile'
 
-async function getInitialNotifications(userId: string): Promise<Notification[]> {
+async function getInitialNotifications(): Promise<Notification[]> {
   const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
   const { data, error } = await supabase
     .from('notifications')
     .select('*')
-    .eq('user_id', userId)
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(10)
   
@@ -47,40 +50,32 @@ export function NotificationBell() {
   const isMobile = useIsMobile()
   const [notifications, setNotifications] = React.useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = React.useState(0)
-  const [userId, setUserId] = React.useState<string | null>(null)
   const [isOpen, setIsOpen] = React.useState(false)
 
   React.useEffect(() => {
-    const supabase = createClient()
-    const fetchUserAndNotifications = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserId(user.id)
-        const initialData = await getInitialNotifications(user.id)
-        setNotifications(initialData)
-        setUnreadCount(initialData.filter(n => !n.is_read).length)
-      }
+    const fetchNotifications = async () => {
+      const initialData = await getInitialNotifications()
+      setNotifications(initialData)
+      setUnreadCount(initialData.filter(n => !n.is_read).length)
     }
-    fetchUserAndNotifications()
+    fetchNotifications()
   }, [])
   
   React.useEffect(() => {
-      if (!userId) return;
-
       const supabase = createClient()
       const channel = supabase
-        .channel(`realtime-notifications:${userId}`)
+        .channel('realtime-admin-notifications')
         .on(
             'postgres_changes', 
             { 
                 event: '*', 
                 schema: 'public', 
                 table: 'notifications', 
-                filter: `user_id=eq.${userId}` 
             }, 
             (payload) => {
+                 // Re-fetch all notifications to update the list and count
                  const fetchAndSet = async () => {
-                    const freshNotifications = await getInitialNotifications(userId);
+                    const freshNotifications = await getInitialNotifications();
                     setNotifications(freshNotifications);
                     setUnreadCount(freshNotifications.filter(n => !n.is_read).length);
                  }
@@ -92,7 +87,7 @@ export function NotificationBell() {
       return () => {
         supabase.removeChannel(channel)
       }
-  }, [userId])
+  }, [])
 
 
   const handleMarkAllAsRead = async () => {
@@ -131,7 +126,7 @@ export function NotificationBell() {
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                {unreadCount}
+                {unreadCount > 9 ? '9+' : unreadCount}
             </span>
         )}
     </Button>

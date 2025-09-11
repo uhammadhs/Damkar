@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -12,7 +13,6 @@ import {
   Sun,
   LogOut,
   Loader2,
-  Bell,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -24,7 +24,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarTrigger,
   SidebarInset,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
@@ -48,10 +47,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const checkUser = async () => {
+    const checkUserRole = async () => {
+        // The middleware already ensures the user is logged in.
+        // This check is specifically for the role.
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-            router.replace('/');
+            // This should theoretically not happen due to middleware
+            router.replace('/'); 
             return;
         }
 
@@ -62,7 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
         setIsLoading(false);
     }
-    checkUser();
+    checkUserRole();
   }, [router, supabase]);
 
 
