@@ -40,35 +40,17 @@ async function getLeaveRequests(status: 'Menunggu' | 'Semua', page: number) {
     return { requests: data as LeaveRequest[], count: count || 0 };
 }
 
-async function LeaveTabs({ 
-  searchParams 
-} : { 
-  searchParams?: { tab?: string; page?: string; }
-}) {
-  const currentTab = searchParams?.tab === 'semua' ? 'Semua' : 'Menunggu';
-  const currentPage = Number(searchParams?.page) || 1;
-
-  const { requests: waitingRequests, count: waitingCount } = await getLeaveRequests('Menunggu', currentTab === 'Menunggu' ? currentPage : 1);
-  const { requests: allRequests, count: allCount } = await getLeaveRequests('Semua', currentTab === 'Semua' ? currentPage : 1);
-
-  return (
-     <Tabs defaultValue={currentTab.toLowerCase()}>
-        <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="menunggu" asChild><Link href="?tab=menunggu">Menunggu ({waitingCount})</Link></TabsTrigger>
-            <TabsTrigger value="semua" asChild><Link href="?tab=semua">Semua ({allCount})</Link></TabsTrigger>
-        </TabsList>
-        <TabsContent value="menunggu">
-            <LeaveRequestTable requests={waitingRequests} />
-        </TabsContent>
-        <TabsContent value="semua">
-            <LeaveRequestTable requests={allRequests} />
-        </TabsContent>
-    </Tabs>
-  )
+async function WaitingTabContent({ currentPage }: { currentPage: number }) {
+  const { requests: waitingRequests } = await getLeaveRequests('Menunggu', currentPage);
+  return <LeaveRequestTable requests={waitingRequests} />;
 }
 
+async function AllTabContent({ currentPage }: { currentPage: number }) {
+  const { requests: allRequests } = await getLeaveRequests('Semua', currentPage);
+  return <LeaveRequestTable requests={allRequests} />;
+}
 
-export default function ManajemenCutiPage({
+export default async function ManajemenCutiPage({
   searchParams
 }: {
   searchParams?: {
@@ -76,12 +58,38 @@ export default function ManajemenCutiPage({
     page?: string;
   }
 }) {
+  const currentTab = searchParams?.tab === 'semua' ? 'semua' : 'menunggu';
+  const currentPage = Number(searchParams?.page) || 1;
+
+  // We fetch counts separately and in parallel for the tab triggers
+  const supabase = createClient();
+  const waitingCountPromise = supabase.from('leave_requests').select('id', { count: 'exact', head: true }).eq('status', 'Menunggu');
+  const allCountPromise = supabase.from('leave_requests').select('id', { count: 'exact', head: true });
+
+  const [
+    { count: waitingCount },
+    { count: allCount }
+  ] = await Promise.all([waitingCountPromise, allCountPromise]);
+  
   return (
     <Card>
       <CardContent className="pt-6">
-        <Suspense fallback={<Loading />}>
-          <LeaveTabs searchParams={searchParams} />
-        </Suspense>
+        <Tabs defaultValue={currentTab}>
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="menunggu" asChild><Link href="?tab=menunggu">Menunggu ({waitingCount ?? 0})</Link></TabsTrigger>
+                <TabsTrigger value="semua" asChild><Link href="?tab=semua">Semua ({allCount ?? 0})</Link></TabsTrigger>
+            </TabsList>
+            <TabsContent value="menunggu">
+              <Suspense key={`menunggu-${currentPage}`} fallback={<Loading />}>
+                <WaitingTabContent currentPage={currentPage} />
+              </Suspense>
+            </TabsContent>
+            <TabsContent value="semua">
+              <Suspense key={`semua-${currentPage}`} fallback={<Loading />}>
+                <AllTabContent currentPage={currentPage} />
+              </Suspense>
+            </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
