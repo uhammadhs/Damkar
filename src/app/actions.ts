@@ -40,7 +40,7 @@ export async function login(prevState: LoginState | undefined, formData: FormDat
   // Handle potential errors from the RPC function itself
   if (rpcError) {
       console.error('RPC login error:', rpcError);
-      return { error: 'Terjadi kesalahan pada server. Silakan coba lagi.' };
+      return { error: 'Terjadi kesalahan internal saat login.' };
   }
   
   // The RPC function returns a JSON object with an error or success field
