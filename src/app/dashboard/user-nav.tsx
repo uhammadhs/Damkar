@@ -93,7 +93,7 @@ export function UserNav({ user }: { user: SupabaseUser | null }) {
 
 // We extract the mobile navigation into a separate component
 // so that it can use the `usePathname` hook without making the whole layout a client component.
-function MobileNav() {
+export function MobileNav() {
     const pathname = usePathname();
     const navItems = [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -127,6 +127,3 @@ function MobileNav() {
         </footer>
     );
 }
-
-// Attach MobileNav to UserNav as a compound component
-UserNav.MobileNav = MobileNav;

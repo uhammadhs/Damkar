@@ -1,4 +1,3 @@
-
 import Link from "next/link"
 import {
   History,
@@ -17,7 +16,7 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar"
 import { createClient } from "@/lib/supabase/server"
-import { UserNav } from "./user-nav"
+import { UserNav, MobileNav } from "./user-nav"
 import { Suspense } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -81,9 +80,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </div>
           </header>
           <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
-          {/* Mobile Bottom Nav is now in UserNav client component to get active state */}
+          {/* Mobile Bottom Nav is now in its own component and uses Suspense */}
           <Suspense>
-            <UserNav.MobileNav />
+            <MobileNav />
           </Suspense>
         </div>
       </SidebarInset>
