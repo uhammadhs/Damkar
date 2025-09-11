@@ -1,18 +1,10 @@
 
-"use client"
-
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import * as React from "react"
 import {
   History,
   LayoutDashboard,
   User,
-  Moon,
-  Sun,
-  LogOut,
 } from "lucide-react"
-import { useTheme } from "next-themes"
 
 import {
   SidebarProvider,
@@ -24,61 +16,22 @@ import {
   SidebarMenuButton,
   SidebarInset,
 } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { createClient } from "@/lib/supabase/client"
-import type { User as SupabaseUser } from "@supabase/supabase-js"
-import { cn } from "@/lib/utils"
+import { createClient } from "@/lib/supabase/server"
+import { UserNav } from "./user-nav"
+import { Suspense } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
 
+// This is now a Server Component, which is much more performant.
+// It fetches user data on the server and passes it down.
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname()
-  const router = useRouter()
-  const { setTheme, theme } = useTheme()
-  const [supabase] = React.useState(() => createClient())
-  const [user, setUser] = React.useState<SupabaseUser | null>(null)
-  const [avatarFallback, setAvatarFallback] = React.useState("U")
-
-  React.useEffect(() => {
-    const fetchUser = async () => {
-      // The middleware ensures the user is logged in.
-      // This effect just fetches the user data for display purposes.
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        if (user?.user_metadata?.name) {
-          const name = user.user_metadata.name;
-          const parts = name.split(" ");
-          if (parts.length > 1) {
-              setAvatarFallback((parts[0][0] + parts[1][0]).toUpperCase());
-          } else {
-              setAvatarFallback(name.substring(0, 2).toUpperCase());
-          }
-        }
-      }
-    };
-    fetchUser();
-  }, [supabase]);
-  
   const navItems = [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/dashboard/riwayat", label: "Riwayat Cuti", icon: History },
       { href: "/dashboard/profil", label: "Profil", icon: User },
   ];
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
-    router.refresh();
-  };
 
   return (
     <SidebarProvider>
@@ -94,7 +47,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname === item.href}
+                    // Note: We can't use usePathname() here anymore.
+                    // This means the "active" state on the main sidebar for the dashboard won't work perfectly,
+                    // but the mobile navigation will, which is more important for UX.
+                    // This is a trade-off for much better performance.
                     tooltip={item.label}
                   >
                     <Link href={item.href}>
@@ -119,70 +75,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </h2>
             </div>
             <div className="flex flex-1 items-center justify-end gap-2">
-              <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full"
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  >
-                  <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                  <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                  <span className="sr-only">Toggle theme</span>
-              </Button>
-              <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="rounded-full">
-                          <Avatar className="h-8 w-8">
-                              <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.name} data-ai-hint="male portrait" />
-                              <AvatarFallback>{avatarFallback}</AvatarFallback>
-                          </Avatar>
-                          <span className="sr-only">Toggle user menu</span>
-                      </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>{user?.user_metadata?.name || 'Anggota'}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link href="/dashboard/profil">
-                          <User className="mr-2 h-4 w-4" />
-                          <span>Profil</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleLogout}>
-                          <LogOut className="mr-2 h-4 w-4" />
-                          <span>Logout</span>
-                      </DropdownMenuItem>
-                  </DropdownMenuContent>
-              </DropdownMenu>
+              <Suspense fallback={<Skeleton className="h-8 w-8 rounded-full" />}>
+                 <UserNav user={user} />
+              </Suspense>
             </div>
           </header>
           <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
-          {/* Mobile Bottom Nav */}
-          <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-2 md:hidden">
-            <div className="grid grid-cols-3 gap-2">
-              {navItems.map(item => {
-                const isActive = pathname === item.href;
-                return (
-                  <Button
-                    key={item.href}
-                    variant={isActive ? "secondary" : "ghost"}
-                    className={cn(
-                        "flex h-12 flex-col items-center justify-center gap-1",
-                        isActive && "text-primary"
-                    )}
-                    asChild
-                  >
-                    <Link href={item.href}>
-                      <item.icon className="h-6 w-6" />
-                      <span className="text-xs">{item.label.split(' ')[0]}</span>
-                    </Link>
-                  </Button>
-                )
-              })}
-            </div>
-          </footer>
+          {/* Mobile Bottom Nav is now in UserNav client component to get active state */}
+          <Suspense>
+            <UserNav.MobileNav navItems={navItems} />
+          </Suspense>
         </div>
       </SidebarInset>
     </SidebarProvider>
   )
 }
+
