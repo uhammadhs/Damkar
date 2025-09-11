@@ -38,9 +38,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
 import { NotificationBell } from "./notification-bell"
 
-// Note: This layout is a client component because it uses many hooks 
-// (usePathname, useRouter, useTheme, useState for supabase client).
-// The middleware is responsible for the crucial role-based redirection.
+// This layout is a client component because it uses many hooks for interactivity.
+// The critical role-based redirection is handled by the server-side middleware.
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -63,7 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/');
-    router.refresh(); // Ensure the page reloads and middleware runs
+    router.refresh();
   };
 
   return (
@@ -120,7 +119,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="rounded-full">
                           <Avatar className="h-8 w-8">
-                              <AvatarImage src="https://source.unsplash.com/50x50/?portrait,person" alt="Admin" data-ai-hint="male portrait" />
+                              <AvatarImage src={`https://api.dicebear.com/8.x/initials/svg?seed=Admin`} alt="Admin" />
                               <AvatarFallback>A</AvatarFallback>
                           </Avatar>
                           <span className="sr-only">Toggle user menu</span>

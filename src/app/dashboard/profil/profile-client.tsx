@@ -21,7 +21,7 @@ export function ProfileClient({ profile }: { profile: Profile }) {
     return (
         <div className="flex flex-col items-center gap-8 md:flex-row md:items-start">
           <Avatar className="h-32 w-32">
-            <AvatarImage src={profile.avatar_url || ''} alt={profile.name || ''} data-ai-hint="male portrait" />
+            <AvatarImage src={profile.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(profile.name || '??')}`} alt={profile.name || ''} />
             <AvatarFallback>{getAvatarFallback(profile.name)}</AvatarFallback>
           </Avatar>
           <div className="flex-1 w-full space-y-4 text-left">

@@ -3,6 +3,8 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { sendNewUserWelcomeEmail } from '@/lib/email'
+import { headers } from 'next/headers'
 
 export async function addMember(formData: FormData) {
   const supabase = createAdminClient()
@@ -49,8 +51,26 @@ export async function addMember(formData: FormData) {
     return { success: false, message: authError?.message || 'Gagal membuat pengguna.' }
   }
 
+  // Send welcome email
+  try {
+    const origin = headers().get('origin') || 'http://localhost:9002';
+    await sendNewUserWelcomeEmail({
+        to: email,
+        name: name,
+        id_pjlp: id_pjlp,
+        password: password,
+        loginUrl: `${origin}/`
+    });
+  } catch (emailError: any) {
+     console.warn(`Anggota ${name} berhasil dibuat, tapi email selamat datang gagal dikirim:`, emailError.message);
+     // We don't return a failure here, but the admin should know.
+     revalidatePath('/admin/anggota');
+     return { success: true, message: `Anggota berhasil ditambahkan, namun email notifikasi ke anggota gagal dikirim.` };
+  }
+
+
   revalidatePath('/admin/anggota')
-  return { success: true, message: 'Anggota berhasil ditambahkan.' }
+  return { success: true, message: 'Anggota berhasil ditambahkan dan email selamat datang telah dikirim.' }
 }
 
 

@@ -66,7 +66,7 @@ export function UserNav({ user }: { user: SupabaseUser | null }) {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="rounded-full">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.name} data-ai-hint="male portrait" />
+              <AvatarImage src={user?.user_metadata?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(user?.user_metadata?.name || '??')}`} alt={user?.user_metadata?.name} />
               <AvatarFallback>{getAvatarFallback(user?.user_metadata?.name)}</AvatarFallback>
             </Avatar>
             <span className="sr-only">Toggle user menu</span>
@@ -91,8 +91,6 @@ export function UserNav({ user }: { user: SupabaseUser | null }) {
   )
 }
 
-// We extract the mobile navigation into a separate component
-// so that it can use the `usePathname` hook without making the whole layout a client component.
 export function MobileNav() {
     const pathname = usePathname();
     const navItems = [
@@ -105,7 +103,7 @@ export function MobileNav() {
         <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-2 md:hidden">
             <div className="grid grid-cols-3 gap-2">
             {navItems.map(item => {
-                const isActive = pathname === item.href;
+                const isActive = pathname.startsWith(item.href);
                 return (
                 <Button
                     key={item.href}

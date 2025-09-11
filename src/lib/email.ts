@@ -15,7 +15,6 @@ interface LeaveStatusEmailProps {
 }
 
 export async function sendLeaveStatusEmail({ to, name, status, requestTitle, startDate, endDate }: LeaveStatusEmailProps) {
-    // Membaca environment variables langsung di dalam fungsi untuk menjamin ketersediaan.
     const resendApiKey = process.env.RESEND_API_KEY;
     const resendFromEmail = process.env.RESEND_FROM_EMAIL;
 
@@ -67,6 +66,57 @@ export async function sendLeaveStatusEmail({ to, name, status, requestTitle, sta
     if (error) {
         console.error("Resend API Error:", error);
         throw new Error(`Gagal mengirim email: ${error.message}`);
+    }
+
+    return data;
+}
+
+interface NewUserWelcomeEmailProps {
+    to: string;
+    name: string;
+    id_pjlp: string;
+    password: string;
+    loginUrl: string;
+}
+
+export async function sendNewUserWelcomeEmail({ to, name, id_pjlp, password, loginUrl }: NewUserWelcomeEmailProps) {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const resendFromEmail = process.env.RESEND_FROM_EMAIL;
+
+    if (!resendApiKey || !resendFromEmail) {
+        console.error("Konfigurasi email tidak lengkap untuk email selamat datang.");
+        throw new Error("Konfigurasi email server tidak lengkap.");
+    }
+    
+    const resend = new Resend(resendApiKey);
+
+    const subject = "Selamat Datang di SIAP CUTI!";
+    
+    const { data, error } = await resend.emails.send({
+        from: `SIAP CUTI Admin <${resendFromEmail}>`,
+        to: [to],
+        subject: subject,
+        html: `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <h2 style="color: #D32F2F;">Selamat Bergabung, ${name}!</h2>
+                <p>Akun Anda untuk aplikasi SIAP CUTI telah berhasil dibuat oleh admin.</p>
+                <p>Anda dapat menggunakan detail berikut untuk login ke dalam sistem:</p>
+                <hr style="border: none; border-top: 1px solid #eee;">
+                <p style="margin-bottom: 5px;"><strong>ID PJLP:</strong> ${id_pjlp}</p>
+                <p style="margin-bottom: 5px;"><strong>Password Sementara:</strong> ${password}</p>
+                <hr style="border: none; border-top: 1px solid #eee;">
+                <p>Silakan klik tombol di bawah ini untuk langsung menuju halaman login.</p>
+                <a href="${loginUrl}" style="background-color: #D32F2F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Login ke SIAP CUTI</a>
+                <p>Untuk keamanan, kami sangat menyarankan Anda untuk segera mengubah password setelah berhasil login pertama kali melalui halaman profil Anda.</p>
+                <br>
+                <p style="font-size: 0.8em; color: #777;"><em>Ini adalah email otomatis, mohon untuk tidak membalas.</em></p>
+            </div>
+        `,
+    });
+
+     if (error) {
+        console.error("Resend API Error (Welcome Email):", error);
+        throw new Error(`Gagal mengirim email selamat datang: ${error.message}`);
     }
 
     return data;
