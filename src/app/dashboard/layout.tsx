@@ -11,7 +11,6 @@ import {
   Moon,
   Sun,
   LogOut,
-  Loader2,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -44,36 +43,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const router = useRouter()
   const { setTheme, theme } = useTheme()
-  const supabase = createClient()
+  const [supabase] = React.useState(() => createClient())
   const [user, setUser] = React.useState<SupabaseUser | null>(null)
   const [avatarFallback, setAvatarFallback] = React.useState("U")
-  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     const fetchUser = async () => {
-      // Middleware ensures user is logged in.
+      // The middleware ensures the user is logged in.
       // This effect just fetches the user data for display purposes.
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-          // This should not happen due to middleware, but as a fallback:
-          router.replace('/');
-          return;
-      }
-
-      setUser(user);
-      if (user?.user_metadata?.name) {
-        const name = user.user_metadata.name;
-        const parts = name.split(" ");
-        if (parts.length > 1) {
-            setAvatarFallback((parts[0][0] + parts[1][0]).toUpperCase());
-        } else {
-            setAvatarFallback(name.substring(0, 2).toUpperCase());
+      if (user) {
+        setUser(user);
+        if (user?.user_metadata?.name) {
+          const name = user.user_metadata.name;
+          const parts = name.split(" ");
+          if (parts.length > 1) {
+              setAvatarFallback((parts[0][0] + parts[1][0]).toUpperCase());
+          } else {
+              setAvatarFallback(name.substring(0, 2).toUpperCase());
+          }
         }
       }
-      setIsLoading(false);
     };
     fetchUser();
-  }, [router, supabase]);
+  }, [supabase]);
   
   const navItems = [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -84,15 +77,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/')
+    router.refresh();
   };
-  
-   if (isLoading) {
-    return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-    )
-  }
 
   return (
     <SidebarProvider>

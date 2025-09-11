@@ -51,13 +51,18 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
   // Step 1: Fetch the original request to get all necessary data first.
   const { data: originalRequest, error: fetchError } = await supabase
     .from('leave_requests')
-    .select('id, title, start_date, end_date, user_id, duration')
+    .select('id, title, start_date, end_date, user_id, duration, status')
     .eq('id', requestId)
     .single();
 
   if (fetchError || !originalRequest) {
     console.error('Error fetching original leave request:', fetchError);
     return { success: false, message: 'Gagal menemukan data pengajuan yang akan diperbarui.' };
+  }
+  
+  // Prevent re-processing if the status is already the new status
+  if (originalRequest.status === newStatus) {
+    return { success: true, message: `Pengajuan sudah dalam status "${newStatus}". Tidak ada tindakan yang diambil.` };
   }
 
   // Step 2: Fetch the user profile data separately to ensure we have it for the email.

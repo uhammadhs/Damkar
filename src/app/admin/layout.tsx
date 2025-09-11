@@ -12,7 +12,6 @@ import {
   Moon,
   Sun,
   LogOut,
-  Loader2,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -39,34 +38,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
 import { NotificationBell } from "./notification-bell"
 
+// Note: This layout is a client component because it uses many hooks 
+// (usePathname, useRouter, useTheme, useState for supabase client).
+// The middleware is responsible for the crucial role-based redirection.
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { setTheme, theme } = useTheme()
-  const supabase = createClient()
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    const checkUserRole = async () => {
-        // The middleware already ensures the user is logged in.
-        // This check is specifically for the role.
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            // This should theoretically not happen due to middleware
-            router.replace('/'); 
-            return;
-        }
-
-        const { data: role } = await supabase.rpc('get_user_role');
-        if (role !== 'admin') {
-            router.replace('/dashboard');
-            return;
-        }
-        setIsLoading(false);
-    }
-    checkUserRole();
-  }, [router, supabase]);
-
+  const [supabase] = React.useState(() => createClient())
 
   const navItems = [
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -83,15 +63,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/');
+    router.refresh(); // Ensure the page reloads and middleware runs
   };
-  
-  if (isLoading) {
-    return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-    )
-  }
 
   return (
     <SidebarProvider>
@@ -123,7 +96,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <SidebarInset>
         <div className="flex h-svh flex-col">
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur">
-            <div className="flex items-center gap-2 md:hidden">
+             <div className="flex items-center gap-2 md:hidden">
               <h1 className="font-headline text-lg font-semibold text-primary">ADMIN SIAP CUTI</h1>
             </div>
             <div className="hidden flex-1 md:block">

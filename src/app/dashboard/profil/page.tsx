@@ -6,36 +6,28 @@ import { ProfileClient } from "./profile-client";
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 
-async function getProfileData(): Promise<Profile | null> {
-    const supabase = createClient();
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect("/");
-    }
-
-    const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-    if (error || !profile) {
-        console.error("Fatal: Could not find profile for a logged-in user.", { userId: user.id, error });
-        return null;
-    }
-    
-    return profile;
-}
-
-
+// This is now a pure server component.
 export default async function ProfilPage() {
-  const profile = await getProfileData();
+  const supabase = createClient();
 
-  if (!profile) {
+  const {
+      data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+      // This case should be handled by middleware, but it's a good safeguard.
+      redirect("/");
+  }
+
+  const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+  if (error || !profile) {
+      console.error("Fatal: Could not find profile for a logged-in user.", { userId: user.id, error });
+      // Render an error state if the profile is unexpectedly missing.
       return (
         <Card>
             <CardHeader>
@@ -57,6 +49,7 @@ export default async function ProfilPage() {
             </CardDescription>
         </CardHeader>
         <CardContent>
+            {/* The client component receives the profile data as a prop */}
             <ProfileClient profile={profile} />
         </CardContent>
     </Card>
