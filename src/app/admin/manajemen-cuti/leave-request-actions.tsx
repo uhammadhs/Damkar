@@ -7,11 +7,12 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, Loader2, X, User, Hash, Calendar, Hourglass, FileText } from "lucide-react";
+import { Check, Loader2, X, User, Hash, Calendar, Hourglass, FileText, Paperclip } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { updateLeaveRequestStatus } from "./actions";
 import type { LeaveRequest } from "./page";
 import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
 
 const getStatusColor = (status: string): string => {
     switch (status) {
@@ -86,7 +87,7 @@ export function LeaveRequestActions({ request }: { request: LeaveRequest }) {
                             <Badge className={`${getStatusColor(request.status)}`}>{request.status}</Badge>
                         </div>
                     </DialogHeader>
-                    <div className="space-y-6 px-6 pb-6">
+                    <div className="space-y-6 px-6 pb-6 max-h-[70vh] overflow-y-auto">
                         <Separator />
                         <div className="space-y-4">
                             <h3 className="text-sm font-medium text-muted-foreground">Data Pemohon</h3>
@@ -113,6 +114,22 @@ export function LeaveRequestActions({ request }: { request: LeaveRequest }) {
                                 </div>
                                 <p className="pl-6 pt-1 text-base text-foreground bg-muted/50 p-3 rounded-md mt-1">{request.reason}</p>
                             </div>
+                            {request.attachment_url && (
+                                <div>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <Paperclip className="h-4 w-4" />
+                                        <span>Lampiran</span>
+                                    </div>
+                                    <div className="pl-6 pt-1 mt-1">
+                                        <Button variant="outline" asChild size="sm">
+                                            <Link href={request.attachment_url} target="_blank" rel="noopener noreferrer">
+                                                <Paperclip className="mr-2 h-4 w-4" />
+                                                Lihat Lampiran
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                     {request.status === 'Menunggu' && (
