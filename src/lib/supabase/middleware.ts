@@ -2,9 +2,16 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { Database } from '@/types/supabase'
-import type { User } from '@supabase/supabase-js'
+import type { User, SupabaseClient } from '@supabase/supabase-js'
 
-export async function updateSession(request: NextRequest) {
+// The return type is explicitly defined to ensure clarity.
+type UpdateSessionResult = {
+  response: NextResponse,
+  user: User | null,
+  supabase: SupabaseClient<Database>
+}
+
+export async function updateSession(request: NextRequest): Promise<UpdateSessionResult> {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -59,5 +66,6 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  return { response: { ...response, supabase }, user: user as User | null }
+  // Now returning the created supabase instance along with the response and user.
+  return { response, user, supabase }
 }

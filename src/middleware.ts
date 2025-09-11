@@ -1,10 +1,10 @@
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
-  const { response, user } = await updateSession(request)
+  // `updateSession` now returns the supabase client instance.
+  const { response, user, supabase } = await updateSession(request)
   const { pathname } = request.nextUrl
 
   // Define protected and auth-related routes
@@ -22,20 +22,7 @@ export async function middleware(request: NextRequest) {
 
   // Scenario 2: User is logged in and tries to access an auth route (e.g., login, register)
   if (user && isAuthRoute) {
-    // IMPORTANT FIX: Create a new Supabase client within the middleware scope
-    // to correctly fetch the user's role. The 'response' object from 
-    // updateSession does not contain a 'supabase' instance.
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                get(name: string) {
-                    return request.cookies.get(name)?.value
-                },
-            },
-        }
-    )
+    // Use the returned supabase client to get the user's role.
     const { data: role } = await supabase.rpc('get_user_role');
     const redirectUrl = role === 'admin' ? '/admin/dashboard' : '/dashboard'
     return NextResponse.redirect(new URL(redirectUrl, request.url))
