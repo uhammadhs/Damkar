@@ -84,10 +84,11 @@ npm install
     CRON_SECRET=BUAT_PASSWORD_RAHASIA_YANG_KUAT_DAN_ACAK_DI_SINI
     ```
 
-3.  **Jalankan Skema SQL**:
+3.  **Jalankan Skema SQL (PENTING!)**:
     - Buka **SQL Editor** di dashboard Supabase Anda.
-    - Salin seluruh konten dari file `/src/lib/supabase/schema.sql` di proyek ini.
-    - Tempelkan ke SQL Editor dan klik **"RUN"**. Ini akan membuat semua tabel dan fungsi yang dibutuhkan.
+    - Salin **SELURUH KONTEN** dari file `/src/lib/supabase/schema.sql` di proyek ini.
+    - **PENTING**: Jika Anda sudah pernah menjalankan skema sebelumnya, hapus semua yang ada di SQL Editor terlebih dahulu untuk memastikan Anda menggunakan versi terbaru.
+    - Tempelkan ke SQL Editor dan klik **"RUN"**. Ini akan membuat semua tabel, fungsi, hak akses (RLS), dan optimasi indeks yang dibutuhkan.
 
 ### 5. Jalankan Aplikasi
 ```bash
