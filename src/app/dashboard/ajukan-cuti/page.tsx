@@ -190,8 +190,8 @@ export default function AjukanCutiPage() {
                                 {isUploading ? "Mengunggah..." : "Unggah Dokumen Pendukung"}
                             </Button>
                         ) : (
-                            <div className="flex items-center justify-between rounded-md border border-input p-2">
-                                <div className="flex items-center gap-2 truncate">
+                            <div className="flex items-center justify-between rounded-md border border-input p-2 space-x-2">
+                                <div className="flex items-center gap-2 min-w-0">
                                     <Paperclip className="h-4 w-4 shrink-0" />
                                     <span className="truncate text-sm">{attachmentName}</span>
                                 </div>
