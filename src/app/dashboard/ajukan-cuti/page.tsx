@@ -193,7 +193,11 @@ export default function AjukanCutiPage() {
                             <div className="flex items-center justify-between rounded-md border border-input p-2 space-x-2">
                                 <div className="flex items-center gap-2 min-w-0">
                                     <Paperclip className="h-4 w-4 shrink-0" />
-                                    <span className="truncate text-sm">{attachmentName}</span>
+                                    <span className="truncate text-sm">
+                                        {attachmentName && attachmentName.length > 10
+                                            ? `${attachmentName.substring(0, 10)}...`
+                                            : attachmentName}
+                                    </span>
                                 </div>
                                 <Button type="button" variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={handleRemoveAttachment}>
                                     <X className="h-4 w-4" />
