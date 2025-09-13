@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react";
@@ -20,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { changePassword, updateProfile, type FormState } from "./actions";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useFormStatus } from "react-dom";
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -109,6 +108,8 @@ function EditProfileDialog({ profile, isOpen, onOpenChange }: { profile: Profile
 function ChangePasswordDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const { toast } = useToast();
     const [isChangingPassword, setIsChangingPassword] = React.useState(false);
+    const [showPassword, setShowPassword] = React.useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
     const formRef = React.useRef<HTMLFormElement>(null);
 
     const handleChangePasswordSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -149,11 +150,49 @@ function ChangePasswordDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                 <form id="change-password-form" ref={formRef} onSubmit={handleChangePasswordSubmit} className="space-y-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor="new_password">Password Baru</Label>
-                        <Input id="new_password" name="new_password" type="password" placeholder="••••••••" required/>
+                        <div className="relative">
+                            <Input 
+                                id="new_password" 
+                                name="new_password" 
+                                type={showPassword ? "text" : "password"}
+                                placeholder="••••••••" 
+                                required
+                                className="pr-10"
+                            />
+                            <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="icon" 
+                                className="absolute inset-y-0 right-0 h-full w-10 text-muted-foreground"
+                                onClick={() => setShowPassword(prev => !prev)}
+                                aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                            >
+                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </Button>
+                        </div>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="confirm_password">Konfirmasi</Label>
-                        <Input id="confirm_password" name="confirm_password" type="password" placeholder="••••••••" required/>
+                        <div className="relative">
+                            <Input 
+                                id="confirm_password" 
+                                name="confirm_password" 
+                                type={showConfirmPassword ? "text" : "password"}
+                                placeholder="••••••••" 
+                                required
+                                className="pr-10"
+                            />
+                            <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="icon" 
+                                className="absolute inset-y-0 right-0 h-full w-10 text-muted-foreground"
+                                onClick={() => setShowConfirmPassword(prev => !prev)}
+                                aria-label={showConfirmPassword ? "Sembunyikan password" : "Tampilkan password"}
+                            >
+                                {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </Button>
+                        </div>
                     </div>
                 </form>
                 <DialogFooter>

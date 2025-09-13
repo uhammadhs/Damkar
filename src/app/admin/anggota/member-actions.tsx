@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -10,13 +9,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 export function MemberActions({ member }: { member: Profile }) {
     const { toast } = useToast();
     const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
     const [isDeleting, setIsDeleting] = React.useState(false);
     const [isSaving, setIsSaving] = React.useState(false);
+    const [showPassword, setShowPassword] = React.useState(false);
 
     const handleDelete = async () => {
         if (!confirm("Apakah Anda yakin ingin menghapus anggota ini? Aksi ini tidak dapat dibatalkan.")) {
@@ -92,7 +92,25 @@ export function MemberActions({ member }: { member: Profile }) {
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="edit-password" className="text-right">Password</Label>
-                            <Input id="edit-password" name="password" type="password" className="col-span-3" placeholder="Kosongkan jika tidak berubah" />
+                            <div className="col-span-3 relative">
+                                <Input 
+                                    id="edit-password" 
+                                    name="password" 
+                                    type={showPassword ? "text" : "password"} 
+                                    className="pr-10" 
+                                    placeholder="Kosongkan jika tidak berubah" 
+                                />
+                                <Button 
+                                    type="button" 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="absolute inset-y-0 right-0 h-full w-10 text-muted-foreground"
+                                    onClick={() => setShowPassword(prev => !prev)}
+                                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                                >
+                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </Button>
+                            </div>
                         </div>
                     </form>
                     <DialogFooter>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import Image from 'next/image';
@@ -10,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { z } from 'zod';
 
@@ -28,6 +27,8 @@ export default function UpdatePasswordPage() {
   const supabase = createClient();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
   // Check for password recovery error in URL hash on mount
   React.useEffect(() => {
@@ -100,25 +101,53 @@ export default function UpdatePasswordPage() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="password">Password Baru</Label>
-              <Input 
-                id="password" 
-                name="password" 
-                placeholder="••••••••" 
-                required 
-                type="password"
-                disabled={loading}
-              />
+              <div className="relative">
+                <Input 
+                  id="password" 
+                  name="password" 
+                  placeholder="••••••••" 
+                  required 
+                  type={showPassword ? "text" : "password"}
+                  disabled={loading}
+                  className="pr-10"
+                />
+                 <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute inset-y-0 right-0 h-full w-10 text-muted-foreground"
+                    onClick={() => setShowPassword(prev => !prev)}
+                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                    disabled={loading}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </Button>
+              </div>
             </div>
              <div className="space-y-2">
               <Label htmlFor="confirm_password">Konfirmasi Password</Label>
-              <Input 
-                id="confirm_password" 
-                name="confirm_password" 
-                placeholder="••••••••" 
-                required 
-                type="password"
-                disabled={loading}
-              />
+              <div className="relative">
+                <Input 
+                  id="confirm_password" 
+                  name="confirm_password" 
+                  placeholder="••••••••" 
+                  required 
+                  type={showConfirmPassword ? "text" : "password"}
+                  disabled={loading}
+                  className="pr-10"
+                />
+                 <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute inset-y-0 right-0 h-full w-10 text-muted-foreground"
+                    onClick={() => setShowConfirmPassword(prev => !prev)}
+                    aria-label={showConfirmPassword ? "Sembunyikan konfirmasi password" : "Tampilkan konfirmasi password"}
+                    disabled={loading}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </Button>
+              </div>
             </div>
             <Button className="w-full" type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

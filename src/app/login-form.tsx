@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { login, type LoginState } from './actions';
 
 function LoginButton() {
@@ -27,6 +27,7 @@ function LoginButton() {
 export function LoginForm() {
   const searchParams = useSearchParams();
   const initialError = searchParams.get('error');
+  const [showPassword, setShowPassword] = React.useState(false);
   
   const initialState: LoginState = { error: initialError, message: searchParams.get('message') };
   const [state, formAction] = useActionState(login, initialState);
@@ -64,13 +65,26 @@ export function LoginForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input 
-              id="password" 
-              name="password" 
-              required 
-              type="password" 
-              placeholder="••••••••" 
-            />
+            <div className="relative">
+              <Input 
+                id="password" 
+                name="password" 
+                required 
+                type={showPassword ? "text" : "password"} 
+                placeholder="••••••••" 
+                className="pr-10"
+              />
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                className="absolute inset-y-0 right-0 h-full w-10 text-muted-foreground"
+                onClick={() => setShowPassword(prev => !prev)}
+                aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </Button>
+            </div>
           </div>
           <LoginButton />
           <div className="relative my-2">

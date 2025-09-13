@@ -1,4 +1,3 @@
-
 "use client"
 
 import Image from 'next/image';
@@ -11,13 +10,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
   
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [showPassword, setShowPassword] = React.useState(false);
   
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -94,7 +94,28 @@ export default function RegisterPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" required type="password" placeholder="Minimal 6 karakter" disabled={isLoading} />
+              <div className="relative">
+                <Input 
+                  id="password" 
+                  name="password" 
+                  required 
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Minimal 6 karakter" 
+                  disabled={isLoading} 
+                  className="pr-10"
+                />
+                 <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute inset-y-0 right-0 h-full w-10 text-muted-foreground"
+                    onClick={() => setShowPassword(prev => !prev)}
+                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                    disabled={isLoading}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </Button>
+              </div>
             </div>
             <Button className="w-full" type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

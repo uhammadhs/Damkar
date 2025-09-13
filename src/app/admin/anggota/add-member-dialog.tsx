@@ -1,8 +1,7 @@
-
 "use client"
 
 import * as React from 'react'
-import { Plus, Loader2 } from 'lucide-react'
+import { Plus, Loader2, Eye, EyeOff } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -22,6 +21,7 @@ import { addMember } from './actions'
 export function AddMemberDialog() {
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [showPassword, setShowPassword] = React.useState(false)
   const { toast } = useToast()
   const formRef = React.useRef<HTMLFormElement>(null)
 
@@ -83,7 +83,26 @@ export function AddMemberDialog() {
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="password" className="text-right">Password</Label>
-            <Input id="password" name="password" type="password" className="col-span-3" placeholder="••••••••" required />
+            <div className="col-span-3 relative">
+                <Input 
+                    id="password" 
+                    name="password" 
+                    type={showPassword ? "text" : "password"} 
+                    className="pr-10" 
+                    placeholder="••••••••" 
+                    required 
+                />
+                <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute inset-y-0 right-0 h-full w-10 text-muted-foreground"
+                    onClick={() => setShowPassword(prev => !prev)}
+                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </Button>
+            </div>
           </div>
         </form>
         <DialogFooter>
