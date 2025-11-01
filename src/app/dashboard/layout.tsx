@@ -26,6 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Simplified navItems for the server-side sidebar
   const navItems = [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/dashboard/riwayat", label: "Riwayat Cuti", icon: History },

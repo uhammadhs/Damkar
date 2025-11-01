@@ -97,13 +97,15 @@ export function MobileNav() {
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/dashboard/riwayat", label: "Riwayat", icon: History },
       { href: "/dashboard/profil", label: "Profil", icon: UserIcon },
-  ];
+    ];
 
     return (
         <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-2 md:hidden">
             <div className="grid grid-cols-3 gap-2">
             {navItems.map(item => {
-                const isActive = pathname.startsWith(item.href);
+                // For mobile, we can be more specific. `startsWith` is good for nested routes
+                // but for a flat bottom nav, direct equality is often better.
+                const isActive = pathname === item.href;
                 return (
                 <Button
                     key={item.href}
