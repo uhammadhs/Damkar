@@ -1,5 +1,5 @@
 
-"use server"
+'use server'
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache";
@@ -103,4 +103,3 @@ export async function changePassword(formData: FormData) {
 
     return { success: true, message: "Password berhasil diubah." };
 }
-

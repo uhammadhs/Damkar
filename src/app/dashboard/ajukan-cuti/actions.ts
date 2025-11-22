@@ -106,8 +106,12 @@ export async function submitLeaveRequest(prevState: FormState | undefined, formD
     return { success: false, message: error.message || 'Gagal mengirim pengajuan.' }
   }
 
-  revalidatePath('/dashboard')
-  revalidatePath('/dashboard/riwayat')
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/riwayat');
+  // Admin pages need to be revalidated as well
+  revalidatePath('/admin/manajemen-cuti');
+  revalidatePath('/admin/dashboard');
+
   // We can't redirect from here, but the success status will be used by the client to redirect.
   return { success: true, message: 'Pengajuan cuti berhasil dikirim.' }
 }

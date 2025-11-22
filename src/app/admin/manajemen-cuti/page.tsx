@@ -9,7 +9,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import Loading from "./loading";
 
-export const revalidate = 0;
+// By removing `export const revalidate = 0`, we opt into Next.js's default static caching.
+// Revalidation will be handled on-demand by `revalidatePath` in our server actions.
 
 export type LeaveRequest = Database['public']['Tables']['leave_requests']['Row'] & {
   profiles: Pick<Database['public']['Tables']['profiles']['Row'], 'name' | 'id_pjlp' | 'avatar_url'> | null;

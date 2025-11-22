@@ -65,11 +65,15 @@ export async function addMember(formData: FormData) {
      console.warn(`Anggota ${name} berhasil dibuat, tapi email selamat datang gagal dikirim:`, emailError.message);
      // We don't return a failure here, but the admin should know.
      revalidatePath('/admin/anggota');
+     revalidatePath('/admin/laporan');
+     revalidatePath('/admin/dashboard');
      return { success: true, message: `Anggota berhasil ditambahkan, namun email notifikasi ke anggota gagal dikirim.` };
   }
 
 
-  revalidatePath('/admin/anggota')
+  revalidatePath('/admin/anggota');
+  revalidatePath('/admin/laporan');
+  revalidatePath('/admin/dashboard');
   return { success: true, message: 'Anggota berhasil ditambahkan dan email selamat datang telah dikirim.' }
 }
 
@@ -134,6 +138,7 @@ export async function editMember(formData: FormData) {
 
 
     revalidatePath('/admin/anggota');
+    revalidatePath('/admin/laporan');
     return { success: true, message: 'Profil berhasil diperbarui.' };
 }
 
@@ -148,5 +153,7 @@ export async function deleteMember(id: string) {
     }
 
     revalidatePath('/admin/anggota');
+    revalidatePath('/admin/laporan');
+    revalidatePath('/admin/dashboard');
     return { success: true, message: 'Anggota berhasil dihapus.' };
 }

@@ -105,11 +105,11 @@ export async function updateLeaveRequestStatus(requestId: number, newStatus: 'Di
   }
 
   // Revalidate paths to reflect changes across the app.
-  revalidatePath('/admin/manajemen-cuti')
-  revalidatePath('/admin/dashboard')
-  revalidatePath('/admin/laporan')
-  revalidatePath('/dashboard')
-  revalidatePath('/dashboard/riwayat')
+  revalidatePath('/admin/manajemen-cuti');
+  revalidatePath('/admin/dashboard');
+  revalidatePath('/admin/laporan');
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/riwayat');
 
   // Step 5: Send the notification email.
   try {
