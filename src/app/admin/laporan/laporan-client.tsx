@@ -24,6 +24,10 @@ export function LaporanClient({ availableYears, selectedYear }: LaporanClientPro
   const handleYearChange = (year: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('year', year);
+    // Hapus query pencarian saat tahun diubah untuk konsistensi
+    if (params.has('query')) {
+      params.delete('query');
+    }
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
   
@@ -31,7 +35,7 @@ export function LaporanClient({ availableYears, selectedYear }: LaporanClientPro
 
   return (
     <Select value={String(selectedYear)} onValueChange={handleYearChange}>
-        <SelectTrigger className="w-full sm:w-[180px]">
+        <SelectTrigger className="w-full sm:w-[130px]">
             <SelectValue />
         </SelectTrigger>
         <SelectContent>

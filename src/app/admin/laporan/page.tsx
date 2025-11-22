@@ -8,6 +8,7 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { LaporanClient } from './laporan-client';
 import { ReportTable } from './report-table';
+import { ExportButton } from './export-button';
 
 export const revalidate = 300; // Cache for 5 minutes
 
@@ -59,7 +60,10 @@ export default async function LaporanPage({
                                 />
                             </div>
                         </form>
-                        <LaporanClient availableYears={availableYears} selectedYear={selectedYear} />
+                        <div className="flex items-center gap-2">
+                           <LaporanClient availableYears={availableYears} selectedYear={selectedYear} />
+                           <ExportButton year={selectedYear} />
+                        </div>
                     </div>
                 </div>
             </CardHeader>
