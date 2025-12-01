@@ -55,10 +55,10 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - api/ (API routes)
-     * - auth/ (auth routes like callback, confirm, verified)
+     * - api/ (API routes, but we now explicitly allow /api/auth/callback)
+     * - auth/ (auth flow routes like confirm, verified - we exclude them all)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/|auth/.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/cron|auth/.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
