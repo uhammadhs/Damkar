@@ -80,7 +80,7 @@ npm install
     RESEND_API_KEY=KUNCI_API_RESEND_ANDA
     RESEND_FROM_EMAIL=ALAMAT_EMAIL_PENGIRIM_ANDA # Contoh: no-reply@domainanda.com
     
-    # Cron Job Secret Key
+    # Cron Job Secret Key (PENTING: Samakan nilai ini dengan Repository Secret di GitHub)
     CRON_SECRET=BUAT_PASSWORD_RAHASIA_YANG_KUAT_DAN_ACAK_DI_SINI
     ```
 
