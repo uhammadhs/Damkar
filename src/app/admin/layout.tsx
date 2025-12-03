@@ -56,7 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const getPageTitle = () => {
     const activeItem = navItems.find(item => pathname.startsWith(item.href));
-    return activeItem?.label || "Admin SIAP CUTI";
+    return activeItem?.label || "Admin CUTI DAMKAR";
   }
 
   const handleLogout = async () => {
@@ -70,7 +70,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <Sidebar>
         <SidebarHeader className="p-4 flex items-center justify-between">
           <h1 className="font-headline text-2xl font-semibold text-primary">
-            ADMIN SIAP CUTI
+            ADMIN CUTI DAMKAR
           </h1>
         </SidebarHeader>
         <SidebarContent>
@@ -96,7 +96,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex h-svh flex-col">
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur">
              <div className="flex items-center gap-2 md:hidden">
-              <h1 className="font-headline text-lg font-semibold text-primary">ADMIN SIAP CUTI</h1>
+              <h1 className="font-headline text-lg font-semibold text-primary">ADMIN CUTI DAMKAR</h1>
             </div>
             <div className="hidden flex-1 md:block">
               <h2 className="text-lg font-semibold font-headline">

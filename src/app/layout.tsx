@@ -21,7 +21,7 @@ const fontMontserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: 'SIAP CUTI',
+  title: 'CUTI DAMKAR',
   description: 'Sistem Informasi Approval Cuti',
   manifest: '/manifest.webmanifest',
 };

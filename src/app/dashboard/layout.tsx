@@ -39,7 +39,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Sidebar>
         <SidebarHeader className="p-4 flex items-center justify-between">
           <h1 className="font-headline text-2xl font-semibold text-primary">
-            SIAP CUTI
+            CUTI DAMKAR
           </h1>
         </SidebarHeader>
         <SidebarContent>
@@ -68,7 +68,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="flex h-svh flex-col">
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur">
             <div className="flex items-center gap-2 md:hidden">
-               <h1 className="font-headline text-lg font-semibold text-primary">SIAP CUTI</h1>
+               <h1 className="font-headline text-lg font-semibold text-primary">CUTI DAMKAR</h1>
             </div>
             <div className="hidden flex-1 md:block">
               <h2 className="text-lg font-semibold font-headline">

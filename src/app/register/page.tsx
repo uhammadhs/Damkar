@@ -1,3 +1,4 @@
+
 "use client"
 
 import Image from 'next/image';
@@ -65,7 +66,7 @@ export default function RegisterPage() {
       <Card className="z-10 w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="font-headline text-2xl">Buat Akun Baru</CardTitle>
-          <CardDescription>Daftarkan diri Anda sebagai anggota SIAP CUTI.</CardDescription>
+          <CardDescription>Daftarkan diri Anda sebagai anggota CUTI DAMKAR.</CardDescription>
         </CardHeader>
         <CardContent>
            {error && (

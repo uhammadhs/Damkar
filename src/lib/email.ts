@@ -42,7 +42,7 @@ export async function sendLeaveStatusEmail({ to, name, status, requestTitle, sta
     const formattedEndDate = format(new Date(endDate), "EEEE, d MMMM yyyy", { locale: id });
 
     const { data, error } = await resend.emails.send({
-        from: `SIAP CUTI Admin <${resendFromEmail}>`,
+        from: `CUTI DAMKAR Admin <${resendFromEmail}>`,
         to: [to],
         subject: subject,
         html: `
@@ -55,7 +55,7 @@ export async function sendLeaveStatusEmail({ to, name, status, requestTitle, sta
                 <p style="margin-bottom: 5px;"><strong>Tanggal:</strong> ${formattedStartDate} - ${formattedEndDate}</p>
                 <p style="margin-bottom: 5px;"><strong>Status Saat Ini:</strong> <strong style="color: ${status === 'Disetujui' ? '#28a745' : '#dc3545'};">${status}</strong></p>
                 <hr style="border: none; border-top: 1px solid #eee;">
-                <p>Anda dapat melihat detail lebih lanjut dengan login ke aplikasi SIAP CUTI.</p>
+                <p>Anda dapat melihat detail lebih lanjut dengan login ke aplikasi CUTI DAMKAR.</p>
                 <p>Terima kasih atas perhatiannya.</p>
                 <br>
                 <p style="font-size: 0.8em; color: #777;"><em>Ini adalah email otomatis, mohon untuk tidak membalas.</em></p>
@@ -90,23 +90,23 @@ export async function sendNewUserWelcomeEmail({ to, name, id_pjlp, password, log
     
     const resend = new Resend(resendApiKey);
 
-    const subject = "Selamat Datang di SIAP CUTI!";
+    const subject = "Selamat Datang di CUTI DAMKAR!";
     
     const { data, error } = await resend.emails.send({
-        from: `SIAP CUTI Admin <${resendFromEmail}>`,
+        from: `CUTI DAMKAR Admin <${resendFromEmail}>`,
         to: [to],
         subject: subject,
         html: `
             <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
                 <h2 style="color: #D32F2F;">Selamat Bergabung, ${name}!</h2>
-                <p>Akun Anda untuk aplikasi SIAP CUTI telah berhasil dibuat oleh admin.</p>
+                <p>Akun Anda untuk aplikasi CUTI DAMKAR telah berhasil dibuat oleh admin.</p>
                 <p>Anda dapat menggunakan detail berikut untuk login ke dalam sistem:</p>
                 <hr style="border: none; border-top: 1px solid #eee;">
                 <p style="margin-bottom: 5px;"><strong>ID PJLP:</strong> ${id_pjlp}</p>
                 <p style="margin-bottom: 5px;"><strong>Password Sementara:</strong> ${password}</p>
                 <hr style="border: none; border-top: 1px solid #eee;">
                 <p>Silakan klik tombol di bawah ini untuk langsung menuju halaman login.</p>
-                <a href="${loginUrl}" style="background-color: #D32F2F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Login ke SIAP CUTI</a>
+                <a href="${loginUrl}" style="background-color: #D32F2F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Login ke CUTI DAMKAR</a>
                 <p>Untuk keamanan, kami sangat menyarankan Anda untuk segera mengubah password setelah berhasil login pertama kali melalui halaman profil Anda.</p>
                 <br>
                 <p style="font-size: 0.8em; color: #777;"><em>Ini adalah email otomatis, mohon untuk tidak membalas.</em></p>

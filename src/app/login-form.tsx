@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from 'next/link';
@@ -35,7 +36,7 @@ export function LoginForm() {
   return (
     <Card className="z-10 w-full max-w-sm">
       <CardHeader className="text-center">
-        <CardTitle className="font-headline text-2xl">SIAP CUTI</CardTitle>
+        <CardTitle className="font-headline text-2xl">CUTI DAMKAR</CardTitle>
         <CardDescription>Sistem Izin Siaga dan Berhalangan</CardDescription>
       </CardHeader>
       <CardContent>

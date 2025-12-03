@@ -1,7 +1,7 @@
 
-# SIAP CUTI - Sistem Izin Siaga dan Berhalangan
+# CUTI DAMKAR - Sistem Izin Siaga dan Berhalangan
 
-**SIAP CUTI** adalah aplikasi web lengkap yang dirancang untuk mengelola proses pengajuan dan persetujuan cuti untuk anggota, khususnya ditujukan untuk organisasi seperti tim PJLP (Penyedia Jasa Lainnya Perorangan). Aplikasi ini menyediakan dua portal berbeda: satu untuk anggota mengajukan dan melacak cuti, dan satu lagi untuk admin mengelola anggota, meninjau pengajuan, dan melihat laporan.
+**CUTI DAMKAR** adalah aplikasi web lengkap yang dirancang untuk mengelola proses pengajuan dan persetujuan cuti untuk anggota, khususnya ditujukan untuk organisasi seperti tim PJLP (Penyedia Jasa Lainnya Perorangan). Aplikasi ini menyediakan dua portal berbeda: satu untuk anggota mengajukan dan melacak cuti, dan satu lagi untuk admin mengelola anggota, meninjau pengajuan, dan melihat laporan.
 
 Dibangun dengan tumpukan teknologi modern, aplikasi ini mengutamakan pengalaman pengguna yang bersih, responsivitas, dan keamanan data.
 
@@ -51,8 +51,8 @@ Untuk menjalankan proyek ini di lingkungan lokal Anda, ikuti langkah-langkah di 
 
 ### 2. Kloning Repositori
 ```bash
-git clone https://github.com/your-username/siap-cuti.git
-cd siap-cuti
+git clone https://github.com/your-username/cuti-damkar.git
+cd cuti-damkar
 ```
 
 ### 3. Instalasi Dependensi
@@ -109,7 +109,7 @@ Aplikasi ini menggunakan **GitHub Actions** untuk menjalankan reset saldo cuti t
 4.  Di menu samping kiri, navigasi ke **Secrets and variables > Actions**.
 5.  Di bagian "Repository secrets", klik **"New repository secret"** dan tambahkan dua *secret* berikut:
     *   **Nama Secret:** `APP_URL`
-        *   **Isi (Value):** Masukkan URL utama tempat aplikasi Anda akan di-deploy (misalnya: `https://siap-cuti.vercel.app`).
+        *   **Isi (Value):** Masukkan URL utama tempat aplikasi Anda akan di-deploy (misalnya: `https://cuti-damkar.vercel.app`).
     *   **Nama Secret:** `CRON_SECRET`
         *   **Isi (Value):** Masukkan nilai yang **sama persis** dengan yang Anda definisikan untuk `CRON_SECRET` di file `.env.local` Anda.
 
